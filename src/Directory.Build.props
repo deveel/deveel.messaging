@@ -1,0 +1,59 @@
+<Project>
+  <PropertyGroup>
+    <!-- Compilation Properties -->
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Deveel</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- Package Metadata -->
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Authors>antonello</Authors>
+    <Company>Deveel</Company>
+    <Copyright>Copyright (C) 2025 Antonello Provenzano</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://deveel.org</PackageProjectUrl>
+    <PackageIcon>deveel-logo.png</PackageIcon>
+    <RepositoryUrl>https://github.com/deveel/deveel.message.model</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <IncludeSymbols>true</IncludeSymbols>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DeterministicBuilds>true</DeterministicBuilds>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!-- GitVersion Integration -->
+  <ItemGroup>
+    <PackageReference Include="GitVersion.MsBuild" Version="6.0.5" PrivateAssets="All" Condition="'$(UseGitVersion)' != 'false'" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(UseGitVersion)' != 'false'">
+    <Version>$(GitVersion_SemVer)</Version>
+    <AssemblyVersion>$(GitVersion_AssemblySemVer)</AssemblyVersion>
+    <FileVersion>$(GitVersion_AssemblySemFileVer)</FileVersion>
+    <InformationalVersion>$(GitVersion_InformationalVersion)</InformationalVersion>
+    <PackageVersion>$(GitVersion_NuGetVersion)</PackageVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" Condition="$(TargetFramework) == 'net8.0'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\deveel-logo.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\mit.licenseheader" Link="mit.licenseheader"/>
+  </ItemGroup>
+</Project>
