@@ -47,8 +47,16 @@ public class SchemaDerivationDemo
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Media)
 			.AddAuthenticationType(AuthenticationType.Token)
-			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: true, asReceiver: true)
-			.AllowsMessageEndpoint(EndpointType.Url, asSender: false, asReceiver: true)
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			{
+				CanSend = true,
+				CanReceive = true
+			})
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
+			{
+				CanSend = false,
+				CanReceive = true
+			})
 			.AddMessageProperty(new MessagePropertyConfiguration("PhoneNumber", ParameterType.String)
 			{
 				IsRequired = true,

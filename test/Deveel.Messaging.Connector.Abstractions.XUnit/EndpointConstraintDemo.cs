@@ -9,9 +9,21 @@ try
 {
     Console.WriteLine("? Creating schema with different endpoint types...");
     var validSchema = new ChannelSchema("Demo", "Multi", "1.0.0")
-        .AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false)
-        .AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: false, asReceiver: true)
-        .AllowsMessageEndpoint(EndpointType.Url, asSender: true, asReceiver: true);
+        .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+        {
+            CanSend = true,
+            CanReceive = false
+        })
+        .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+        {
+            CanSend = false,
+            CanReceive = true
+        })
+        .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
+        {
+            CanSend = true,
+            CanReceive = true
+        });
     
     Console.WriteLine($"   Schema created successfully with {validSchema.Endpoints.Count} endpoint types.");
     foreach (var endpoint in validSchema.Endpoints)
@@ -30,10 +42,18 @@ try
 {
     Console.WriteLine("? Attempting to add duplicate endpoint type...");
     var invalidSchema = new ChannelSchema("Demo", "Invalid", "1.0.0")
-        .AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false);
+        .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+        {
+            CanSend = true,
+            CanReceive = false
+        });
     
     // This should throw an exception
-    invalidSchema.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: false, asReceiver: true);
+    invalidSchema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+    {
+        CanSend = false,
+        CanReceive = true
+    });
     
     Console.WriteLine("   ? ERROR: Duplicate was allowed (this shouldn't happen!)\n");
 }

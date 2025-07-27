@@ -1,6 +1,6 @@
 # ChannelSchema Derivation Usage Examples
 
-This document demonstrates how to use the new schema derivation functionality in the `ChannelSchema` class.
+This document demonstrates how to use the new schema derivation functionality in the `ChannelSchema` class with the updated endpoint type system.
 
 ## Basic Schema Derivation
 
@@ -39,8 +39,8 @@ var twilioBaseSchema = new ChannelSchema("Twilio", "SMS", "2.1.0")
     .AddContentType(MessageContentType.PlainText)
     .AddContentType(MessageContentType.Media)
     .AddAuthenticationType(AuthenticationType.Token)
-    .AllowsMessageEndpoint("sms", asSender: true, asReceiver: true)
-    .AllowsMessageEndpoint("webhook", asSender: false, asReceiver: true)
+    .AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: true, asReceiver: true)
+    .AllowsMessageEndpoint(EndpointType.Url, asSender: false, asReceiver: true)
     .AddMessageProperty(new MessagePropertyConfiguration("PhoneNumber", ParameterType.String)
     {
         IsRequired = true,
@@ -58,250 +58,380 @@ var twilioBaseSchema = new ChannelSchema("Twilio", "SMS", "2.1.0")
     });
 
 // Create a derived schema for a specific customer with restrictions
-var customerSmsSchema = new ChannelSchema(twilioBaseSchema, "CustomerCorp", "RestrictedSMS", "1.0.0")
-    .WithDisplayName("Customer Corp Restricted SMS")
-    .RestrictCapabilities(ChannelCapability.SendMessages) // Remove receiving capabilities
+var customerSmsSchema = new ChannelSchema(twilioBaseSchema, "Customer Corp SMS Notifications")
+    .RemoveCapability(ChannelCapability.ReceiveMessages) // Remove receiving capabilities
     .RemoveParameter("WebhookUrl") // Remove webhook support
     .RestrictContentTypes(MessageContentType.PlainText) // Only plain text messages
-    .RemoveEndpoint("webhook") // Remove webhook endpoint
+    .RemoveEndpoint(EndpointType.Url) // Remove webhook endpoint
     .UpdateParameter("FromNumber", param => 
     {
         param.DefaultValue = "+1234567890"; // Set a default number
-        param.Description = "Customer's designated sender number";
+        param.Description = "Customer-specific sender phone number";
     })
     .UpdateMessageProperty("PhoneNumber", prop =>
     {
         prop.Description = "Customer phone number in E.164 format";
     })
-    .RemoveMessageProperty("IsUrgent") // Remove urgency property
-    .UpdateEndpoint("sms", endpoint =>
+    .RemoveMessageProperty("IsUrgent"); // Remove urgency levels
+```
+
+## Logical Identity Preservation
+
+Derived schemas maintain the same logical identity as their parent:
+
+```csharp
+// Core properties are identical
+Console.WriteLine(twilioBaseSchema.ChannelProvider);   // "Twilio"
+Console.WriteLine(customerSmsSchema.ChannelProvider);  // "Twilio"
+
+Console.WriteLine(twilioBaseSchema.ChannelType);       // "SMS"
+Console.WriteLine(customerSmsSchema.ChannelType);      // "SMS"
+
+Console.WriteLine(twilioBaseSchema.Version);           // "2.1.0"
+Console.WriteLine(customerSmsSchema.Version);          // "2.1.0"
+
+// Logical identity is the same
+Console.WriteLine(twilioBaseSchema.GetLogicalIdentity());   // "Twilio/SMS/2.1.0"
+Console.WriteLine(customerSmsSchema.GetLogicalIdentity()); // "Twilio/SMS/2.1.0"
+
+// Schemas are compatible
+Console.WriteLine(twilioBaseSchema.IsCompatibleWith(customerSmsSchema)); // True
+```
+
+## Endpoint Management in Derived Schemas
+
+### Removing Endpoints
+
+```csharp
+var multiChannelBase = new ChannelSchema("Universal", "Multi", "1.0.0")
+    .AllowsMessageEndpoint(EndpointType.EmailAddress)
+    .AllowsMessageEndpoint(EndpointType.PhoneNumber)
+    .AllowsMessageEndpoint(EndpointType.Url)
+    .AllowsMessageEndpoint(EndpointType.ApplicationId);
+
+// Create email-only schema
+var emailOnlySchema = new ChannelSchema(multiChannelBase, "Email Only Service")
+    .RemoveEndpoint(EndpointType.PhoneNumber)
+    .RemoveEndpoint(EndpointType.Url)
+    .RemoveEndpoint(EndpointType.ApplicationId);
+
+// Result: Only EmailAddress endpoint remains
+Console.WriteLine($"Endpoints: {emailOnlySchema.Endpoints.Count}"); // 1
+```
+
+### Updating Endpoint Configurations
+
+```csharp
+var baseSchema = new ChannelSchema("Provider", "Type", "1.0.0")
+    .AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: true, asReceiver: true);
+
+// Make phone number send-only and required
+var sendOnlySchema = new ChannelSchema(baseSchema, "Send Only SMS")
+    .UpdateEndpoint(EndpointType.PhoneNumber, endpoint => 
     {
-        endpoint.CanReceive = false; // Make it send-only
-        endpoint.IsRequired = true;
+        endpoint.CanReceive = false;  // Remove receive capability
+        endpoint.IsRequired = true;   // Make required
+        endpoint.Description = "Phone number for outbound SMS only";
     });
 ```
 
-## Key Benefits
-
-### 1. Inheritance and Customization
-- Start with a well-defined base schema (like a Twilio SMS connector)
-- Create specialized versions for different customers or use cases
-- Maintain consistency while allowing customization
-
-### 2. Configuration Restriction
-- Remove parameters that shouldn't be configurable by certain users
-- Restrict content types for security or compliance reasons
-- Limit capabilities based on subscription levels or organizational policies
-
-### 3. Independent Modifications
-- Changes to derived schemas don't affect the parent schema
-- Multiple derived schemas can be created from the same parent
-- Each derived schema maintains its own configuration
-
-## Advanced Usage Examples
-
-### Email Connector with Department-Specific Restrictions
+## Content Type Restrictions
 
 ```csharp
-// Base email schema with full capabilities
-var baseEmailSchema = new ChannelSchema("SMTP", "Email", "2.0.0")
-    .WithDisplayName("Corporate SMTP Connector")
-    .WithCapabilities(
-        ChannelCapability.SendMessages | 
-        ChannelCapability.Templates | 
-        ChannelCapability.MediaAttachments |
-        ChannelCapability.BulkMessaging)
-    .AddParameter(new ChannelParameter("SmtpHost", ParameterType.String) { IsRequired = true })
-    .AddParameter(new ChannelParameter("SmtpPort", ParameterType.Integer) { IsRequired = true, DefaultValue = 587 })
-    .AddParameter(new ChannelParameter("Username", ParameterType.String) { IsRequired = true })
-    .AddParameter(new ChannelParameter("Password", ParameterType.String) { IsRequired = true, IsSensitive = true })
-    .AddParameter(new ChannelParameter("EnableSsl", ParameterType.Boolean) { DefaultValue = true })
-    .AddParameter(new ChannelParameter("MaxAttachmentSize", ParameterType.Integer) { DefaultValue = 25 })
+var richContentBase = new ChannelSchema("Provider", "RichMessaging", "1.0.0")
     .AddContentType(MessageContentType.PlainText)
     .AddContentType(MessageContentType.Html)
-    .AddContentType(MessageContentType.Multipart)
-    .AllowsMessageEndpoint("email")
-    .AddMessageProperty(new MessagePropertyConfiguration("Subject", ParameterType.String) { IsRequired = true })
-    .AddMessageProperty(new MessagePropertyConfiguration("Priority", ParameterType.Integer) { IsRequired = false })
-    .AddMessageProperty(new MessagePropertyConfiguration("IsHtml", ParameterType.Boolean) { IsRequired = false });
+    .AddContentType(MessageContentType.Media)
+    .AddContentType(MessageContentType.Json);
 
-// HR Department - restricted to plain text only, no attachments
-var hrEmailSchema = new ChannelSchema(baseEmailSchema, "HR", "SecureEmail", "1.0.0")
-    .WithDisplayName("HR Secure Email")
-    .RemoveCapability(ChannelCapability.MediaAttachments) // No attachments for HR
-    .RemoveCapability(ChannelCapability.BulkMessaging) // No bulk emails
-    .RestrictContentTypes(MessageContentType.PlainText) // Plain text only
-    .RemoveParameter("MaxAttachmentSize") // Not needed without attachments
-    .UpdateParameter("EnableSsl", param => 
-    {
-        param.IsRequired = true; // Force SSL for HR
-        param.DefaultValue = true;
-    })
-    .RemoveMessageProperty("IsHtml"); // No HTML emails
+// Restrict to text-only content
+var textOnlySchema = new ChannelSchema(richContentBase, "Text Only Messaging")
+    .RestrictContentTypes(MessageContentType.PlainText, MessageContentType.Html);
 
-// Marketing Department - full featured but with bulk restrictions
-var marketingEmailSchema = new ChannelSchema(baseEmailSchema, "Marketing", "BulkEmail", "1.0.0")
-    .WithDisplayName("Marketing Bulk Email")
-    .UpdateParameter("MaxAttachmentSize", param =>
+// Alternative: Remove specific content types
+var noMediaSchema = new ChannelSchema(richContentBase, "No Media Messaging")
+    .RemoveContentType(MessageContentType.Media)
+    .RemoveContentType(MessageContentType.Json);
+```
+
+## Real-World Customer Scenarios
+
+### Customer A: Outbound Marketing SMS
+
+```csharp
+var customerASchema = new ChannelSchema(twilioBaseSchema, "Customer A - Marketing SMS")
+    .RemoveCapability(ChannelCapability.ReceiveMessages) // Outbound only
+    .RemoveParameter("WebhookUrl") // No webhooks needed
+    .RemoveEndpoint(EndpointType.Url) // Phone numbers only
+    .UpdateParameter("FromNumber", param => 
     {
-        param.DefaultValue = 10; // Smaller attachments for bulk emails
-        param.Description = "Maximum attachment size in MB for bulk emails";
+        param.DefaultValue = "+1555MARKET"; // Marketing shortcode
+        param.Description = "Marketing SMS shortcode";
     })
     .AddMessageProperty(new MessagePropertyConfiguration("CampaignId", ParameterType.String)
     {
         IsRequired = true,
         Description = "Marketing campaign identifier"
     })
-    .AddMessageProperty(new MessagePropertyConfiguration("SegmentId", ParameterType.String)
+    .RemoveMessageProperty("IsUrgent"); // Not applicable for marketing
+```
+
+### Customer B: Two-Way Support SMS
+
+```csharp
+var customerBSchema = new ChannelSchema(twilioBaseSchema, "Customer B - Support SMS")
+    .RemoveCapability(ChannelCapability.BulkMessaging) // One-on-one support only
+    .RestrictContentTypes(MessageContentType.PlainText) // Text only for support
+    .UpdateParameter("FromNumber", param => 
+    {
+        param.DefaultValue = "+1555SUPPORT"; // Support number
+        param.Description = "Customer support SMS number";
+    })
+    .AddMessageProperty(new MessagePropertyConfiguration("TicketId", ParameterType.String)
     {
         IsRequired = false,
-        Description = "Target segment identifier"
+        Description = "Support ticket identifier"
+    })
+    .UpdateMessageProperty("IsUrgent", prop =>
+    {
+        prop.IsRequired = true; // All support messages need urgency level
+        prop.Description = "Support message urgency (true for urgent tickets)";
     });
 ```
 
-### Multi-Channel Connector with Channel-Specific Derivations
+### Customer C: Webhook-Only Integration
 
 ```csharp
-// Universal messaging base schema
-var baseMessagingSchema = new ChannelSchema("Universal", "MultiChannel", "1.0.0")
-    .WithDisplayName("Universal Messaging Platform")
+var customerCSchema = new ChannelSchema(twilioBaseSchema, "Customer C - Webhook Integration")
+    .RestrictCapabilities(ChannelCapability.ReceiveMessages) // Receive-only
+    .RemoveEndpoint(EndpointType.PhoneNumber) // Webhooks only
+    .RestrictContentTypes(MessageContentType.PlainText) // Simple text notifications
+    .UpdateParameter("WebhookUrl", param => 
+    {
+        param.IsRequired = true;
+        param.DefaultValue = "https://customerc.com/sms-webhook";
+        param.Description = "Customer C webhook endpoint for SMS notifications";
+    })
+    .RemoveParameter("FromNumber") // Not needed for receive-only
+    .AddMessageProperty(new MessagePropertyConfiguration("WebhookSecret", ParameterType.String)
+    {
+        IsRequired = true,
+        IsSensitive = true,
+        Description = "Webhook verification secret"
+    });
+```
+
+## Multi-Channel Derivation Example
+
+```csharp
+// Universal base schema supporting multiple channels
+var universalBase = new ChannelSchema("Universal", "Messaging", "2.0.0")
     .WithCapabilities(
         ChannelCapability.SendMessages | 
         ChannelCapability.ReceiveMessages |
+        ChannelCapability.BulkMessaging |
         ChannelCapability.Templates |
         ChannelCapability.MediaAttachments)
-    .AddParameter(new ChannelParameter("ApiKey", ParameterType.String) { IsRequired = true, IsSensitive = true })
-    .AddParameter(new ChannelParameter("Region", ParameterType.String) { IsRequired = true, DefaultValue = "us-east-1" })
-    .AddParameter(new ChannelParameter("Timeout", ParameterType.Integer) { DefaultValue = 30 })
     .AddContentType(MessageContentType.PlainText)
     .AddContentType(MessageContentType.Html)
     .AddContentType(MessageContentType.Media)
-    .AddContentType(MessageContentType.Template)
-    .AllowsMessageEndpoint("email")
-    .AllowsMessageEndpoint("sms")
-    .AllowsMessageEndpoint("push")
-    .AllowsMessageEndpoint("webhook")
-    .AddMessageProperty(new MessagePropertyConfiguration("Recipient", ParameterType.String) { IsRequired = true })
-    .AddMessageProperty(new MessagePropertyConfiguration("Priority", ParameterType.Integer) { IsRequired = false });
+    .AllowsMessageEndpoint(EndpointType.EmailAddress)
+    .AllowsMessageEndpoint(EndpointType.PhoneNumber)
+    .AllowsMessageEndpoint(EndpointType.Url)
+    .AllowsMessageEndpoint(EndpointType.ApplicationId);
 
-// SMS-only derivation
-var smsOnlySchema = new ChannelSchema(baseMessagingSchema, "SMSOnly", "SMS", "1.0.0")
-    .WithDisplayName("SMS Only Messaging")
-    .RemoveCapability(ChannelCapability.MediaAttachments) // SMS doesn't support large media
-    .RestrictContentTypes(MessageContentType.PlainText) // SMS is text only
-    .RestrictAuthenticationTypes(AuthenticationType.Token) // Simplified auth
-    .RemoveEndpoint("email")
-    .RemoveEndpoint("push")
-    .UpdateEndpoint("sms", endpoint => { endpoint.IsRequired = true; })
-    .UpdateMessageProperty("Recipient", prop =>
-    {
-        prop.Description = "Phone number in E.164 format";
-    })
-    .AddMessageProperty(new MessagePropertyConfiguration("MessageType", ParameterType.String)
-    {
-        IsRequired = false,
-        Description = "SMS message type (transactional, promotional)"
-    });
-
-// Email-only derivation with enhanced features
-var emailOnlySchema = new ChannelSchema(baseMessagingSchema, "EmailOnly", "Email", "1.0.0")
-    .WithDisplayName("Enhanced Email Messaging")
-    .WithCapability(ChannelCapability.BulkMessaging) // Add bulk capability
-    .RemoveEndpoint("sms")
-    .RemoveEndpoint("push")
-    .UpdateEndpoint("email", endpoint => { endpoint.IsRequired = true; })
-    .UpdateMessageProperty("Recipient", prop =>
-    {
-        prop.Description = "Email address";
-    })
+// Email-only derivation
+var emailSchema = new ChannelSchema(universalBase, "Email Service")
+    .RemoveEndpoint(EndpointType.PhoneNumber)
+    .RemoveEndpoint(EndpointType.Url)
+    .RemoveEndpoint(EndpointType.ApplicationId)
     .AddMessageProperty(new MessagePropertyConfiguration("Subject", ParameterType.String)
     {
         IsRequired = true,
         Description = "Email subject line"
+    });
+
+// SMS-only derivation
+var smsSchema = new ChannelSchema(universalBase, "SMS Service")
+    .RemoveEndpoint(EndpointType.EmailAddress)
+    .RemoveEndpoint(EndpointType.Url)
+    .RemoveEndpoint(EndpointType.ApplicationId)
+    .RemoveCapability(ChannelCapability.MediaAttachments) // SMS limitations
+    .RestrictContentTypes(MessageContentType.PlainText)
+    .AddMessageProperty(new MessagePropertyConfiguration("PhoneNumber", ParameterType.String)
+    {
+        IsRequired = true,
+        Description = "Recipient phone number"
+    });
+
+// Push notification derivation
+var pushSchema = new ChannelSchema(universalBase, "Push Notification Service")
+    .RemoveEndpoint(EndpointType.EmailAddress)
+    .RemoveEndpoint(EndpointType.PhoneNumber)
+    .RemoveEndpoint(EndpointType.Url)
+    .RestrictContentTypes(MessageContentType.PlainText, MessageContentType.Json)
+    .AddMessageProperty(new MessagePropertyConfiguration("DeviceToken", ParameterType.String)
+    {
+        IsRequired = true,
+        IsSensitive = true,
+        Description = "Device push notification token"
     })
-    .AddMessageProperty(new MessagePropertyConfiguration("IsHtml", ParameterType.Boolean)
+    .AddMessageProperty(new MessagePropertyConfiguration("Badge", ParameterType.Integer)
     {
         IsRequired = false,
-        Description = "Whether email content is HTML formatted"
-    })
-    .AddMessageProperty(new MessagePropertyConfiguration("AttachmentCount", ParameterType.Integer)
-    {
-        IsRequired = false,
-        Description = "Number of attachments in the email"
+        Description = "App badge count"
     });
 ```
 
-## Schema Hierarchy and Validation
+## Department-Specific Email Derivations
 
-### Parent Schema Reference
 ```csharp
-// Check if a schema is derived
-if (customerSmsSchema.ParentSchema != null)
+// Corporate email base
+var corporateEmail = new ChannelSchema("SMTP", "Email", "2.0.0")
+    .WithCapabilities(
+        ChannelCapability.SendMessages | 
+        ChannelCapability.Templates | 
+        ChannelCapability.MediaAttachments)
+    .AddContentType(MessageContentType.PlainText)
+    .AddContentType(MessageContentType.Html)
+    .AddContentType(MessageContentType.Multipart)
+    .AllowsMessageEndpoint(EndpointType.EmailAddress);
+
+// HR Department - Secure, text-only
+var hrEmail = new ChannelSchema(corporateEmail, "HR Secure Email")
+    .RemoveCapability(ChannelCapability.MediaAttachments) // No attachments for security
+    .RestrictContentTypes(MessageContentType.PlainText) // Text only
+    .AddMessageProperty(new MessagePropertyConfiguration("EmployeeId", ParameterType.String)
+    {
+        IsRequired = true,
+        Description = "Employee ID for HR tracking"
+    })
+    .AddMessageProperty(new MessagePropertyConfiguration("Confidential", ParameterType.Boolean)
+    {
+        IsRequired = true,
+        Description = "Mark as confidential HR communication"
+    });
+
+// Marketing Department - Rich content, bulk capable
+var marketingEmail = new ChannelSchema(corporateEmail, "Marketing Email")
+    .WithCapability(ChannelCapability.BulkMessaging) // Add bulk for campaigns
+    .AddMessageProperty(new MessagePropertyConfiguration("CampaignId", ParameterType.String)
+    {
+        IsRequired = false,
+        Description = "Marketing campaign identifier"
+    })
+    .AddMessageProperty(new MessagePropertyConfiguration("Segment", ParameterType.String)
+    {
+        IsRequired = false,
+        Description = "Customer segment for targeting"
+    });
+```
+
+## Validation and Compatibility
+
+```csharp
+// All derived schemas maintain compatibility with base
+var baseSchema = new ChannelSchema("Provider", "Type", "1.0.0");
+var derivedSchema = new ChannelSchema(baseSchema, "Derived");
+
+// Compatibility check
+Console.WriteLine(baseSchema.IsCompatibleWith(derivedSchema)); // True
+Console.WriteLine(derivedSchema.IsCompatibleWith(baseSchema)); // True
+
+// Validate that derived schema is a proper restriction
+var validationResults = derivedSchema.ValidateAsRestrictionOf(baseSchema);
+if (validationResults.Any())
 {
-    Console.WriteLine($"This schema is derived from: {customerSmsSchema.ParentSchema.ChannelProvider} {customerSmsSchema.ParentSchema.ChannelType}");
+    foreach (var error in validationResults)
+    {
+        Console.WriteLine($"Validation Error: {error.ErrorMessage}");
+    }
 }
-
-// Validate that derived schema restrictions are working
-var connectionSettings = new ConnectionSettings();
-connectionSettings.SetParameter("AccountSid", "AC123...");
-connectionSettings.SetParameter("AuthToken", "auth_token");
-connectionSettings.SetParameter("FromNumber", "+1234567890");
-
-var validationResults = customerSmsSchema.ValidateConnectionSettings(connectionSettings);
-// Should pass validation for the restricted schema
-```
-
-### Message Property Validation in Derived Schema
-```csharp
-var messageProperties = new Dictionary<string, object?>
+else
 {
-    { "PhoneNumber", "+9876543210" },
-    { "MessageType", "transactional" }
-    // Note: "IsUrgent" property was removed in the derived schema
-};
-
-var validationResults = customerSmsSchema.ValidateMessageProperties(messageProperties);
-// Should pass validation (IsUrgent is not required or expected)
-
-// But trying to use IsUrgent would fail
-messageProperties.Add("IsUrgent", true);
-var invalidResults = customerSmsSchema.ValidateMessageProperties(messageProperties);
-// Should contain validation error about unknown property
+    Console.WriteLine("Derived schema is a valid restriction of base schema");
+}
 ```
 
-## Method Reference
+## Multi-Generation Hierarchies
 
-### Restriction Methods
-- `RestrictCapabilities(ChannelCapability)` - Limit capabilities to specified flags
-- `RemoveCapability(ChannelCapability)` - Remove a specific capability
-- `RestrictContentTypes(params MessageContentType[])` - Replace all content types with specified ones
-- `RestrictAuthenticationTypes(params AuthenticationType[])` - Replace all auth types with specified ones
+```csharp
+// Three-level hierarchy example
+var grandparent = new ChannelSchema("Platform", "Messaging", "1.0.0")
+    .WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages | ChannelCapability.BulkMessaging)
+    .AllowsMessageEndpoint(EndpointType.EmailAddress)
+    .AllowsMessageEndpoint(EndpointType.PhoneNumber);
 
-### Removal Methods
-- `RemoveParameter(string)` - Remove a parameter by name
-- `RemoveMessageProperty(string)` - Remove a message property by name
-- `RemoveContentType(MessageContentType)` - Remove a specific content type
-- `RemoveAuthenticationType(AuthenticationType)` - Remove a specific authentication type
-- `RemoveEndpoint(string)` - Remove an endpoint by type
+var parent = new ChannelSchema(grandparent, "Department Level")
+    .RemoveCapability(ChannelCapability.BulkMessaging) // Restrict bulk messaging
+    .RemoveEndpoint(EndpointType.PhoneNumber); // Email only
 
-### Update Methods
-- `UpdateParameter(string, Action<ChannelParameter>)` - Modify an existing parameter
-- `UpdateMessageProperty(string, Action<MessagePropertyConfiguration>)` - Modify an existing message property
-- `UpdateEndpoint(string, Action<ChannelEndpointConfiguration>)` - Modify an existing endpoint
+var child = new ChannelSchema(parent, "User Level")
+    .RestrictCapabilities(ChannelCapability.SendMessages); // Send-only
 
-### Properties
-- `ParentSchema` - Read-only reference to the parent schema (null for base schemas)
+// All maintain same logical identity
+Console.WriteLine(grandparent.GetLogicalIdentity()); // "Platform/Messaging/1.0.0"
+Console.WriteLine(parent.GetLogicalIdentity());      // "Platform/Messaging/1.0.0"
+Console.WriteLine(child.GetLogicalIdentity());       // "Platform/Messaging/1.0.0"
 
-## Best Practices
+// All are compatible
+Console.WriteLine(grandparent.IsCompatibleWith(child)); // True
+```
 
-1. **Start with Comprehensive Base Schemas**: Create base schemas with all possible parameters and capabilities, then restrict as needed in derived schemas.
+## Best Practices for Schema Derivation
 
-2. **Use Meaningful Names**: Give derived schemas clear names that indicate their purpose and restrictions.
+### 1. Start with Comprehensive Base Schemas
 
-3. **Document Restrictions**: Use the `Description` property to explain why certain parameters or capabilities were removed or modified.
+```csharp
+// ? Good - Comprehensive base with all possible features
+var comprehensiveBase = new ChannelSchema("Provider", "Type", "1.0.0")
+    .WithCapabilities(/* All capabilities */)
+    .AddContentType(/* All content types */)
+    .AllowsMessageEndpoint(EndpointType.EmailAddress)
+    .AllowsMessageEndpoint(EndpointType.PhoneNumber)
+    .AllowsMessageEndpoint(EndpointType.Url)
+    .AllowsMessageEndpoint(EndpointType.ApplicationId);
 
-4. **Validate Derived Schemas**: Always test that your derived schemas validate correctly for their intended use cases.
+// Then restrict as needed
+var restrictedSchema = new ChannelSchema(comprehensiveBase, "Restricted")
+    .RemoveCapability(ChannelCapability.BulkMessaging)
+    .RemoveEndpoint(EndpointType.Url);
+```
 
-5. **Maintain Parent References**: The `ParentSchema` property allows you to trace the derivation hierarchy for debugging and documentation purposes.
+### 2. Use Descriptive Display Names
 
-6. **Independent Evolution**: Remember that changes to parent schemas don't automatically propagate to derived schemas - this is by design to maintain stability.
+```csharp
+// ? Good - Clear purpose and restrictions
+var schema = new ChannelSchema(baseSchema, "Customer Corp - Outbound SMS Only");
+
+// ? Avoid - Generic names
+var schema = new ChannelSchema(baseSchema, "Derived Schema");
+```
+
+### 3. Document Changes with Descriptions
+
+```csharp
+// ? Good - Document why parameters were updated
+.UpdateParameter("Timeout", param => 
+{
+    param.DefaultValue = 60; // Increased for customer's slow network
+    param.Description = "Connection timeout (increased for customer requirements)";
+})
+.UpdateEndpoint(EndpointType.PhoneNumber, endpoint =>
+{
+    endpoint.CanReceive = false; // Customer requirement: send-only
+    endpoint.Description = "Phone number for outbound notifications only";
+})
+```
+
+### 4. Validate Derived Schemas
+
+```csharp
+// ? Good - Always validate derived schemas
+var derivedSchema = CreateCustomerSchema(baseSchema);
+var validation = derivedSchema.ValidateAsRestrictionOf(baseSchema);
+
+if (validation.Any())
+{
+    throw new InvalidOperationException($"Invalid schema derivation: {validation.First().ErrorMessage}");
+}

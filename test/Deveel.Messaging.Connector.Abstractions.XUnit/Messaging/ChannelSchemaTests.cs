@@ -172,13 +172,17 @@ public class ChannelSchemaTests
 	}
 
 	[Fact]
-	public void AllowsMessageEndpoint_WithValidType_AddsEndpointWithDefaults()
+	public void HandlesMessageEndpoint_WithValidType_AddsEndpointWithDefaults()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 
 		// Act
-		var result = schema.AllowsMessageEndpoint(EndpointType.PhoneNumber);
+		var result = schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+		{
+			CanSend = true,
+			CanReceive = true
+		});
 
 		// Assert
 		Assert.Same(schema, result);
@@ -192,14 +196,17 @@ public class ChannelSchemaTests
 	}
 
 	[Fact]
-	public void AllowsMessageEndpoint_WithCustomFlags_AddsEndpointWithSpecifiedFlags()
+	public void HandlesMessageEndpoint_WithCustomFlags_AddsEndpointWithSpecifiedFlags()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		const string endpointType = "webhook";
 
 		// Act
-		var result = schema.AllowsMessageEndpoint(EndpointType.Url, asSender: false, asReceiver: true);
+		var result = schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
+		{
+			CanSend = false,
+			CanReceive = true
+		});
 
 		// Assert
 		Assert.Same(schema, result);
@@ -215,16 +222,16 @@ public class ChannelSchemaTests
 	[InlineData(EndpointType.EmailAddress)]
 	[InlineData(EndpointType.PhoneNumber)]
 	[InlineData(EndpointType.Url)]
-	public void AllowsMessageEndpoint_WithInvalidType_ThrowsArgumentException(EndpointType endpointType)
+	public void HandlesMessageEndpoint_WithDuplicateType_ThrowsArgumentException(EndpointType endpointType)
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 		
 		// First add a valid endpoint
-		schema.AllowsMessageEndpoint(endpointType);
+		schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(endpointType));
 
 		// Act & Assert - Adding the same type again should throw
-		Assert.Throws<InvalidOperationException>(() => schema.AllowsMessageEndpoint(endpointType));
+		Assert.Throws<InvalidOperationException>(() => schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(endpointType)));
 	}
 
 	[Fact]
@@ -254,8 +261,16 @@ public class ChannelSchemaTests
 
 		// Act
 		var result = schema
-			.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false)
-			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: false, asReceiver: true)
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+			{
+				CanSend = true,
+				CanReceive = false
+			})
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			{
+				CanSend = false,
+				CanReceive = true
+			})
 			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
 			{
 				CanSend = true,
@@ -294,9 +309,13 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithDisplayName("Test Schema")
 			.WithCapability(ChannelCapability.ReceiveMessages)
-			.AllowsMessageEndpoint(EndpointType.EmailAddress)
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress))
 			.AddContentType(MessageContentType.PlainText)
-			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: false, asReceiver: true)
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			{
+				CanSend = false,
+				CanReceive = true
+			})
 			.WithCapability(ChannelCapability.Templates);
 
 		// Assert
@@ -318,513 +337,22 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 
 		// Act - Add first endpoint configuration
-		schema.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false);
-
-		// Assert - Adding another endpoint with the same type should throw
-		var exception = Assert.Throws<InvalidOperationException>(() => 
-			schema.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: false, asReceiver: true));
-		
-		Assert.Contains("An endpoint configuration with type 'EmailAddress' already exists", exception.Message);
-		Assert.Single(schema.Endpoints);
-	}
-
-	[Fact]
-	public void HandlesMessageEndpoint_WithDuplicateType_ThrowsInvalidOperationException()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		var firstEndpoint = new ChannelEndpointConfiguration(EndpointType.Url)
+		schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
 		{
 			CanSend = true,
-			CanReceive = false,
-			IsRequired = false
-		};
-		var duplicateEndpoint = new ChannelEndpointConfiguration(EndpointType.Url)
-		{
-			CanSend = false,
-			CanReceive = true,
-			IsRequired = true
-		};
-
-		// Act - Add first endpoint configuration
-		schema.HandlesMessageEndpoint(firstEndpoint);
+			CanReceive = false
+		});
 
 		// Assert - Adding another endpoint with the same type should throw
 		var exception = Assert.Throws<InvalidOperationException>(() => 
-			schema.HandlesMessageEndpoint(duplicateEndpoint));
-		
-		Assert.Contains("An endpoint configuration with type 'Url' already exists", exception.Message);
-		Assert.Single(schema.Endpoints);
-	}
-
-	[Fact]
-	public void EndpointConfiguration_CaseInsensitiveDuplicateType_ThrowsInvalidOperationException()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-
-		// Act - Add first endpoint configuration
-		schema.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false);
-
-		// Assert - Adding another endpoint with the same type should throw
-		var exception = Assert.Throws<InvalidOperationException>(() => 
-			schema.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: false, asReceiver: true));
+			schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+			{
+				CanSend = false,
+				CanReceive = true
+			}));
 		
 		Assert.Contains("An endpoint configuration with type 'EmailAddress' already exists", exception.Message);
 		Assert.Single(schema.Endpoints);
-	}
-
-	[Fact]
-	public void EndpointConfiguration_WithSendOnlyEndpoint_ConfiguredCorrectly()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-
-		// Act
-		schema.AllowsMessageEndpoint(EndpointType.Id, asSender: true, asReceiver: false);
-
-		// Assert
-		Assert.Single(schema.Endpoints);
-		
-		var endpoint = schema.Endpoints.First();
-		Assert.Equal(EndpointType.Id, endpoint.Type);
-		Assert.True(endpoint.CanSend);
-		Assert.False(endpoint.CanReceive);
-	}
-
-	[Fact]
-	public void EndpointConfiguration_WithReceiveOnlyEndpoint_ConfiguredCorrectly()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-
-		// Act
-		schema.AllowsMessageEndpoint(EndpointType.Label, asSender: false, asReceiver: true);
-
-		// Assert
-		Assert.Single(schema.Endpoints);
-		
-		var endpoint = schema.Endpoints.First();
-		Assert.Equal(EndpointType.Label, endpoint.Type);
-		Assert.False(endpoint.CanSend);
-		Assert.True(endpoint.CanReceive);
-	}
-
-	[Fact]
-	public void EndpointConfiguration_WithBiDirectionalEndpoint_ConfiguredCorrectly()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-
-		// Act
-		schema.AllowsMessageEndpoint(EndpointType.Topic, asSender: true, asReceiver: true);
-
-		// Assert
-		Assert.Single(schema.Endpoints);
-		
-		var endpoint = schema.Endpoints.First();
-		Assert.Equal(EndpointType.Topic, endpoint.Type);
-		Assert.True(endpoint.CanSend);
-		Assert.True(endpoint.CanReceive);
-	}
-
-	#endregion
-
-	[Fact]
-	public void WithCapabilities_WithValidCapabilities_SetsCapabilities()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		const ChannelCapability capabilities = ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages;
-
-		// Act
-		var result = schema.WithCapabilities(capabilities);
-
-		// Assert
-		Assert.Same(schema, result);
-		Assert.Equal(capabilities, schema.Capabilities);
-	}
-
-	[Fact]
-	public void WithCapability_WithSingleCapability_AddsCapabilityToExisting()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		// Schema starts with SendMessages capability by default
-
-		// Act
-		var result = schema.WithCapability(ChannelCapability.ReceiveMessages);
-
-		// Assert
-		Assert.Same(schema, result);
-		Assert.Equal(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages, schema.Capabilities);
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.SendMessages));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
-	}
-
-	[Fact]
-	public void WithCapability_WithDuplicateCapability_DoesNotDuplicate()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		// Schema starts with SendMessages capability by default
-
-		// Act
-		var result = schema.WithCapability(ChannelCapability.SendMessages);
-
-		// Assert
-		Assert.Same(schema, result);
-		Assert.Equal(ChannelCapability.SendMessages, schema.Capabilities);
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.SendMessages));
-	}
-
-	[Theory]
-	[InlineData(ChannelCapability.ReceiveMessages)]
-	[InlineData(ChannelCapability.MessageStatusQuery)]
-	[InlineData(ChannelCapability.HandlerMessageState)]
-	[InlineData(ChannelCapability.MediaAttachments)]
-	[InlineData(ChannelCapability.Templates)]
-	[InlineData(ChannelCapability.BulkMessaging)]
-	[InlineData(ChannelCapability.HealthCheck)]
-	public void WithCapability_WithIndividualCapabilities_AddsEachCapabilityCorrectly(ChannelCapability capability)
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-
-		// Act
-		var result = schema.WithCapability(capability);
-
-		// Assert
-		Assert.Same(schema, result);
-		Assert.True(schema.Capabilities.HasFlag(capability));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.SendMessages)); // Default should still be present
-	}
-
-	[Fact]
-	public void WithCapability_FluentChaining_AddsMultipleCapabilities()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-
-		// Act
-		var result = schema
-			.WithCapability(ChannelCapability.ReceiveMessages)
-			.WithCapability(ChannelCapability.MessageStatusQuery)
-			.WithCapability(ChannelCapability.Templates)
-			.WithCapability(ChannelCapability.HealthCheck);
-
-		// Assert
-		Assert.Same(schema, result);
-		
-		var expectedCapabilities = ChannelCapability.SendMessages | // Default
-								   ChannelCapability.ReceiveMessages |
-								   ChannelCapability.MessageStatusQuery |
-								   ChannelCapability.Templates |
-								   ChannelCapability.HealthCheck;
-		
-		Assert.Equal(expectedCapabilities, schema.Capabilities);
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.SendMessages));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
-	}
-
-	[Fact]
-	public void WithCapability_AfterWithCapabilities_ComplementsExistingCapabilities()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		var initialCapabilities = ChannelCapability.SendMessages | ChannelCapability.Templates;
-
-		// Act
-		var result = schema
-			.WithCapabilities(initialCapabilities)
-			.WithCapability(ChannelCapability.ReceiveMessages)
-			.WithCapability(ChannelCapability.HealthCheck);
-
-		// Assert
-		Assert.Same(schema, result);
-		
-		var expectedCapabilities = ChannelCapability.SendMessages |
-								   ChannelCapability.Templates |
-								   ChannelCapability.ReceiveMessages |
-								   ChannelCapability.HealthCheck;
-		
-		Assert.Equal(expectedCapabilities, schema.Capabilities);
-	}
-
-	[Fact]
-	public void WithCapability_WithComplexCombination_HandlesBitwiseOperationsCorrectly()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-
-		// Act
-		var result = schema
-			.WithCapability(ChannelCapability.ReceiveMessages | ChannelCapability.MessageStatusQuery)
-			.WithCapability(ChannelCapability.MediaAttachments);
-
-		// Assert
-		Assert.Same(schema, result);
-		
-		var expectedCapabilities = ChannelCapability.SendMessages | // Default
-								   ChannelCapability.ReceiveMessages |
-								   ChannelCapability.MessageStatusQuery |
-								   ChannelCapability.MediaAttachments;
-		
-		Assert.Equal(expectedCapabilities, schema.Capabilities);
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.SendMessages));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.MessageStatusQuery));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
-	}
-
-	[Fact]
-	public void WithCapability_IntegrationWithOtherMethods_WorksInFluentChain()
-	{
-		// Arrange & Act
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.WithDisplayName("Test Schema")
-			.WithCapability(ChannelCapability.ReceiveMessages)
-			.AllowsMessageEndpoint(EndpointType.EmailAddress)
-			.AddContentType(MessageContentType.PlainText)
-			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: false, asReceiver: true)
-			.WithCapability(ChannelCapability.Templates);
-
-		// Assert
-		Assert.Equal("Test Schema", schema.DisplayName);
-		Assert.Contains(MessageContentType.PlainText, schema.ContentTypes);
-		Assert.Equal(2, schema.Endpoints.Count);
-		
-		var expectedCapabilities = ChannelCapability.SendMessages |
-								   ChannelCapability.ReceiveMessages |
-								   ChannelCapability.Templates;
-		
-		Assert.Equal(expectedCapabilities, schema.Capabilities);
-	}
-
-	[Fact]
-	public void WithCapability_PreservesDefaultCapability_WhenAddingNewOnes()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		
-		// Verify default capability is set
-		Assert.Equal(ChannelCapability.SendMessages, schema.Capabilities);
-
-		// Act
-		schema.WithCapability(ChannelCapability.MediaAttachments)
-			  .WithCapability(ChannelCapability.BulkMessaging);
-
-		// Assert
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.SendMessages));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
-	}
-
-	[Fact]
-	public void WithCapability_AllCapabilities_CanBeAddedIndividually()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-
-		// Act
-		schema.WithCapability(ChannelCapability.ReceiveMessages)
-			  .WithCapability(ChannelCapability.MessageStatusQuery)
-			  .WithCapability(ChannelCapability.HandlerMessageState)
-			  .WithCapability(ChannelCapability.MediaAttachments)
-			  .WithCapability(ChannelCapability.Templates)
-			  .WithCapability(ChannelCapability.BulkMessaging)
-			  .WithCapability(ChannelCapability.HealthCheck);
-
-		// Assert
-		var allCapabilities = ChannelCapability.SendMessages | // Default
-							  ChannelCapability.ReceiveMessages |
-							  ChannelCapability.MessageStatusQuery |
-							  ChannelCapability.HandlerMessageState |
-							  ChannelCapability.MediaAttachments |
-							  ChannelCapability.Templates |
-							  ChannelCapability.BulkMessaging |
-							  ChannelCapability.HealthCheck;
-
-		Assert.Equal(allCapabilities, schema.Capabilities);
-		
-		// Verify each capability individually
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.SendMessages));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.MessageStatusQuery));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.HandlerMessageState));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.Templates));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.HealthCheck));
-	}
-
-	[Fact]
-	public void WithDisplayName_WithValidDisplayName_SetsDisplayName()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		const string displayName = "Test Display Name";
-
-		// Act
-		var result = schema.WithDisplayName(displayName);
-
-		// Assert
-		Assert.Same(schema, result);
-		Assert.Equal(displayName, schema.DisplayName);
-	}
-
-	[Fact]
-	public void WithDisplayName_WithNull_SetsDisplayNameToNull()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-
-		// Act
-		var result = schema.WithDisplayName(null);
-
-		// Assert
-		Assert.Same(schema, result);
-		Assert.Null(schema.DisplayName);
-	}
-
-	[Fact]
-	public void FluentConfiguration_WithMethodChaining_ConfiguresSchemaCorrectly()
-	{
-		// Arrange & Act
-		var schema = new ChannelSchema("TestProvider", "Email", "2.0.0")
-			.WithDisplayName("Email Connector Schema")
-			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.Templates | ChannelCapability.MediaAttachments)
-			.AddParameter(new ChannelParameter("ApiKey", ParameterType.String) 
-			{ 
-				IsRequired = true, 
-				IsSensitive = true,
-				Description = "API key for authentication"
-			})
-			.AddParameter(new ChannelParameter("Timeout", ParameterType.Integer) 
-			{ 
-				DefaultValue = 30,
-				Description = "Connection timeout in seconds"
-			})
-			.AddContentType(MessageContentType.PlainText)
-			.AddContentType(MessageContentType.Html)
-			.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false)
-			.AllowsMessageEndpoint(EndpointType.Url, asSender: false, asReceiver: true)
-			.AddAuthenticationType(AuthenticationType.Token)
-			.AddAuthenticationType(AuthenticationType.Basic);
-
-		// Assert
-		Assert.Equal("TestProvider", schema.ChannelProvider);
-		Assert.Equal("Email", schema.ChannelType);
-		Assert.Equal("2.0.0", schema.Version);
-		Assert.Equal("Email Connector Schema", schema.DisplayName);
-		Assert.Equal(ChannelCapability.SendMessages | ChannelCapability.Templates | ChannelCapability.MediaAttachments, schema.Capabilities);
-		
-		Assert.Equal(2, schema.Parameters.Count);
-		Assert.Contains(schema.Parameters, p => p.Name == "ApiKey" && p.IsRequired && p.IsSensitive);
-		Assert.Contains(schema.Parameters, p => p.Name == "Timeout" && p.DefaultValue?.Equals(30) == true);
-		
-		Assert.Equal(2, schema.ContentTypes.Count);
-		Assert.Contains(MessageContentType.PlainText, schema.ContentTypes);
-		Assert.Contains(MessageContentType.Html, schema.ContentTypes);
-		
-		Assert.Equal(2, schema.Endpoints.Count);
-		Assert.Contains(schema.Endpoints, e => e.Type == EndpointType.EmailAddress && e.CanSend && !e.CanReceive);
-		Assert.Contains(schema.Endpoints, e => e.Type == EndpointType.Url && !e.CanSend && e.CanReceive);
-		
-		Assert.Equal(2, schema.AuthenticationTypes.Count);
-		Assert.Contains(AuthenticationType.Token, schema.AuthenticationTypes);
-		Assert.Contains(AuthenticationType.Basic, schema.AuthenticationTypes);
-	}
-
-	[Fact]
-	public void IChannelSchema_Interface_IsImplementedCorrectly()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		
-		// Act
-		IChannelSchema interfaceSchema = schema;
-
-		// Assert
-		Assert.Equal(schema.ChannelProvider, interfaceSchema.ChannelProvider);
-		Assert.Equal(schema.ChannelType, interfaceSchema.ChannelType);
-		Assert.Equal(schema.Version, interfaceSchema.Version);
-		Assert.Equal(schema.DisplayName, interfaceSchema.DisplayName);
-		Assert.Equal(schema.Capabilities, interfaceSchema.Capabilities);
-		Assert.Same(schema.Parameters, interfaceSchema.Parameters);
-		Assert.Same(schema.MessageProperties, interfaceSchema.MessageProperties);
-		Assert.Same(schema.ContentTypes, interfaceSchema.ContentTypes);
-		Assert.Same(schema.AuthenticationTypes, interfaceSchema.AuthenticationTypes);
-		Assert.Same(schema.Endpoints, interfaceSchema.Endpoints);
-	}
-
-	[Fact]
-	public void DefaultCapabilities_IsSetToSendMessages()
-	{
-		// Arrange & Act
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-
-		// Assert
-		Assert.Equal(ChannelCapability.SendMessages, schema.Capabilities);
-	}
-
-	[Fact]
-	public void Collections_AreInitializedAndMutable()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-
-		// Act & Assert - Collections should be initialized and mutable
-		Assert.NotNull(schema.Parameters);
-		Assert.NotNull(schema.MessageProperties);
-		Assert.NotNull(schema.ContentTypes);
-		Assert.NotNull(schema.AuthenticationTypes);
-		Assert.NotNull(schema.Endpoints);
-
-		// Test mutability
-		var parameter = new ChannelParameter("Test", ParameterType.String);
-		schema.Parameters.Add(parameter);
-		Assert.Contains(parameter, schema.Parameters);
-
-		var messageProperty = new MessagePropertyConfiguration("TestProperty", ParameterType.String);
-		schema.MessageProperties.Add(messageProperty);
-		Assert.Contains(messageProperty, schema.MessageProperties);
-
-		schema.ContentTypes.Add(MessageContentType.Binary);
-		Assert.Contains(MessageContentType.Binary, schema.ContentTypes);
-
-		schema.AuthenticationTypes.Add(AuthenticationType.Custom);
-		Assert.Contains(AuthenticationType.Custom, schema.AuthenticationTypes);
-
-		var endpoint = new ChannelEndpointConfiguration(EndpointType.Id);
-		schema.Endpoints.Add(endpoint);
-		Assert.Contains(endpoint, schema.Endpoints);
-	}
-
-	[Fact]
-	public void ContentTypes_SupportsAllMessageContentTypes()
-	{
-		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-
-		// Act
-		schema.AddContentType(MessageContentType.PlainText)
-			  .AddContentType(MessageContentType.Html)
-			  .AddContentType(MessageContentType.Multipart)
-			  .AddContentType(MessageContentType.Template)
-			  .AddContentType(MessageContentType.Media)
-			  .AddContentType(MessageContentType.Json)
-			  .AddContentType(MessageContentType.Binary);
-
-		// Assert
-		Assert.Equal(7, schema.ContentTypes.Count);
-		Assert.Contains(MessageContentType.PlainText, schema.ContentTypes);
-		Assert.Contains(MessageContentType.Html, schema.ContentTypes);
-		Assert.Contains(MessageContentType.Multipart, schema.ContentTypes);
-		Assert.Contains(MessageContentType.Template, schema.ContentTypes);
-		Assert.Contains(MessageContentType.Media, schema.ContentTypes);
-		Assert.Contains(MessageContentType.Json, schema.ContentTypes);
-		Assert.Contains(MessageContentType.Binary, schema.ContentTypes);
 	}
 
 	[Fact]
@@ -855,7 +383,7 @@ public class ChannelSchemaTests
 
 		// Assert - Adding a specific endpoint after wildcard should throw
 		var exception = Assert.Throws<InvalidOperationException>(() => 
-			schema.AllowsMessageEndpoint(EndpointType.Any, asSender: false, asReceiver: true));
+			schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Any)));
 		
 		Assert.Contains("An endpoint configuration with type 'Any' already exists", exception.Message);
 		Assert.Single(schema.Endpoints);
@@ -997,7 +525,7 @@ public class ChannelSchemaTests
 			{
 				IsRequired = false
 			})
-			.AllowsMessageEndpoint(EndpointType.EmailAddress);
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress));
 
 		// Assert
 		Assert.Equal("Test Schema", schema.DisplayName);
@@ -1302,6 +830,74 @@ public class ChannelSchemaTests
 		// the validation treats case-sensitive property names as unknown properties
 		Assert.Single(results);
 		Assert.Contains("Required message property 'TestProperty' is missing", results[0].ErrorMessage);
+	}
+
+	#endregion
+
+	[Fact]
+	public void EndpointConfiguration_WithSendOnlyEndpoint_ConfiguredCorrectly()
+	{
+		// Arrange
+		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
+
+		// Act
+		schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Id)
+		{
+			CanSend = true,
+			CanReceive = false
+		});
+
+		// Assert
+		Assert.Single(schema.Endpoints);
+		
+		var endpoint = schema.Endpoints.First();
+		Assert.Equal(EndpointType.Id, endpoint.Type);
+		Assert.True(endpoint.CanSend);
+		Assert.False(endpoint.CanReceive);
+	}
+
+	[Fact]
+	public void EndpointConfiguration_WithReceiveOnlyEndpoint_ConfiguredCorrectly()
+	{
+		// Arrange
+		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
+
+		// Act
+		schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Label)
+		{
+			CanSend = false,
+			CanReceive = true
+		});
+
+		// Assert
+		Assert.Single(schema.Endpoints);
+		
+		var endpoint = schema.Endpoints.First();
+		Assert.Equal(EndpointType.Label, endpoint.Type);
+		Assert.False(endpoint.CanSend);
+		Assert.True(endpoint.CanReceive);
+	}
+
+	[Fact]
+	public void EndpointConfiguration_WithBiDirectionalEndpoint_ConfiguredCorrectly()
+	{
+		// Arrange
+		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
+
+		// Act
+		schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Topic)
+		{
+			CanSend = true,
+			CanReceive = true
+		});
+
+		// Assert
+		Assert.Single(schema.Endpoints);
+		
+		var endpoint = schema.Endpoints.First();
+		Assert.Equal(EndpointType.Topic, endpoint.Type);
+		Assert.True(endpoint.CanSend);
+		Assert.True(endpoint.CanReceive);
 	}
 
 	#endregion

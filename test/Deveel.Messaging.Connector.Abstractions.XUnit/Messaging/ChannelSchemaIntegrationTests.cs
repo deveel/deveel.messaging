@@ -52,8 +52,16 @@ public class ChannelSchemaIntegrationTests
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
 			.AddContentType(MessageContentType.Multipart)
-			.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false)
-			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: true, asReceiver: false)
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+			{
+				CanSend = true,
+				CanReceive = false
+			})
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			{
+				CanSend = true,
+				CanReceive = false
+			})
 			.AddAuthenticationType(AuthenticationType.Basic);
 
 		// Assert
@@ -121,8 +129,16 @@ public class ChannelSchemaIntegrationTests
 				Description = "Sender phone number"
 			})
 			.AddContentType(MessageContentType.PlainText)
-			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: true, asReceiver: true)
-			.AllowsMessageEndpoint(EndpointType.Url, asSender: false, asReceiver: true)
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			{
+				CanSend = true,
+				CanReceive = true
+			})
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
+			{
+				CanSend = false,
+				CanReceive = true
+			})
 			.AddAuthenticationType(AuthenticationType.Token);
 
 		// Assert
@@ -404,9 +420,21 @@ public class ChannelSchemaIntegrationTests
 			})
 			.AddContentType(MessageContentType.Json)
 			.AddContentType(MessageContentType.Binary)
-			.AllowsMessageEndpoint(EndpointType.Topic, asSender: true, asReceiver: true)
-			.AllowsMessageEndpoint(EndpointType.Id, asSender: true, asReceiver: false)
-			.AllowsMessageEndpoint(EndpointType.Label, asSender: true, asReceiver: true)
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Topic)
+			{
+				CanSend = true,
+				CanReceive = true
+			})
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Id)
+			{
+				CanSend = true,
+				CanReceive = false
+			})
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Label)
+			{
+				CanSend = true,
+				CanReceive = true
+			})
 			.AddAuthenticationType(AuthenticationType.Basic);
 
 		// Assert
@@ -493,7 +521,11 @@ public class ChannelSchemaIntegrationTests
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
 			.AddContentType(MessageContentType.Multipart)
-			.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false)
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+			{
+				CanSend = true,
+				CanReceive = false
+			})
 			.AddMessageProperty(new MessagePropertyConfiguration("Priority", ParameterType.Integer)
 			{
 				IsRequired = true,
@@ -661,7 +693,11 @@ public class ChannelSchemaIntegrationTests
 				Description = "Whether message requires urgent delivery"
 			})
 			.AddContentType(MessageContentType.PlainText)
-			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: true, asReceiver: true);
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			{
+				CanSend = true,
+				CanReceive = true
+			});
 
 		// Test valid message properties
 		var validSmsProperties = new Dictionary<string, object?>

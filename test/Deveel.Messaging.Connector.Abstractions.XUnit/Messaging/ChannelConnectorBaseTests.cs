@@ -528,7 +528,11 @@ public class ChannelConnectorBaseTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-			.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false);
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+			{
+				CanSend = true,
+				CanReceive = false
+			});
 		var connector = new TestConnector(schema);
 
 		// Act
@@ -543,7 +547,11 @@ public class ChannelConnectorBaseTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-			.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false);
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+			{
+				CanSend = true,
+				CanReceive = false
+			});
 		var connector = new TestConnector(schema);
 
 		// Act
@@ -559,7 +567,11 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
 			.AddContentType(MessageContentType.PlainText)
-			.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false);
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+			{
+				CanSend = true,
+				CanReceive = false
+			});
 		
 		var connector = new TestConnector(schema);
 		var validMessage = new MockMessage

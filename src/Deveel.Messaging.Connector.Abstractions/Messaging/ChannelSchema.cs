@@ -249,47 +249,23 @@ namespace Deveel.Messaging
 		}
 
 		/// <summary>
-		/// Configures the channel schema to allow a message using endpoints 
-		/// of the specified type.
-		/// </summary>
-		/// <param name="type">
-		/// The type of the message endpoint.
-		/// </param>
-		/// <param name="asSender">
-		/// A value indicating whether the endpoint can send messages. The default is <see langword="true"/>.
-		/// </param>
-		/// <param name="asReceiver">
-		/// A value indicating whether the endpoint can receive messages. The default is <see langword="true"/>.
-		/// </param>
-		/// <returns>
-		/// The current <see cref="ChannelSchema"/> instance with the configured endpoint.
-		/// </returns>
-		/// <exception cref="InvalidOperationException">
-		/// Thrown when an endpoint configuration with the same type already exists.
-		/// </exception>
-		public ChannelSchema AllowsMessageEndpoint(EndpointType type, bool asSender = true, bool asReceiver = true)
-		{
-			if (Endpoints.Any(e => e.Type == type))
-			{
-				throw new InvalidOperationException($"An endpoint configuration with type '{type}' already exists in the schema.");
-			}
-			
-			var endpoint = new ChannelEndpointConfiguration(type)
-			{
-				CanSend = asSender,
-				CanReceive = asReceiver
-			};
-			Endpoints.Add(endpoint);
-			return this;
-		}
-
-		/// <summary>
 		/// Configures the channel schema to handle any message endpoint.
 		/// </summary>
 		/// <returns>A <see cref="ChannelSchema"/> that is set to handle any message endpoint.</returns>
 		public ChannelSchema AllowsAnyMessageEndpoint()
 		{
-			return AllowsMessageEndpoint(EndpointType.Any);
+			if (Endpoints.Any(e => e.Type == EndpointType.Any))
+			{
+				throw new InvalidOperationException($"An endpoint configuration with type '{EndpointType.Any}' already exists in the schema.");
+			}
+			
+			var endpoint = new ChannelEndpointConfiguration(EndpointType.Any)
+			{
+				CanSend = true,
+				CanReceive = true
+			};
+			Endpoints.Add(endpoint);
+			return this;
 		}
 
 		/// <summary>

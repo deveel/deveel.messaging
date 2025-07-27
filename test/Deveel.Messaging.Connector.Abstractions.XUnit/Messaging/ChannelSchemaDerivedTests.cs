@@ -23,8 +23,16 @@ public class ChannelSchemaDerivedTests
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Media)
 			.AddAuthenticationType(AuthenticationType.Token)
-			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: true, asReceiver: true)
-			.AllowsMessageEndpoint(EndpointType.Url, asSender: false, asReceiver: true)
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			{
+				CanSend = true,
+				CanReceive = true
+			})
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
+			{
+				CanSend = false,
+				CanReceive = true
+			})
 			.AddMessageProperty(new MessagePropertyConfiguration("PhoneNumber", ParameterType.String) { IsRequired = true })
 			.AddMessageProperty(new MessagePropertyConfiguration("MessageType", ParameterType.String) { IsRequired = false });
 
@@ -104,14 +112,14 @@ public class ChannelSchemaDerivedTests
 		var sourceSchema = new ChannelSchema("Base", "Base", "1.0.0")
 			.AddParameter(new ChannelParameter("SharedParam", ParameterType.String))
 			.AddContentType(MessageContentType.PlainText)
-			.AllowsMessageEndpoint(EndpointType.EmailAddress);
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress));
 
 		var copiedSchema = new ChannelSchema(sourceSchema, "Modified Schema");
 
 		// Act - Modify the copied schema
 		copiedSchema.AddParameter(new ChannelParameter("NewParam", ParameterType.Integer));
 		copiedSchema.AddContentType(MessageContentType.Html);
-		copiedSchema.AllowsMessageEndpoint(EndpointType.PhoneNumber);
+		copiedSchema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber));
 
 		// Assert - Source schema should remain unchanged
 		Assert.Single(sourceSchema.Parameters);
@@ -264,8 +272,8 @@ public class ChannelSchemaDerivedTests
 		// Arrange
 		var baseSchema = new ChannelSchema("TestProvider", "SMS", "1.0.0")
 			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
-			.AllowsMessageEndpoint(EndpointType.PhoneNumber)
-			.AllowsMessageEndpoint(EndpointType.Url)
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber))
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url))
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Media);
 
@@ -300,7 +308,7 @@ public class ChannelSchemaDerivedTests
 		// Arrange
 		var baseSchema = new ChannelSchema("TestProvider", "Multi", "1.0.0")
 			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
-			.AllowsMessageEndpoint(EndpointType.EmailAddress)
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress))
 			.AddContentType(MessageContentType.PlainText)
 			.AddParameter(new ChannelParameter("TestParam", ParameterType.String) { IsRequired = true });
 
