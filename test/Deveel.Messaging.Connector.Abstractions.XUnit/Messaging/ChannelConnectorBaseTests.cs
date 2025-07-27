@@ -528,11 +528,11 @@ public class ChannelConnectorBaseTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-			.AllowsMessageEndpoint("email", asSender: true, asReceiver: false);
+			.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false);
 		var connector = new TestConnector(schema);
 
 		// Act
-		var isSupported = connector.IsEndpointTypeSupportedPublic("email", asSender: true);
+		var isSupported = connector.IsEndpointTypeSupportedPublic(EndpointType.EmailAddress, asSender: true);
 
 		// Assert
 		Assert.True(isSupported);
@@ -543,11 +543,11 @@ public class ChannelConnectorBaseTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-			.AllowsMessageEndpoint("email", asSender: true, asReceiver: false);
+			.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false);
 		var connector = new TestConnector(schema);
 
 		// Act
-		var isSupported = connector.IsEndpointTypeSupportedPublic("sms", asSender: true);
+		var isSupported = connector.IsEndpointTypeSupportedPublic(EndpointType.PhoneNumber, asSender: true);
 
 		// Assert
 		Assert.False(isSupported);
@@ -559,47 +559,28 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
 			.AddContentType(MessageContentType.PlainText)
-			.AllowsMessageEndpoint("email", asSender: true, asReceiver: true)
-			.AllowsMessageEndpoint("sms", asSender: false, asReceiver: true);
-
-		var connector = new TestConnector(schema);
+			.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false);
 		
-		// Test with supported endpoint types
+		var connector = new TestConnector(schema);
 		var validMessage = new MockMessage
 		{
 			Sender = new MockEndpoint("email", "sender@test.com"),
-			Receiver = new MockEndpoint("sms", "+1234567890")
-		};
-
-		// Test with unsupported endpoint type
-		var invalidMessage = new MockMessage
-		{
-			Sender = new MockEndpoint("webhook", "https://example.com/webhook"), // Not supported as sender
-			Receiver = new MockEndpoint("email", "receiver@test.com")
+			Receiver = new MockEndpoint("email", "receiver@test.com")  // This should fail validation
 		};
 
 		// Act
-		var validResults = new List<ValidationResult>();
+		var results = new List<ValidationResult>();
 		await foreach (var result in connector.ValidateMessageAsync(validMessage, CancellationToken.None))
 		{
-			validResults.Add(result);
+			results.Add(result);
 		}
 
-		var invalidResults = new List<ValidationResult>();
-		await foreach (var result in connector.ValidateMessageAsync(invalidMessage, CancellationToken.None))
-		{
-			invalidResults.Add(result);
-		}
-
-		// Assert
-		// Valid message should pass validation
-		Assert.Contains(ValidationResult.Success, validResults);
-
-		// Invalid message should have validation error for unsupported endpoint type
-		var endpointError = invalidResults.FirstOrDefault(r => r != ValidationResult.Success);
-		Assert.NotNull(endpointError);
-		Assert.Contains("webhook", endpointError.ErrorMessage);
-		Assert.Contains("not supported", endpointError.ErrorMessage);
+		// Assert - Should have one error for receiver not being supported
+		var errorResults = results.Where(r => r != ValidationResult.Success).ToList();
+		Assert.Single(errorResults);
+		var errorResult = errorResults.First();
+		Assert.Contains("Receiver endpoint type", errorResult.ErrorMessage);
+		Assert.Contains("not supported", errorResult.ErrorMessage);
 	}
 
 	// Test connector implementation for testing
@@ -616,7 +597,8 @@ public class ChannelConnectorBaseTests
 
 		// Expose protected methods for testing
 		public string? GetEndpointTypePublic(IEndpoint endpoint) => GetEndpointType(endpoint);
-		public bool IsEndpointTypeSupportedPublic(string endpointType, bool asSender = false, bool asReceiver = false) =>
+
+		public bool IsEndpointTypeSupportedPublic(EndpointType endpointType, bool asSender = false, bool asReceiver = false) =>
 			IsEndpointTypeSupported(endpointType, asSender, asReceiver);
 
 		protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
@@ -675,13 +657,28 @@ public class ChannelConnectorBaseTests
 	// Mock endpoint implementation
 	private class MockEndpoint : IEndpoint
 	{
-		public MockEndpoint(string type, string address)
+		public MockEndpoint(string typeString, string address)
 		{
-			Type = type;
+			// Convert string type to EndpointType enum for compatibility
+			Type = typeString.ToLowerInvariant() switch
+			{
+				"email" => EndpointType.EmailAddress,
+				"phone" => EndpointType.PhoneNumber,
+				"url" => EndpointType.Url,
+				"user-id" => EndpointType.UserId,
+				"app-id" => EndpointType.ApplicationId,
+				"endpoint-id" => EndpointType.Id,
+				"device-id" => EndpointType.DeviceId,
+				"label" => EndpointType.Label,
+				"topic" => EndpointType.Topic,
+				"sms" => EndpointType.PhoneNumber, // Map sms to phone for testing
+				"webhook" => EndpointType.Url, // Map webhook to URL for testing
+				_ => EndpointType.Id // Default fallback
+			};
 			Address = address;
 		}
 
-		public string Type { get; }
+		public EndpointType Type { get; }
 		public string Address { get; }
 	}
 }

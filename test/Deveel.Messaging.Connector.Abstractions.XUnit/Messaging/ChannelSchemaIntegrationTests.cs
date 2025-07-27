@@ -52,8 +52,8 @@ public class ChannelSchemaIntegrationTests
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
 			.AddContentType(MessageContentType.Multipart)
-			.AllowsMessageEndpoint("email", asSender: true, asReceiver: false)
-			.AllowsMessageEndpoint("smtp", asSender: true, asReceiver: false)
+			.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false)
+			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: true, asReceiver: false)
 			.AddAuthenticationType(AuthenticationType.Basic);
 
 		// Assert
@@ -85,8 +85,8 @@ public class ChannelSchemaIntegrationTests
 
 		// Verify endpoints
 		Assert.Equal(2, emailSchema.Endpoints.Count);
-		Assert.Contains(emailSchema.Endpoints, e => e.Type == "email" && e.CanSend && !e.CanReceive);
-		Assert.Contains(emailSchema.Endpoints, e => e.Type == "smtp" && e.CanSend && !e.CanReceive);
+		Assert.Contains(emailSchema.Endpoints, e => e.Type == EndpointType.EmailAddress && e.CanSend && !e.CanReceive);
+		Assert.Contains(emailSchema.Endpoints, e => e.Type == EndpointType.PhoneNumber && e.CanSend && !e.CanReceive);
 
 		// Verify authentication types
 		Assert.Single(emailSchema.AuthenticationTypes);
@@ -121,8 +121,8 @@ public class ChannelSchemaIntegrationTests
 				Description = "Sender phone number"
 			})
 			.AddContentType(MessageContentType.PlainText)
-			.AllowsMessageEndpoint("sms", asSender: true, asReceiver: true)
-			.AllowsMessageEndpoint("webhook", asSender: false, asReceiver: true)
+			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: true, asReceiver: true)
+			.AllowsMessageEndpoint(EndpointType.Url, asSender: false, asReceiver: true)
 			.AddAuthenticationType(AuthenticationType.Token);
 
 		// Assert
@@ -143,12 +143,12 @@ public class ChannelSchemaIntegrationTests
 		Assert.Single(smsSchema.AuthenticationTypes);
 
 		// Verify endpoints
-		var smsEndpoint = smsSchema.Endpoints.FirstOrDefault(e => e.Type == "sms");
+		var smsEndpoint = smsSchema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.PhoneNumber);
 		Assert.NotNull(smsEndpoint);
 		Assert.True(smsEndpoint.CanSend);
 		Assert.True(smsEndpoint.CanReceive);
 
-		var webhookEndpoint = smsSchema.Endpoints.FirstOrDefault(e => e.Type == "webhook");
+		var webhookEndpoint = smsSchema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.Url);
 		Assert.NotNull(webhookEndpoint);
 		Assert.False(webhookEndpoint.CanSend);
 		Assert.True(webhookEndpoint.CanReceive);
@@ -179,7 +179,7 @@ public class ChannelSchemaIntegrationTests
 		// Verify wildcard endpoint
 		Assert.Single(schema.Endpoints);
 		var anyEndpoint = schema.Endpoints.First();
-		Assert.Equal("*", anyEndpoint.Type);
+		Assert.Equal(EndpointType.Any, anyEndpoint.Type);
 		Assert.True(anyEndpoint.CanSend);
 		Assert.True(anyEndpoint.CanReceive);
 	}
@@ -356,15 +356,7 @@ public class ChannelSchemaIntegrationTests
 			})
 			.AddContentType(MessageContentType.Json)
 			.AddContentType(MessageContentType.PlainText)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration("webhook")
-			{
-				CanSend = false,
-				CanReceive = true,
-				IsRequired = false
-			})
-			.AllowsMessageEndpoint("http", asSender: true, asReceiver: false)
-			.AllowsMessageEndpoint("https", asSender: true, asReceiver: false)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration("callback")
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
 			{
 				CanSend = false,
 				CanReceive = true,
@@ -380,25 +372,9 @@ public class ChannelSchemaIntegrationTests
 		Assert.Equal("REST API Connector", webApiSchema.DisplayName);
 
 		// Verify endpoints
-		Assert.Equal(4, webApiSchema.Endpoints.Count);
+		Assert.Single(webApiSchema.Endpoints);
 		
-		var webhookEndpoint = webApiSchema.Endpoints.FirstOrDefault(e => e.Type == "webhook");
-		Assert.NotNull(webhookEndpoint);
-		Assert.False(webhookEndpoint.CanSend);
-		Assert.True(webhookEndpoint.CanReceive);
-		Assert.False(webhookEndpoint.IsRequired);
-
-		var httpEndpoint = webApiSchema.Endpoints.FirstOrDefault(e => e.Type == "http");
-		Assert.NotNull(httpEndpoint);
-		Assert.True(httpEndpoint.CanSend);
-		Assert.False(httpEndpoint.CanReceive);
-
-		var httpsEndpoint = webApiSchema.Endpoints.FirstOrDefault(e => e.Type == "https");
-		Assert.NotNull(httpsEndpoint);
-		Assert.True(httpsEndpoint.CanSend);
-		Assert.False(httpsEndpoint.CanReceive);
-
-		var callbackEndpoint = webApiSchema.Endpoints.FirstOrDefault(e => e.Type == "callback");
+		var callbackEndpoint = webApiSchema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.Url);
 		Assert.NotNull(callbackEndpoint);
 		Assert.False(callbackEndpoint.CanSend);
 		Assert.True(callbackEndpoint.CanReceive);
@@ -428,9 +404,9 @@ public class ChannelSchemaIntegrationTests
 			})
 			.AddContentType(MessageContentType.Json)
 			.AddContentType(MessageContentType.Binary)
-			.AllowsMessageEndpoint("queue", asSender: true, asReceiver: true)
-			.AllowsMessageEndpoint("exchange", asSender: true, asReceiver: false)
-			.AllowsMessageEndpoint("topic", asSender: true, asReceiver: true)
+			.AllowsMessageEndpoint(EndpointType.Topic, asSender: true, asReceiver: true)
+			.AllowsMessageEndpoint(EndpointType.Id, asSender: true, asReceiver: false)
+			.AllowsMessageEndpoint(EndpointType.Label, asSender: true, asReceiver: true)
 			.AddAuthenticationType(AuthenticationType.Basic);
 
 		// Assert
@@ -438,20 +414,20 @@ public class ChannelSchemaIntegrationTests
 		Assert.Equal("Queue", queueSchema.ChannelType);
 		Assert.Equal(3, queueSchema.Endpoints.Count);
 
-		// Verify bidirectional queue endpoint
-		var queueEndpoint = queueSchema.Endpoints.FirstOrDefault(e => e.Type == "queue");
+		// Verify bidirectional queue endpoint (using Topic for queue-like behavior)
+		var queueEndpoint = queueSchema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.Topic);
 		Assert.NotNull(queueEndpoint);
 		Assert.True(queueEndpoint.CanSend);
 		Assert.True(queueEndpoint.CanReceive);
 
-		// Verify send-only exchange endpoint
-		var exchangeEndpoint = queueSchema.Endpoints.FirstOrDefault(e => e.Type == "exchange");
+		// Verify send-only exchange endpoint (using Id for exchange-like behavior)
+		var exchangeEndpoint = queueSchema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.Id);
 		Assert.NotNull(exchangeEndpoint);
 		Assert.True(exchangeEndpoint.CanSend);
 		Assert.False(exchangeEndpoint.CanReceive);
 
-		// Verify bidirectional topic endpoint
-		var topicEndpoint = queueSchema.Endpoints.FirstOrDefault(e => e.Type == "topic");
+		// Verify bidirectional topic endpoint (using Label for secondary topic behavior)
+		var topicEndpoint = queueSchema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.Label);
 		Assert.NotNull(topicEndpoint);
 		Assert.True(topicEndpoint.CanSend);
 		Assert.True(topicEndpoint.CanReceive);
@@ -483,7 +459,7 @@ public class ChannelSchemaIntegrationTests
 		Assert.Single(flexibleSchema.Endpoints);
 
 		var anyEndpoint = flexibleSchema.Endpoints.First();
-		Assert.Equal("*", anyEndpoint.Type);
+		Assert.Equal(EndpointType.Any, anyEndpoint.Type);
 		Assert.True(anyEndpoint.CanSend);
 		Assert.True(anyEndpoint.CanReceive);
 		Assert.False(anyEndpoint.IsRequired); // Default should be false
@@ -517,7 +493,7 @@ public class ChannelSchemaIntegrationTests
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
 			.AddContentType(MessageContentType.Multipart)
-			.AllowsMessageEndpoint("email", asSender: true, asReceiver: false)
+			.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false)
 			.AddMessageProperty(new MessagePropertyConfiguration("Priority", ParameterType.Integer)
 			{
 				IsRequired = true,
@@ -685,7 +661,7 @@ public class ChannelSchemaIntegrationTests
 				Description = "Whether message requires urgent delivery"
 			})
 			.AddContentType(MessageContentType.PlainText)
-			.AllowsMessageEndpoint("sms", asSender: true, asReceiver: true);
+			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: true, asReceiver: true);
 
 		// Test valid message properties
 		var validSmsProperties = new Dictionary<string, object?>

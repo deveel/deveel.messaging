@@ -47,8 +47,8 @@ public class SchemaDerivationDemo
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Media)
 			.AddAuthenticationType(AuthenticationType.Token)
-			.AllowsMessageEndpoint("sms", asSender: true, asReceiver: true)
-			.AllowsMessageEndpoint("webhook", asSender: false, asReceiver: true)
+			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: true, asReceiver: true)
+			.AllowsMessageEndpoint(EndpointType.Url, asSender: false, asReceiver: true)
 			.AddMessageProperty(new MessagePropertyConfiguration("PhoneNumber", ParameterType.String)
 			{
 				IsRequired = true,
@@ -82,7 +82,7 @@ public class SchemaDerivationDemo
 			.RestrictCapabilities(ChannelCapability.SendMessages) // Remove receiving capabilities
 			.RemoveParameter("WebhookUrl") // Remove webhook support
 			.RestrictContentTypes(MessageContentType.PlainText) // Only plain text messages
-			.RemoveEndpoint("webhook") // Remove webhook endpoint
+			.RemoveEndpoint(EndpointType.Url) // Remove webhook endpoint
 			.UpdateParameter("FromNumber", param => 
 			{
 				param.DefaultValue = "+1234567890"; // Set a default number
@@ -93,7 +93,7 @@ public class SchemaDerivationDemo
 				prop.Description = "Customer phone number in E.164 format";
 			})
 			.RemoveMessageProperty("IsUrgent") // Remove urgency property
-			.UpdateEndpoint("sms", endpoint =>
+			.UpdateEndpoint(EndpointType.PhoneNumber, endpoint =>
 			{
 				endpoint.CanReceive = false; // Make it send-only
 				endpoint.IsRequired = true;

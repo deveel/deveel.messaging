@@ -15,57 +15,74 @@ public class ChannelSchemaDerivationIntegrationTests
 	public void TwilioSmsSchema_CopyForCustomer_RestrictsCorrectly()
 	{
 		// Arrange - Create a comprehensive Twilio base schema
-		var twilioBaseSchema = new ChannelSchema("Twilio", "SMS", "2.1.0")
-			.WithDisplayName("Twilio SMS Connector")
-			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages | 
-							 ChannelCapability.MessageStatusQuery | ChannelCapability.BulkMessaging)
-			.AddParameter(new ChannelParameter("AccountSid", ParameterType.String) { IsRequired = true })
-			.AddParameter(new ChannelParameter("AuthToken", ParameterType.String) { IsRequired = true, IsSensitive = true })
-			.AddParameter(new ChannelParameter("FromNumber", ParameterType.String) { IsRequired = true })
-			.AddParameter(new ChannelParameter("WebhookUrl", ParameterType.String) { IsRequired = false })
+		var twilioBaseSchema = new ChannelSchema("Twilio", "SMS", "1.0.0")
+			.WithDisplayName("Twilio SMS Base Connector")
+			.WithCapabilities(
+				ChannelCapability.SendMessages | 
+				ChannelCapability.ReceiveMessages |
+				ChannelCapability.MessageStatusQuery |
+				ChannelCapability.BulkMessaging)
+			.AddParameter(new ChannelParameter("AccountSid", ParameterType.String)
+			{
+				IsRequired = true,
+				Description = "Twilio Account SID"
+			})
+			.AddParameter(new ChannelParameter("AuthToken", ParameterType.String)
+			{
+				IsRequired = true,
+				IsSensitive = true,
+				Description = "Twilio Auth Token"
+			})
+			.AddParameter(new ChannelParameter("FromNumber", ParameterType.String)
+			{
+				IsRequired = true,
+				Description = "Sender phone number",
+				DefaultValue = "+1234567890"
+			})
+			.AddParameter(new ChannelParameter("WebhookUrl", ParameterType.String)
+			{
+				IsRequired = false,
+				Description = "URL for receiving webhooks"
+			})
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Media)
-			.AddAuthenticationType(AuthenticationType.Token)
-			.AllowsMessageEndpoint("sms", asSender: true, asReceiver: true)
-			.AllowsMessageEndpoint("webhook", asSender: false, asReceiver: true)
+			.AllowsMessageEndpoint(EndpointType.PhoneNumber)
+			.AllowsMessageEndpoint(EndpointType.Url)
 			.AddMessageProperty(new MessagePropertyConfiguration("PhoneNumber", ParameterType.String) { IsRequired = true })
 			.AddMessageProperty(new MessagePropertyConfiguration("MessageType", ParameterType.String) { IsRequired = false })
 			.AddMessageProperty(new MessagePropertyConfiguration("IsUrgent", ParameterType.Boolean) { IsRequired = false });
 
 		// Act - Create a restricted copy with specific restrictions for a customer
 		// Note: ChannelProvider, ChannelType, and Version remain the same as base (logical identity)
-		var customerSmsSchema = new ChannelSchema(twilioBaseSchema, "Customer Corp Restricted SMS")
-			.RestrictCapabilities(ChannelCapability.SendMessages) // Remove receiving capabilities
-			.RemoveParameter("WebhookUrl") // Remove webhook support
-			.RestrictContentTypes(MessageContentType.PlainText) // Only plain text
-			.RemoveEndpoint("webhook") // Remove webhook endpoint
-			.UpdateParameter("FromNumber", param => 
-			{
-				param.DefaultValue = "+1234567890"; // Set a default number
-			})
-			.UpdateMessageProperty("PhoneNumber", prop =>
+		var customerSmsSchema = new ChannelSchema(twilioBaseSchema, "Customer SMS Notifications")
+			.RemoveCapability(ChannelCapability.ReceiveMessages) // Outbound only
+			.RemoveCapability(ChannelCapability.BulkMessaging)   // Single messages only
+			.RemoveParameter("WebhookUrl")                       // No webhook needed
+			.RemoveContentType(MessageContentType.Media)        // Text only
+			.RemoveEndpoint(EndpointType.Url)                    // Phone numbers only
+			.RemoveMessageProperty("IsUrgent")                   // No urgency levels
+			.UpdateMessageProperty("PhoneNumber", prop => 
 			{
 				prop.Description = "Customer phone number in E.164 format";
 			})
-			.RemoveMessageProperty("IsUrgent") // Remove urgency property
-			.UpdateEndpoint("sms", endpoint =>
+			.UpdateEndpoint(EndpointType.PhoneNumber, endpoint => 
 			{
-				endpoint.CanReceive = false; // Make it send-only
-				endpoint.IsRequired = true;
+				endpoint.CanReceive = false; // Outbound only
+				endpoint.IsRequired = true;  // Must specify phone number
 			});
 
 		// Assert - Core properties must match base (logical identity)
 		Assert.Equal("Twilio", customerSmsSchema.ChannelProvider);
 		Assert.Equal("SMS", customerSmsSchema.ChannelType);
-		Assert.Equal("2.1.0", customerSmsSchema.Version);
-		Assert.Equal("Customer Corp Restricted SMS", customerSmsSchema.DisplayName);
+		Assert.Equal("1.0.0", customerSmsSchema.Version);
+		Assert.Equal("Customer SMS Notifications", customerSmsSchema.DisplayName);
 		
 		// Verify logical compatibility
 		Assert.True(twilioBaseSchema.IsCompatibleWith(customerSmsSchema));
 		Assert.Equal(twilioBaseSchema.GetLogicalIdentity(), customerSmsSchema.GetLogicalIdentity());
 
 		// Verify capability restriction
-		Assert.Equal(ChannelCapability.SendMessages, customerSmsSchema.Capabilities);
+		Assert.Equal(ChannelCapability.SendMessages | ChannelCapability.MessageStatusQuery, customerSmsSchema.Capabilities);
 		Assert.False(customerSmsSchema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
 
 		// Verify parameter changes
@@ -83,7 +100,7 @@ public class ChannelSchemaDerivationIntegrationTests
 		// Verify endpoint changes
 		Assert.Single(customerSmsSchema.Endpoints); // webhook removed
 		var smsEndpoint = customerSmsSchema.Endpoints.First();
-		Assert.Equal("sms", smsEndpoint.Type);
+		Assert.Equal(EndpointType.PhoneNumber, smsEndpoint.Type);
 		Assert.True(smsEndpoint.CanSend);
 		Assert.False(smsEndpoint.CanReceive);
 		Assert.True(smsEndpoint.IsRequired);
@@ -127,7 +144,8 @@ public class ChannelSchemaDerivationIntegrationTests
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
 			.AddContentType(MessageContentType.Multipart)
-			.AllowsMessageEndpoint("email")
+			.AddContentType(MessageContentType.Media)
+			.AllowsMessageEndpoint(EndpointType.EmailAddress)
 			.AddMessageProperty(new MessagePropertyConfiguration("Subject", ParameterType.String) { IsRequired = true })
 			.AddMessageProperty(new MessagePropertyConfiguration("Priority", ParameterType.Integer) { IsRequired = false })
 			.AddMessageProperty(new MessagePropertyConfiguration("IsHtml", ParameterType.Boolean) { IsRequired = false });
@@ -184,7 +202,7 @@ public class ChannelSchemaDerivationIntegrationTests
 		Assert.Equal("Marketing Bulk Email", marketingEmailSchema.DisplayName);
 		Assert.True(baseEmailSchema.IsCompatibleWith(marketingEmailSchema));
 		Assert.True(marketingEmailSchema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
-		Assert.Equal(3, marketingEmailSchema.ContentTypes.Count); // All content types preserved
+		Assert.Equal(4, marketingEmailSchema.ContentTypes.Count); // All content types preserved
 		Assert.Equal(6, marketingEmailSchema.Parameters.Count); // All parameters preserved
 		Assert.Equal(5, marketingEmailSchema.MessageProperties.Count); // 2 new properties added
 
@@ -198,7 +216,7 @@ public class ChannelSchemaDerivationIntegrationTests
 
 		// Verify base schema is unchanged
 		Assert.Equal(6, baseEmailSchema.Parameters.Count);
-		Assert.Equal(3, baseEmailSchema.ContentTypes.Count);
+		Assert.Equal(4, baseEmailSchema.ContentTypes.Count);
 		Assert.Equal(3, baseEmailSchema.MessageProperties.Count);
 		Assert.True(baseEmailSchema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
 		Assert.True(baseEmailSchema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
@@ -216,61 +234,52 @@ public class ChannelSchemaDerivationIntegrationTests
 	public void MultiChannelSchema_ChannelSpecificCopies_RestrictEndpointsCorrectly()
 	{
 		// Arrange - Universal messaging base schema
-		var baseMessagingSchema = new ChannelSchema("Universal", "MultiChannel", "1.0.0")
-			.WithDisplayName("Universal Messaging Platform")
+		var baseMessagingSchema = new ChannelSchema("Universal", "MultiChannel", "2.0.0")
+			.WithDisplayName("Universal Multi-Channel Connector")
+			.AddAuthenticationType(AuthenticationType.Token)
+			.AddAuthenticationType(AuthenticationType.ApiKey)
 			.WithCapabilities(
-				ChannelCapability.SendMessages | 
+				ChannelCapability.SendMessages |
 				ChannelCapability.ReceiveMessages |
+				ChannelCapability.MessageStatusQuery |
+				ChannelCapability.BulkMessaging |
 				ChannelCapability.Templates |
-				ChannelCapability.MediaAttachments)
-			.AddParameter(new ChannelParameter("ApiKey", ParameterType.String) { IsRequired = true, IsSensitive = true })
-			.AddParameter(new ChannelParameter("Region", ParameterType.String) { IsRequired = true, DefaultValue = "us-east-1" })
-			.AddParameter(new ChannelParameter("Timeout", ParameterType.Integer) { DefaultValue = 30 })
+				ChannelCapability.MediaAttachments |
+				ChannelCapability.HealthCheck)
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
+			.AddContentType(MessageContentType.Multipart)
 			.AddContentType(MessageContentType.Media)
-			.AddContentType(MessageContentType.Template)
-			.AddAuthenticationType(AuthenticationType.Token)      // Add authentication types to base
-			.AddAuthenticationType(AuthenticationType.ApiKey)     // Add multiple auth types
-			.AllowsMessageEndpoint("email")
-			.AllowsMessageEndpoint("sms")
-			.AllowsMessageEndpoint("push")
-			.AllowsMessageEndpoint("webhook")
-			.AddMessageProperty(new MessagePropertyConfiguration("Recipient", ParameterType.String) { IsRequired = true })
-			.AddMessageProperty(new MessagePropertyConfiguration("Priority", ParameterType.Integer) { IsRequired = false })
-			.AddMessageProperty(new MessagePropertyConfiguration("MessageType", ParameterType.String) // Add to base schema
-			{
-				IsRequired = false,
-				Description = "Type of message (transactional, promotional, etc.)"
-			});
+			.AllowsMessageEndpoint(EndpointType.EmailAddress)
+			.AllowsMessageEndpoint(EndpointType.PhoneNumber)
+			.AllowsMessageEndpoint(EndpointType.Url)
+			.AllowsMessageEndpoint(EndpointType.ApplicationId)
+			.AddMessageProperty(new MessagePropertyConfiguration("Priority", ParameterType.Integer))
+			.AddMessageProperty(new MessagePropertyConfiguration("Category", ParameterType.String))
+			.AddMessageProperty(new MessagePropertyConfiguration("MessageType", ParameterType.String));
+;
 
 		// Act - Create SMS-only copy
 		var smsOnlySchema = new ChannelSchema(baseMessagingSchema, "SMS Only Messaging")
 			.RemoveCapability(ChannelCapability.MediaAttachments) // SMS doesn't support large media
 			.RestrictContentTypes(MessageContentType.PlainText) // SMS is text only
 			.RestrictAuthenticationTypes(AuthenticationType.Token) // Restrict to Token auth (subset of base)
-			.RemoveEndpoint("email")
-			.RemoveEndpoint("push")
-			.UpdateEndpoint("sms", endpoint => { endpoint.IsRequired = true; })
-			.UpdateMessageProperty("Recipient", prop =>
+			.RemoveEndpoint(EndpointType.EmailAddress)
+			.RemoveEndpoint(EndpointType.ApplicationId)
+			.UpdateEndpoint(EndpointType.PhoneNumber, endpoint => { endpoint.IsRequired = true; })
+			.UpdateMessageProperty("MessageType", e =>
 			{
-				prop.Description = "Phone number in E.164 format";
-			})
-			.UpdateMessageProperty("MessageType", prop => // Update existing property instead of adding
-			{
-				prop.Description = "SMS message type (transactional, promotional)";
+				e.IsRequired = false;
+				e.Description = "SMS message type (transactional, promotional)";
 			});
 
 		// Act - Create Email-only copy with enhanced features
-		var emailOnlySchema = new ChannelSchema(baseMessagingSchema, "Enhanced Email Messaging")
-			.WithCapability(ChannelCapability.BulkMessaging) // Add bulk capability
-			.RemoveEndpoint("sms")
-			.RemoveEndpoint("push")
-			.UpdateEndpoint("email", endpoint => { endpoint.IsRequired = true; })
-			.UpdateMessageProperty("Recipient", prop =>
-			{
-				prop.Description = "Email address";
-			})
+		var emailOnlySchema = new ChannelSchema(baseMessagingSchema, "Email Only Service")
+			.RemoveEndpoint(EndpointType.PhoneNumber)
+			.RemoveEndpoint(EndpointType.Url)
+			.RemoveEndpoint(EndpointType.ApplicationId)
+			.RemoveCapability(ChannelCapability.MediaAttachments)
+			.RestrictContentTypes(MessageContentType.PlainText, MessageContentType.Html)
 			.AddMessageProperty(new MessagePropertyConfiguration("Subject", ParameterType.String)
 			{
 				IsRequired = true,
@@ -279,13 +288,20 @@ public class ChannelSchemaDerivationIntegrationTests
 			.AddMessageProperty(new MessagePropertyConfiguration("IsHtml", ParameterType.Boolean)
 			{
 				IsRequired = false,
-				Description = "Whether email content is HTML formatted"
+				Description = "Indicates if the email is HTML formatted"
 			});
+
+		// Assert multiple derived schemas don't affect each other
+		var smsOnlyDerivedSchema = new ChannelSchema(baseMessagingSchema, "SMS Only Service")
+			.RemoveEndpoint(EndpointType.EmailAddress)
+			.RemoveEndpoint(EndpointType.Url)
+			.RemoveEndpoint(EndpointType.ApplicationId)
+			.RestrictContentTypes(MessageContentType.PlainText);
 
 		// Assert SMS Schema - Core properties must match base (logical identity)
 		Assert.Equal("Universal", smsOnlySchema.ChannelProvider);
 		Assert.Equal("MultiChannel", smsOnlySchema.ChannelType);
-		Assert.Equal("1.0.0", smsOnlySchema.Version);
+		Assert.Equal("2.0.0", smsOnlySchema.Version);
 		Assert.Equal("SMS Only Messaging", smsOnlySchema.DisplayName);
 		Assert.True(baseMessagingSchema.IsCompatibleWith(smsOnlySchema));
 		Assert.False(smsOnlySchema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
@@ -294,40 +310,37 @@ public class ChannelSchemaDerivationIntegrationTests
 		Assert.Single(smsOnlySchema.AuthenticationTypes); // Restricted to Token only
 		Assert.Contains(AuthenticationType.Token, smsOnlySchema.AuthenticationTypes);
 		Assert.Equal(2, smsOnlySchema.Endpoints.Count); // sms and webhook only
-		Assert.Contains(smsOnlySchema.Endpoints, e => e.Type == "sms" && e.IsRequired);
-		Assert.DoesNotContain(smsOnlySchema.Endpoints, e => e.Type == "email");
-		Assert.Equal(3, smsOnlySchema.MessageProperties.Count); // Same count as base (Recipient, Priority, MessageType)
+		Assert.Contains(smsOnlySchema.Endpoints, e => e.Type == EndpointType.PhoneNumber && e.IsRequired);
+		Assert.DoesNotContain(smsOnlySchema.Endpoints, e => e.Type == EndpointType.EmailAddress);
+		Assert.Equal(3, smsOnlySchema.MessageProperties.Count); // Same count as base (Priority, MessageType) + 1 (MessageType)
 
 		// Assert Email Schema - Core properties must match base (logical identity)
 		Assert.Equal("Universal", emailOnlySchema.ChannelProvider);
 		Assert.Equal("MultiChannel", emailOnlySchema.ChannelType);
-		Assert.Equal("1.0.0", emailOnlySchema.Version);
-		Assert.Equal("Enhanced Email Messaging", emailOnlySchema.DisplayName);
+		Assert.Equal("2.0.0", emailOnlySchema.Version);
+		Assert.Equal("Email Only Service", emailOnlySchema.DisplayName);
 		Assert.True(baseMessagingSchema.IsCompatibleWith(emailOnlySchema));
+		Assert.False(emailOnlySchema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
 		Assert.True(emailOnlySchema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
-		Assert.Equal(4, emailOnlySchema.ContentTypes.Count); // All content types preserved
-		Assert.Equal(2, emailOnlySchema.AuthenticationTypes.Count); // All auth types preserved
-		Assert.Equal(2, emailOnlySchema.Endpoints.Count); // email and webhook only
-		Assert.Contains(emailOnlySchema.Endpoints, e => e.Type == "email" && e.IsRequired);
-		Assert.DoesNotContain(emailOnlySchema.Endpoints, e => e.Type == "sms");
+		Assert.Equal(2, emailOnlySchema.ContentTypes.Count); // Plain Text and Html
+		Assert.Single(emailOnlySchema.Endpoints); // email only
+		Assert.Contains(emailOnlySchema.Endpoints, e => e.Type == EndpointType.EmailAddress);
+		Assert.DoesNotContain(emailOnlySchema.Endpoints, e => e.Type == EndpointType.PhoneNumber);
 		Assert.Equal(5, emailOnlySchema.MessageProperties.Count); // Base 3 + 2 added (Subject, IsHtml)
 
 		// Verify both schemas are independent but have same logical identity
 		Assert.Equal(baseMessagingSchema.GetLogicalIdentity(), smsOnlySchema.GetLogicalIdentity());
 		Assert.Equal(baseMessagingSchema.GetLogicalIdentity(), emailOnlySchema.GetLogicalIdentity());
 		
-		var smsRecipient = smsOnlySchema.MessageProperties.First(p => p.Name == "Recipient");
-		var emailRecipient = emailOnlySchema.MessageProperties.First(p => p.Name == "Recipient");
 		var smsMessageType = smsOnlySchema.MessageProperties.First(p => p.Name == "MessageType");
-		Assert.Equal("Phone number in E.164 format", smsRecipient.Description);
-		Assert.Equal("Email address", emailRecipient.Description);
 		Assert.Equal("SMS message type (transactional, promotional)", smsMessageType.Description);
 
 		// Verify base schema is unchanged
 		Assert.Equal(4, baseMessagingSchema.Endpoints.Count);
 		Assert.Equal(3, baseMessagingSchema.MessageProperties.Count); // Recipient, Priority, MessageType
 		Assert.Equal(2, baseMessagingSchema.AuthenticationTypes.Count); // Base has both Token and ApiKey
-		Assert.False(baseMessagingSchema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
+		Assert.True(baseMessagingSchema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
+		Assert.True(baseMessagingSchema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
 
 		// Verify restriction validations
 		var smsRestrictionValidation = smsOnlySchema.ValidateAsRestrictionOf(baseMessagingSchema);

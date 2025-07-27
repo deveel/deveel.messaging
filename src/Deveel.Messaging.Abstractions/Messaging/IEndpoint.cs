@@ -24,7 +24,7 @@ namespace Deveel.Messaging {
 		/// <summary>
 		/// Gets the type of the endpoint that is used.
 		/// </summary>
-		string Type { get; }
+		EndpointType Type { get; }
 
 		/// <summary>
 		/// Gets the address of the endpoint.

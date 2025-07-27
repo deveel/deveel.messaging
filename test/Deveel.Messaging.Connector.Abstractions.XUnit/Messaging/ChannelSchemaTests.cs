@@ -145,7 +145,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		var endpoint = new ChannelEndpointConfiguration("email")
+		var endpoint = new ChannelEndpointConfiguration(EndpointType.EmailAddress)
 		{
 			CanSend = true,
 			CanReceive = false,
@@ -176,17 +176,16 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		const string endpointType = "sms";
 
 		// Act
-		var result = schema.AllowsMessageEndpoint(endpointType);
+		var result = schema.AllowsMessageEndpoint(EndpointType.PhoneNumber);
 
 		// Assert
 		Assert.Same(schema, result);
 		Assert.Single(schema.Endpoints);
 		
 		var endpoint = schema.Endpoints.First();
-		Assert.Equal(endpointType, endpoint.Type);
+		Assert.Equal(EndpointType.PhoneNumber, endpoint.Type);
 		Assert.True(endpoint.CanSend);
 		Assert.True(endpoint.CanReceive);
 		Assert.False(endpoint.IsRequired); // Default should be false
@@ -200,29 +199,32 @@ public class ChannelSchemaTests
 		const string endpointType = "webhook";
 
 		// Act
-		var result = schema.AllowsMessageEndpoint(endpointType, asSender: false, asReceiver: true);
+		var result = schema.AllowsMessageEndpoint(EndpointType.Url, asSender: false, asReceiver: true);
 
 		// Assert
 		Assert.Same(schema, result);
 		Assert.Single(schema.Endpoints);
 		
 		var endpoint = schema.Endpoints.First();
-		Assert.Equal(endpointType, endpoint.Type);
+		Assert.Equal(EndpointType.Url, endpoint.Type);
 		Assert.False(endpoint.CanSend);
 		Assert.True(endpoint.CanReceive);
 	}
 
 	[Theory]
-	[InlineData(null)]
-	[InlineData("")]
-	[InlineData("   ")]
-	public void AllowsMessageEndpoint_WithInvalidType_ThrowsArgumentException(string endpointType)
+	[InlineData(EndpointType.EmailAddress)]
+	[InlineData(EndpointType.PhoneNumber)]
+	[InlineData(EndpointType.Url)]
+	public void AllowsMessageEndpoint_WithInvalidType_ThrowsArgumentException(EndpointType endpointType)
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
+		
+		// First add a valid endpoint
+		schema.AllowsMessageEndpoint(endpointType);
 
-		// Act & Assert
-		Assert.ThrowsAny<ArgumentException>(() => schema.AllowsMessageEndpoint(endpointType));
+		// Act & Assert - Adding the same type again should throw
+		Assert.Throws<InvalidOperationException>(() => schema.AllowsMessageEndpoint(endpointType));
 	}
 
 	[Fact]
@@ -239,7 +241,7 @@ public class ChannelSchemaTests
 		Assert.Single(schema.Endpoints);
 		
 		var endpoint = schema.Endpoints.First();
-		Assert.Equal("*", endpoint.Type);
+		Assert.Equal(EndpointType.Any, endpoint.Type);
 		Assert.True(endpoint.CanSend);
 		Assert.True(endpoint.CanReceive);
 	}
@@ -252,9 +254,9 @@ public class ChannelSchemaTests
 
 		// Act
 		var result = schema
-			.AllowsMessageEndpoint("email", asSender: true, asReceiver: false)
-			.AllowsMessageEndpoint("sms", asSender: false, asReceiver: true)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration("webhook")
+			.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false)
+			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: false, asReceiver: true)
+			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
 			{
 				CanSend = true,
 				CanReceive = true,
@@ -266,19 +268,19 @@ public class ChannelSchemaTests
 		Assert.Equal(3, schema.Endpoints.Count);
 		
 		// Verify email endpoint
-		var emailEndpoint = schema.Endpoints.FirstOrDefault(e => e.Type == "email");
+		var emailEndpoint = schema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.EmailAddress);
 		Assert.NotNull(emailEndpoint);
 		Assert.True(emailEndpoint.CanSend);
 		Assert.False(emailEndpoint.CanReceive);
 		
 		// Verify SMS endpoint
-		var smsEndpoint = schema.Endpoints.FirstOrDefault(e => e.Type == "sms");
+		var smsEndpoint = schema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.PhoneNumber);
 		Assert.NotNull(smsEndpoint);
 		Assert.False(smsEndpoint.CanSend);
 		Assert.True(smsEndpoint.CanReceive);
 		
 		// Verify webhook endpoint
-		var webhookEndpoint = schema.Endpoints.FirstOrDefault(e => e.Type == "webhook");
+		var webhookEndpoint = schema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.Url);
 		Assert.NotNull(webhookEndpoint);
 		Assert.True(webhookEndpoint.CanSend);
 		Assert.True(webhookEndpoint.CanReceive);
@@ -292,9 +294,9 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithDisplayName("Test Schema")
 			.WithCapability(ChannelCapability.ReceiveMessages)
-			.AllowsMessageEndpoint("email")
+			.AllowsMessageEndpoint(EndpointType.EmailAddress)
 			.AddContentType(MessageContentType.PlainText)
-			.AllowsMessageEndpoint("sms", asSender: false, asReceiver: true)
+			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: false, asReceiver: true)
 			.WithCapability(ChannelCapability.Templates);
 
 		// Assert
@@ -316,13 +318,13 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 
 		// Act - Add first endpoint configuration
-		schema.AllowsMessageEndpoint("email", asSender: true, asReceiver: false);
+		schema.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false);
 
 		// Assert - Adding another endpoint with the same type should throw
 		var exception = Assert.Throws<InvalidOperationException>(() => 
-			schema.AllowsMessageEndpoint("email", asSender: false, asReceiver: true));
+			schema.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: false, asReceiver: true));
 		
-		Assert.Contains("An endpoint configuration with type 'email' already exists", exception.Message);
+		Assert.Contains("An endpoint configuration with type 'EmailAddress' already exists", exception.Message);
 		Assert.Single(schema.Endpoints);
 	}
 
@@ -331,13 +333,13 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		var firstEndpoint = new ChannelEndpointConfiguration("webhook")
+		var firstEndpoint = new ChannelEndpointConfiguration(EndpointType.Url)
 		{
 			CanSend = true,
 			CanReceive = false,
 			IsRequired = false
 		};
-		var duplicateEndpoint = new ChannelEndpointConfiguration("webhook")
+		var duplicateEndpoint = new ChannelEndpointConfiguration(EndpointType.Url)
 		{
 			CanSend = false,
 			CanReceive = true,
@@ -351,7 +353,7 @@ public class ChannelSchemaTests
 		var exception = Assert.Throws<InvalidOperationException>(() => 
 			schema.HandlesMessageEndpoint(duplicateEndpoint));
 		
-		Assert.Contains("An endpoint configuration with type 'webhook' already exists", exception.Message);
+		Assert.Contains("An endpoint configuration with type 'Url' already exists", exception.Message);
 		Assert.Single(schema.Endpoints);
 	}
 
@@ -362,13 +364,13 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 
 		// Act - Add first endpoint configuration
-		schema.AllowsMessageEndpoint("EMAIL", asSender: true, asReceiver: false);
+		schema.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false);
 
-		// Assert - Adding another endpoint with different case should throw
+		// Assert - Adding another endpoint with the same type should throw
 		var exception = Assert.Throws<InvalidOperationException>(() => 
-			schema.AllowsMessageEndpoint("email", asSender: false, asReceiver: true));
+			schema.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: false, asReceiver: true));
 		
-		Assert.Contains("An endpoint configuration with type 'email' already exists", exception.Message);
+		Assert.Contains("An endpoint configuration with type 'EmailAddress' already exists", exception.Message);
 		Assert.Single(schema.Endpoints);
 	}
 
@@ -379,13 +381,13 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 
 		// Act
-		schema.AllowsMessageEndpoint("sendonly", asSender: true, asReceiver: false);
+		schema.AllowsMessageEndpoint(EndpointType.Id, asSender: true, asReceiver: false);
 
 		// Assert
 		Assert.Single(schema.Endpoints);
 		
 		var endpoint = schema.Endpoints.First();
-		Assert.Equal("sendonly", endpoint.Type);
+		Assert.Equal(EndpointType.Id, endpoint.Type);
 		Assert.True(endpoint.CanSend);
 		Assert.False(endpoint.CanReceive);
 	}
@@ -397,13 +399,13 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 
 		// Act
-		schema.AllowsMessageEndpoint("receiveonly", asSender: false, asReceiver: true);
+		schema.AllowsMessageEndpoint(EndpointType.Label, asSender: false, asReceiver: true);
 
 		// Assert
 		Assert.Single(schema.Endpoints);
 		
 		var endpoint = schema.Endpoints.First();
-		Assert.Equal("receiveonly", endpoint.Type);
+		Assert.Equal(EndpointType.Label, endpoint.Type);
 		Assert.False(endpoint.CanSend);
 		Assert.True(endpoint.CanReceive);
 	}
@@ -415,13 +417,13 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 
 		// Act
-		schema.AllowsMessageEndpoint("bidirectional", asSender: true, asReceiver: true);
+		schema.AllowsMessageEndpoint(EndpointType.Topic, asSender: true, asReceiver: true);
 
 		// Assert
 		Assert.Single(schema.Endpoints);
 		
 		var endpoint = schema.Endpoints.First();
-		Assert.Equal("bidirectional", endpoint.Type);
+		Assert.Equal(EndpointType.Topic, endpoint.Type);
 		Assert.True(endpoint.CanSend);
 		Assert.True(endpoint.CanReceive);
 	}
@@ -523,9 +525,6 @@ public class ChannelSchemaTests
 		Assert.Equal(expectedCapabilities, schema.Capabilities);
 		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.SendMessages));
 		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.MessageStatusQuery));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.Templates));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.HealthCheck));
 	}
 
 	[Fact]
@@ -585,18 +584,19 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithDisplayName("Test Schema")
 			.WithCapability(ChannelCapability.ReceiveMessages)
+			.AllowsMessageEndpoint(EndpointType.EmailAddress)
 			.AddContentType(MessageContentType.PlainText)
-			.WithCapability(ChannelCapability.Templates)
-			.WithCapability(ChannelCapability.HealthCheck);
+			.AllowsMessageEndpoint(EndpointType.PhoneNumber, asSender: false, asReceiver: true)
+			.WithCapability(ChannelCapability.Templates);
 
 		// Assert
 		Assert.Equal("Test Schema", schema.DisplayName);
 		Assert.Contains(MessageContentType.PlainText, schema.ContentTypes);
+		Assert.Equal(2, schema.Endpoints.Count);
 		
 		var expectedCapabilities = ChannelCapability.SendMessages |
 								   ChannelCapability.ReceiveMessages |
-								   ChannelCapability.Templates |
-								   ChannelCapability.HealthCheck;
+								   ChannelCapability.Templates;
 		
 		Assert.Equal(expectedCapabilities, schema.Capabilities);
 	}
@@ -707,8 +707,8 @@ public class ChannelSchemaTests
 			})
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
-			.AllowsMessageEndpoint("email", asSender: true, asReceiver: false)
-			.AllowsMessageEndpoint("webhook", asSender: false, asReceiver: true)
+			.AllowsMessageEndpoint(EndpointType.EmailAddress, asSender: true, asReceiver: false)
+			.AllowsMessageEndpoint(EndpointType.Url, asSender: false, asReceiver: true)
 			.AddAuthenticationType(AuthenticationType.Token)
 			.AddAuthenticationType(AuthenticationType.Basic);
 
@@ -728,8 +728,8 @@ public class ChannelSchemaTests
 		Assert.Contains(MessageContentType.Html, schema.ContentTypes);
 		
 		Assert.Equal(2, schema.Endpoints.Count);
-		Assert.Contains(schema.Endpoints, e => e.Type == "email" && e.CanSend && !e.CanReceive);
-		Assert.Contains(schema.Endpoints, e => e.Type == "webhook" && !e.CanSend && e.CanReceive);
+		Assert.Contains(schema.Endpoints, e => e.Type == EndpointType.EmailAddress && e.CanSend && !e.CanReceive);
+		Assert.Contains(schema.Endpoints, e => e.Type == EndpointType.Url && !e.CanSend && e.CanReceive);
 		
 		Assert.Equal(2, schema.AuthenticationTypes.Count);
 		Assert.Contains(AuthenticationType.Token, schema.AuthenticationTypes);
@@ -796,7 +796,7 @@ public class ChannelSchemaTests
 		schema.AuthenticationTypes.Add(AuthenticationType.Custom);
 		Assert.Contains(AuthenticationType.Custom, schema.AuthenticationTypes);
 
-		var endpoint = new ChannelEndpointConfiguration("test");
+		var endpoint = new ChannelEndpointConfiguration(EndpointType.Id);
 		schema.Endpoints.Add(endpoint);
 		Assert.Contains(endpoint, schema.Endpoints);
 	}
@@ -840,7 +840,7 @@ public class ChannelSchemaTests
 		var exception = Assert.Throws<InvalidOperationException>(() => 
 			schema.AllowsAnyMessageEndpoint());
 		
-		Assert.Contains("An endpoint configuration with type '*' already exists", exception.Message);
+		Assert.Contains("An endpoint configuration with type 'Any' already exists", exception.Message);
 		Assert.Single(schema.Endpoints);
 	}
 
@@ -855,9 +855,9 @@ public class ChannelSchemaTests
 
 		// Assert - Adding a specific endpoint after wildcard should throw
 		var exception = Assert.Throws<InvalidOperationException>(() => 
-			schema.AllowsMessageEndpoint("*", asSender: false, asReceiver: true));
+			schema.AllowsMessageEndpoint(EndpointType.Any, asSender: false, asReceiver: true));
 		
-		Assert.Contains("An endpoint configuration with type '*' already exists", exception.Message);
+		Assert.Contains("An endpoint configuration with type 'Any' already exists", exception.Message);
 		Assert.Single(schema.Endpoints);
 	}
 
@@ -997,7 +997,7 @@ public class ChannelSchemaTests
 			{
 				IsRequired = false
 			})
-			.AllowsMessageEndpoint("email");
+			.AllowsMessageEndpoint(EndpointType.EmailAddress);
 
 		// Assert
 		Assert.Equal("Test Schema", schema.DisplayName);

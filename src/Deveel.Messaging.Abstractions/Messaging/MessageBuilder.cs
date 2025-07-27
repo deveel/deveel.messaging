@@ -88,7 +88,7 @@ namespace Deveel.Messaging
 		public MessageBuilder WithSender(IEndpoint sender)
 		{
 			ArgumentNullException.ThrowIfNull(sender, nameof(sender));
-			Message.Sender = Endpoint.Create(sender.Type, sender.Address);
+			Message.Sender = new Endpoint(sender.Type, sender.Address);
 			return this;
 		}
 
@@ -131,7 +131,7 @@ namespace Deveel.Messaging
 		public MessageBuilder WithReceiver(IEndpoint receiver)
 		{
 			ArgumentNullException.ThrowIfNull(receiver, nameof(receiver));
-			Message.Receiver = Endpoint.Create(receiver.Type, receiver.Address);
+			Message.Receiver = new Endpoint(receiver.Type, receiver.Address);
 			return this;
 		}
 

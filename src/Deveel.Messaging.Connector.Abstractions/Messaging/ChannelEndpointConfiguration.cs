@@ -18,17 +18,15 @@
 		/// <param name="type">
 		/// The type of the endpoint to be handled by the channel.
 		/// </param>
-		public ChannelEndpointConfiguration(string type)
+		public ChannelEndpointConfiguration(EndpointType type)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(type, nameof(type));
-
 			Type = type;
 		}
 
 		/// <summary>
 		/// Gets the type of the endpoint that this configuration applies to.
 		/// </summary>
-		public string Type { get; }
+		public EndpointType Type { get; }
 
 		/// <summary>
 		/// Gets or sets a value indicating whether the endpoint is required
@@ -53,12 +51,37 @@
 		/// matches any endpoint.
 		/// </summary>
 		/// <remarks>
-		/// This static field is initialized with a wildcard character ("*"), 
+		/// This static field uses the EndpointType.Any enumeration value, 
 		/// indicating that it can be used to configure a channel to accept 
 		/// messages being sent from or received to any endpoint. 
 		/// This is useful in scenarios where the specific endpoint is not 
 		/// predetermined or when a channel should be open to all incoming connections.
 		/// </remarks>
-		public static ChannelEndpointConfiguration AnyEndpoint = new ChannelEndpointConfiguration("*");
+		public static ChannelEndpointConfiguration AnyEndpoint = new ChannelEndpointConfiguration(EndpointType.Any);
+
+		/// <summary>
+		/// Gets a value indicating whether this configuration represents a wildcard endpoint.
+		/// </summary>
+		public bool IsWildcard => Type == EndpointType.Any;
+
+		/// <summary>
+		/// Determines whether this endpoint configuration matches the specified endpoint type.
+		/// </summary>
+		/// <param name="endpointType">The endpoint type to match against.</param>
+		/// <returns>True if the configuration matches the specified type; otherwise, false.</returns>
+		public bool Matches(EndpointType endpointType)
+		{
+			if (IsWildcard) return true;
+			return Type == endpointType;
+		}
+
+		/// <summary>
+		/// Returns the string representation of this endpoint configuration's type.
+		/// </summary>
+		/// <returns>The string representation of the endpoint type.</returns>
+		public override string ToString()
+		{
+			return Type.ToString();
+		}
 	}
 }

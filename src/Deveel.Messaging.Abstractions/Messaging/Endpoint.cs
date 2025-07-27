@@ -18,8 +18,25 @@ namespace Deveel.Messaging {
 		/// <param name="address">
 		/// The address of the endpoint, specific to its type.
 		/// </param>
-		public Endpoint(string type, string address) {
+		public Endpoint(EndpointType type, string address) {
 			Type = type;
+			Address = address;
+		}
+
+		/// <summary>
+		/// Constructs the endpoint with the given type and address.
+		/// </summary>
+		/// <param name="type">
+		/// The type of the endpoint as a string.
+		/// </param>
+		/// <param name="address">
+		/// The address of the endpoint, specific to its type.
+		/// </param>
+		/// <exception cref="ArgumentException">
+		/// Thrown when the type string cannot be converted to a valid EndpointType.
+		/// </exception>
+		public Endpoint(string type, string address) {
+			Type = ParseEndpointType(type);
 			Address = address;
 		}
 
@@ -41,7 +58,7 @@ namespace Deveel.Messaging {
 		}
 
 		/// <inheritdoc/>
-		public string Type { get; set; } = "";
+		public EndpointType Type { get; set; }
 
 		/// <inheritdoc/>
 		public string Address { get; set; } = "";
@@ -61,8 +78,29 @@ namespace Deveel.Messaging {
 		/// the endpoint with the given type and address.
 		/// </returns>
 		/// <exception cref="ArgumentException"></exception>
+		public static Endpoint Create(EndpointType type, string address) {
+			ArgumentException.ThrowIfNullOrWhiteSpace(address, nameof(address));
+			return new Endpoint(type, address);
+		}
+
+		/// <summary>
+		/// Creates a new instance of <see cref="Endpoint"/> with the given
+		/// type and address.
+		/// </summary>
+		/// <param name="type">
+		/// The type of the endpoint to create as a string.
+		/// </param>
+		/// <param name="address">
+		/// The address of the endpoint, specific to its type.
+		/// </param>
+		/// <returns>
+		/// Returns an instance of <see cref="Endpoint"/> that represents
+		/// the endpoint with the given type and address.
+		/// </returns>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="ArgumentNullException"></exception>
 		public static Endpoint Create(string type, string address) {
-			ArgumentException.ThrowIfNullOrWhiteSpace(type, nameof(type));
+			ArgumentNullException.ThrowIfNull(type, nameof(type));
 			ArgumentException.ThrowIfNullOrWhiteSpace(address, nameof(address));
 			return new Endpoint(type, address);
 		}
@@ -78,9 +116,9 @@ namespace Deveel.Messaging {
 		/// Returns an instance of <see cref="Endpoint"/> that represents
 		/// a reference to a service endpoint.
 		/// </returns>
-		/// <seealso cref="KnownEndpointTypes.EndpointId"/>
+		/// <seealso cref="EndpointType.Id"/>
 		public static Endpoint Id(string endpointId)
-			=> Create(KnownEndpointTypes.EndpointId, endpointId);
+			=> Create(EndpointType.Id, endpointId);
 
 		/// <summary>
 		/// Create a new endpoint that represents an 
@@ -93,9 +131,9 @@ namespace Deveel.Messaging {
 		/// Returns an instance of <see cref="Endpoint"/> that represents
 		/// an email address.
 		/// </returns>
-		/// <seealso cref="KnownEndpointTypes.Email"/>
+		/// <seealso cref="EndpointType.EmailAddress"/>
 		public static Endpoint EmailAddress(string address)
-			=> Create(KnownEndpointTypes.Email, address);
+			=> Create(EndpointType.EmailAddress, address);
 
 		/// <summary>
 		/// Creates a new endpoint that represents a phone number.
@@ -108,7 +146,7 @@ namespace Deveel.Messaging {
 		/// a phone number.
 		/// </returns>
 		public static Endpoint PhoneNumber(string number) 
-			=> Create(KnownEndpointTypes.Phone, number);
+			=> Create(EndpointType.PhoneNumber, number);
 
 		/// <summary>
 		/// Creates a new endpoint that represents a URL address.
@@ -121,7 +159,7 @@ namespace Deveel.Messaging {
 		/// a URL address.
 		/// </returns>
 		public static Endpoint Url(string address) 
-			=> Create(KnownEndpointTypes.Url, address);
+			=> Create(EndpointType.Url, address);
 
 		/// <summary>
 		/// Creates a new endpoint that represents an application
@@ -135,7 +173,7 @@ namespace Deveel.Messaging {
 		/// a endpoint for an application.
 		/// </returns>
 		public static Endpoint Application(string appId)
-			=> Create(KnownEndpointTypes.Application, appId);
+			=> Create(EndpointType.ApplicationId, appId);
 
 		/// <summary>
 		/// Creates a new endpoint that represents a user identifier.
@@ -148,7 +186,7 @@ namespace Deveel.Messaging {
 		/// the endpoint for a user in a system.
 		/// </returns>
 		public static Endpoint User(string userId)
-			=> Create(KnownEndpointTypes.UserId, userId);
+			=> Create(EndpointType.UserId, userId);
 
 		/// <summary>
 		/// Creates a new endpoint that represents a device identifier.
@@ -161,7 +199,7 @@ namespace Deveel.Messaging {
 		/// a endpoint for a device.
 		/// </returns>
 		public static Endpoint Device(string deviceId)
-			=> Create(KnownEndpointTypes.DeviceId, deviceId);
+			=> Create(EndpointType.DeviceId, deviceId);
 
 		/// <summary>
 		/// Creates an endpoint with a specified alphanumeric label.
@@ -174,6 +212,33 @@ namespace Deveel.Messaging {
 		/// specified label.
 		/// </returns>
 		public static Endpoint AlphaNumeric(string label)
-			=> Create(KnownEndpointTypes.Label, label);
+			=> Create(EndpointType.Label, label);
+
+		/// <summary>
+		/// Parses a string representation of an endpoint type to an EndpointType enum value.
+		/// </summary>
+		/// <param name="type">The string representation of the endpoint type.</param>
+		/// <returns>The corresponding EndpointType enum value.</returns>
+		/// <exception cref="ArgumentException">
+		/// Thrown when the type string is not a valid endpoint type.
+		/// </exception>
+		private static EndpointType ParseEndpointType(string type)
+		{
+			ArgumentNullException.ThrowIfNull(type, nameof(type));
+
+			return type.ToLowerInvariant() switch
+			{
+				"email" => EndpointType.EmailAddress,
+				"phone" => EndpointType.PhoneNumber,
+				"url" => EndpointType.Url,
+				"topic" => EndpointType.Topic,
+				"user-id" => EndpointType.UserId,
+				"app-id" => EndpointType.ApplicationId,
+				"endpoint-id" => EndpointType.Id,
+				"device-id" => EndpointType.DeviceId,
+				"label" => EndpointType.Label,
+				_ => throw new ArgumentException($"Unknown endpoint type: {type}", nameof(type))
+			};
+		}
 	}
 }

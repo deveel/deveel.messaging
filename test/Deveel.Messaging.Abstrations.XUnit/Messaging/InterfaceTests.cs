@@ -259,10 +259,10 @@ public class InterfaceUsageTests
     public void IEndpoint_CanBeImplementedByEndpoint()
     {
         // Arrange & Act
-        IEndpoint endpoint = new Endpoint("email", "test@example.com");
+        IEndpoint endpoint = new Endpoint(EndpointType.EmailAddress, "test@example.com");
 
         // Assert
-        Assert.Equal("email", endpoint.Type);
+        Assert.Equal(EndpointType.EmailAddress, endpoint.Type);
         Assert.Equal("test@example.com", endpoint.Address);
     }
 
@@ -273,8 +273,8 @@ public class InterfaceUsageTests
         IMessage message = new Message
         {
             Id = "test-id",
-            Sender = new Endpoint("email", "sender@test.com"),
-            Receiver = new Endpoint("email", "receiver@test.com"),
+            Sender = new Endpoint(EndpointType.EmailAddress, "sender@test.com"),
+            Receiver = new Endpoint(EndpointType.EmailAddress, "receiver@test.com"),
             Content = new TextContent("test content"),
             Properties = new Dictionary<string, MessageProperty> { { "key", new MessageProperty("key", "value") } }
         };

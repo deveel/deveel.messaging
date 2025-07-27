@@ -26,8 +26,8 @@ public class MessageBuilderTests
         var originalMessage = new Message
         {
             Id = "test-id",
-            Sender = new Endpoint(KnownEndpointTypes.Email, "sender@test.com"),
-            Receiver = new Endpoint(KnownEndpointTypes.Email, "receiver@test.com"),
+            Sender = new Endpoint(EndpointType.EmailAddress, "sender@test.com"),
+            Receiver = new Endpoint(EndpointType.EmailAddress, "receiver@test.com"),
             Content = new TextContent("Test content"),
             Properties = new Dictionary<string, MessageProperty> { { "key", new MessageProperty("key", "value") } }
         };
@@ -75,14 +75,14 @@ public class MessageBuilderTests
     {
         // Arrange
         var builder = new MessageBuilder();
-        var sender = new Endpoint(KnownEndpointTypes.Email, "sender@test.com");
+        var sender = new Endpoint(EndpointType.EmailAddress, "sender@test.com");
 
         // Act
         var result = builder.WithSender(sender);
 
         // Assert
         Assert.Same(builder, result);
-        Assert.Equal(KnownEndpointTypes.Email, builder.Message.Sender!.Type);
+        Assert.Equal(EndpointType.EmailAddress, builder.Message.Sender!.Type);
         Assert.Equal("sender@test.com", builder.Message.Sender.Address);
     }
 
@@ -108,7 +108,7 @@ public class MessageBuilderTests
 
         // Assert
         Assert.Same(builder, result);
-        Assert.Equal(KnownEndpointTypes.Email, builder.Message.Sender!.Type);
+        Assert.Equal(EndpointType.EmailAddress, builder.Message.Sender!.Type);
         Assert.Equal(email, builder.Message.Sender.Address);
     }
 
@@ -124,7 +124,7 @@ public class MessageBuilderTests
 
         // Assert
         Assert.Same(builder, result);
-        Assert.Equal(KnownEndpointTypes.Phone, builder.Message.Sender!.Type);
+        Assert.Equal(EndpointType.PhoneNumber, builder.Message.Sender!.Type);
         Assert.Equal(phone, builder.Message.Sender.Address);
     }
 
@@ -133,14 +133,14 @@ public class MessageBuilderTests
     {
         // Arrange
         var builder = new MessageBuilder();
-        var receiver = new Endpoint(KnownEndpointTypes.Email, "receiver@test.com");
+        var receiver = new Endpoint(EndpointType.EmailAddress, "receiver@test.com");
 
         // Act
         var result = builder.WithReceiver(receiver);
 
         // Assert
         Assert.Same(builder, result);
-        Assert.Equal(KnownEndpointTypes.Email, builder.Message.Receiver!.Type);
+        Assert.Equal(EndpointType.EmailAddress, builder.Message.Receiver!.Type);
         Assert.Equal("receiver@test.com", builder.Message.Receiver.Address);
     }
 
@@ -156,7 +156,7 @@ public class MessageBuilderTests
 
         // Assert
         Assert.Same(builder, result);
-        Assert.Equal(KnownEndpointTypes.Email, builder.Message.Receiver!.Type);
+        Assert.Equal(EndpointType.EmailAddress, builder.Message.Receiver!.Type);
         Assert.Equal(email, builder.Message.Receiver.Address);
     }
 
@@ -172,7 +172,7 @@ public class MessageBuilderTests
 
         // Assert
         Assert.Same(builder, result);
-        Assert.Equal(KnownEndpointTypes.Phone, builder.Message.Receiver!.Type);
+        Assert.Equal(EndpointType.PhoneNumber, builder.Message.Receiver!.Type);
         Assert.Equal(phone, builder.Message.Receiver.Address);
     }
 

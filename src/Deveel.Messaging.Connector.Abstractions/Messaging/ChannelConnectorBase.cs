@@ -355,22 +355,20 @@ namespace Deveel.Messaging
 			// Validate endpoints if message has sender/receiver
 			if (message.Sender != null)
 			{
-				var senderEndpointType = GetEndpointType(message.Sender);
-				if (!string.IsNullOrEmpty(senderEndpointType) && !IsEndpointTypeSupported(senderEndpointType, asSender: true))
+				if (!IsEndpointTypeSupported(message.Sender.Type, asSender: true))
 				{
 					yield return new ValidationResult(
-						$"Sender endpoint type '{senderEndpointType}' is not supported by this connector", 
+						$"Sender endpoint type '{message.Sender.Type}' is not supported by this connector", 
 						new[] { "Sender" });
 				}
 			}
 
 			if (message.Receiver != null)
 			{
-				var receiverEndpointType = GetEndpointType(message.Receiver);
-				if (!string.IsNullOrEmpty(receiverEndpointType) && !IsEndpointTypeSupported(receiverEndpointType, asReceiver: true))
+				if (!IsEndpointTypeSupported(message.Receiver.Type, asReceiver: true))
 				{
 					yield return new ValidationResult(
-						$"Receiver endpoint type '{receiverEndpointType}' is not supported by this connector", 
+						$"Receiver endpoint type '{message.Receiver.Type}' is not supported by this connector", 
 						new[] { "Receiver" });
 				}
 			}
@@ -392,8 +390,21 @@ namespace Deveel.Messaging
 		/// <returns>The endpoint type string, or null if it cannot be determined.</returns>
 		protected virtual string? GetEndpointType(IEndpoint endpoint)
 		{
-			// Return the Type property directly from the endpoint
-			return endpoint.Type;
+			// Convert EndpointType enum to its string representation for compatibility
+			return endpoint.Type switch
+			{
+				EndpointType.EmailAddress => "email",
+				EndpointType.PhoneNumber => "phone",
+				EndpointType.Url => "url",
+				EndpointType.UserId => "user-id",
+				EndpointType.ApplicationId => "app-id",
+				EndpointType.Id => "endpoint-id",
+				EndpointType.DeviceId => "device-id",
+				EndpointType.Label => "label",
+				EndpointType.Topic => "topic",
+				EndpointType.Any => "*",
+				_ => null
+			};
 		}
 
 		/// <summary>
@@ -403,14 +414,11 @@ namespace Deveel.Messaging
 		/// <param name="asSender">Whether to check as a sender.</param>
 		/// <param name="asReceiver">Whether to check as a receiver.</param>
 		/// <returns>True if the endpoint type is supported in the specified role.</returns>
-		protected virtual bool IsEndpointTypeSupported(string endpointType, bool asSender = false, bool asReceiver = false)
+		protected virtual bool IsEndpointTypeSupported(EndpointType endpointType, bool asSender = false, bool asReceiver = false)
 		{
-			if (string.IsNullOrWhiteSpace(endpointType))
-				return false;
-
 			// Check if any endpoint configuration matches
 			return Schema.Endpoints.Any(e => 
-				(e.Type == "*" || string.Equals(e.Type, endpointType, StringComparison.OrdinalIgnoreCase)) &&
+				(e.Type == EndpointType.Any || e.Type == endpointType) &&
 				(!asSender || e.CanSend) &&
 				(!asReceiver || e.CanReceive));
 		}

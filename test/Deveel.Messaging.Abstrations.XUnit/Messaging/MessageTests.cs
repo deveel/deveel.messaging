@@ -25,8 +25,8 @@ public class MessageTests
         var sourceMessage = new Message
         {
             Id = "test-id",
-            Sender = new Endpoint(KnownEndpointTypes.Email, "sender@test.com"),
-            Receiver = new Endpoint(KnownEndpointTypes.Email, "receiver@test.com"),
+            Sender = new Endpoint(EndpointType.EmailAddress, "sender@test.com"),
+            Receiver = new Endpoint(EndpointType.EmailAddress, "receiver@test.com"),
             Content = new TextContent("Test content"),
             Properties = new Dictionary<string, MessageProperty> { { "key", new MessageProperty("key", "value") } }
         };
@@ -38,10 +38,10 @@ public class MessageTests
         Assert.Equal("test-id", message.Id);
         Assert.NotSame(sourceMessage.Sender, message.Sender); // Should be a copy
         Assert.Equal("sender@test.com", message.Sender!.Address);
-        Assert.Equal(KnownEndpointTypes.Email, message.Sender.Type);
+        Assert.Equal(EndpointType.EmailAddress, message.Sender.Type);
         Assert.NotSame(sourceMessage.Receiver, message.Receiver); // Should be a copy
         Assert.Equal("receiver@test.com", message.Receiver!.Address);
-        Assert.Equal(KnownEndpointTypes.Email, message.Receiver.Type);
+        Assert.Equal(EndpointType.EmailAddress, message.Receiver.Type);
         Assert.IsType<TextContent>(message.Content);
         Assert.Equal("Test content", ((TextContent)message.Content).Text);
         Assert.NotSame(sourceMessage.Properties, message.Properties); // Should be a copy
@@ -56,7 +56,7 @@ public class MessageTests
         {
             Id = "test-id",
             Sender = null,
-            Receiver = new Endpoint(KnownEndpointTypes.Email, "receiver@test.com"),
+            Receiver = new Endpoint(EndpointType.EmailAddress, "receiver@test.com"),
             Content = new TextContent("Test content")
         };
 
@@ -76,7 +76,7 @@ public class MessageTests
         var sourceMessage = new Message
         {
             Id = "test-id",
-            Sender = new Endpoint(KnownEndpointTypes.Email, "sender@test.com"),
+            Sender = new Endpoint(EndpointType.EmailAddress, "receiver@test.com"),
             Receiver = null,
             Content = new TextContent("Test content")
         };
@@ -98,15 +98,17 @@ public class MessageTests
 
         // Act
         message.Id = "new-id";
-        message.Sender = new Endpoint(KnownEndpointTypes.Phone, "+1234567890");
-        message.Receiver = new Endpoint(KnownEndpointTypes.Email, "receiver@test.com");
+        message.Sender = new Endpoint(EndpointType.PhoneNumber, "+1234567890");
+        message.Receiver = new Endpoint(EndpointType.EmailAddress, "receiver@test.com");
         message.Content = new TextContent("New content");
         message.Properties = new Dictionary<string, MessageProperty> { { "prop", new MessageProperty("prop", "value") } };
 
         // Assert
         Assert.Equal("new-id", message.Id);
         Assert.Equal("+1234567890", message.Sender.Address);
+        Assert.Equal(EndpointType.PhoneNumber, message.Sender.Type);
         Assert.Equal("receiver@test.com", message.Receiver.Address);
+        Assert.Equal(EndpointType.EmailAddress, message.Receiver.Type);
         Assert.Equal("New content", ((TextContent)message.Content).Text);
         Assert.Equal("value", message.Properties["prop"].Value);
     }
@@ -118,8 +120,8 @@ public class MessageTests
         var message = new Message
         {
             Id = "test-id",
-            Sender = new Endpoint(KnownEndpointTypes.Email, "sender@test.com"),
-            Receiver = new Endpoint(KnownEndpointTypes.Email, "receiver@test.com"),
+            Sender = new Endpoint(EndpointType.EmailAddress, "sender@test.com"),
+            Receiver = new Endpoint(EndpointType.EmailAddress, "receiver@test.com"),
             Content = new TextContent("Test content"),
             Properties = new Dictionary<string, MessageProperty> { { "key", new MessageProperty("key", "value") } }
         };
@@ -139,7 +141,7 @@ public class MessageTests
         // Arrange
         var message = new Message
         {
-            Sender = new Endpoint(KnownEndpointTypes.Email, "sender@test.com")
+            Sender = new Endpoint(EndpointType.EmailAddress, "sender@test.com")
         };
 
         // Act
@@ -156,7 +158,7 @@ public class MessageTests
         // Arrange
         var message = new Message
         {
-            Receiver = new Endpoint(KnownEndpointTypes.Email, "receiver@test.com")
+            Receiver = new Endpoint(EndpointType.EmailAddress, "receiver@test.com")
         };
 
         // Act
@@ -213,8 +215,8 @@ public class MessageJsonSerializationTests
         var message = new Message
         {
             Id = "msg-123",
-            Sender = new Endpoint(KnownEndpointTypes.Email, "sender@example.com"),
-            Receiver = new Endpoint(KnownEndpointTypes.Email, "receiver@example.com"),
+            Sender = new Endpoint(EndpointType.EmailAddress, "sender@example.com"),
+            Receiver = new Endpoint(EndpointType.EmailAddress, "receiver@example.com"),
             Content = new TextContent("Hello, World!"),
             Properties = new Dictionary<string, MessageProperty>
             {
@@ -231,10 +233,10 @@ public class MessageJsonSerializationTests
         Assert.NotNull(deserializedMessage);
         Assert.Equal("msg-123", deserializedMessage.Id);
         Assert.NotNull(deserializedMessage.Sender);
-        Assert.Equal(KnownEndpointTypes.Email, deserializedMessage.Sender.Type);
+        Assert.Equal(EndpointType.EmailAddress, deserializedMessage.Sender.Type);
         Assert.Equal("sender@example.com", deserializedMessage.Sender.Address);
         Assert.NotNull(deserializedMessage.Receiver);
-        Assert.Equal(KnownEndpointTypes.Email, deserializedMessage.Receiver.Type);
+        Assert.Equal(EndpointType.EmailAddress, deserializedMessage.Receiver.Type);
         Assert.Equal("receiver@example.com", deserializedMessage.Receiver.Address);
         Assert.NotNull(deserializedMessage.Content);
         Assert.IsType<TextContent>(deserializedMessage.Content);
@@ -501,8 +503,8 @@ public class MessageJsonSerializationTests
         var originalMessage = new Message
         {
             Id = "roundtrip-test",
-            Sender = new Endpoint(KnownEndpointTypes.Phone, "+1234567890"),
-            Receiver = new Endpoint(KnownEndpointTypes.Email, "test@example.com"),
+            Sender = new Endpoint(EndpointType.PhoneNumber, "+1234567890"),
+            Receiver = new Endpoint(EndpointType.EmailAddress, "test@example.com"),
             Content = new TextContent("Round trip test message", "utf-8"),
             Properties = new Dictionary<string, MessageProperty>
             {
@@ -545,13 +547,13 @@ public class MessageJsonSerializationTests
         // Arrange
         var testCases = new[]
         {
-            (KnownEndpointTypes.Email, "test@example.com"),
-            (KnownEndpointTypes.Phone, "+1234567890"),
-            (KnownEndpointTypes.Url, "https://example.com/webhook"),
-            (KnownEndpointTypes.UserId, "user123"),
-            (KnownEndpointTypes.Application, "app456"),
-            (KnownEndpointTypes.DeviceId, "device789"),
-            (KnownEndpointTypes.Label, "SHORTCODE")
+            (EndpointType.EmailAddress, "test@example.com"),
+            (EndpointType.PhoneNumber, "+1234567890"),
+            (EndpointType.Url, "https://example.com/webhook"),
+            (EndpointType.UserId, "user123"),
+            (EndpointType.ApplicationId, "app456"),
+            (EndpointType.DeviceId, "device789"),
+            (EndpointType.Label, "SHORTCODE")
         };
 
         foreach (var (endpointType, address) in testCases)
@@ -612,8 +614,8 @@ public class MessageJsonSerializationTests
         var message = new Message
         {
             Id = "large-message",
-            Sender = new Endpoint(KnownEndpointTypes.Email, "sender@example.com"),
-            Receiver = new Endpoint(KnownEndpointTypes.Email, "receiver@example.com"),
+            Sender = new Endpoint(EndpointType.EmailAddress, "sender@example.com"),
+            Receiver = new Endpoint(EndpointType.EmailAddress, "receiver@example.com"),
             Content = new TextContent(largeText),
             Properties = largeProperties
         };

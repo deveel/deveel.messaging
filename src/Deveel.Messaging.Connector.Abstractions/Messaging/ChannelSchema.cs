@@ -239,7 +239,7 @@ namespace Deveel.Messaging
 		{
 			ArgumentNullException.ThrowIfNull(endpoint, nameof(endpoint));
 			
-			if (Endpoints.Any(e => string.Equals(e.Type, endpoint.Type, StringComparison.OrdinalIgnoreCase)))
+			if (Endpoints.Any(e => e.Type == endpoint.Type))
 			{
 				throw new InvalidOperationException($"An endpoint configuration with type '{endpoint.Type}' already exists in the schema.");
 			}
@@ -253,7 +253,8 @@ namespace Deveel.Messaging
 		/// of the specified type.
 		/// </summary>
 		/// <param name="type">
-		/// The type of the message endpoint.</param>
+		/// The type of the message endpoint.
+		/// </param>
 		/// <param name="asSender">
 		/// A value indicating whether the endpoint can send messages. The default is <see langword="true"/>.
 		/// </param>
@@ -263,17 +264,12 @@ namespace Deveel.Messaging
 		/// <returns>
 		/// The current <see cref="ChannelSchema"/> instance with the configured endpoint.
 		/// </returns>
-		/// <exception cref="ArgumentNullException">
-		/// Thrown when <paramref name="type"/> is <see langword="null"/> or whitespace.
-		/// </exception>
 		/// <exception cref="InvalidOperationException">
 		/// Thrown when an endpoint configuration with the same type already exists.
 		/// </exception>
-		public ChannelSchema AllowsMessageEndpoint(string type, bool asSender = true, bool asReceiver = true)
+		public ChannelSchema AllowsMessageEndpoint(EndpointType type, bool asSender = true, bool asReceiver = true)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(type, nameof(type));
-			
-			if (Endpoints.Any(e => string.Equals(e.Type, type, StringComparison.OrdinalIgnoreCase)))
+			if (Endpoints.Any(e => e.Type == type))
 			{
 				throw new InvalidOperationException($"An endpoint configuration with type '{type}' already exists in the schema.");
 			}
@@ -293,7 +289,7 @@ namespace Deveel.Messaging
 		/// <returns>A <see cref="ChannelSchema"/> that is set to handle any message endpoint.</returns>
 		public ChannelSchema AllowsAnyMessageEndpoint()
 		{
-			return AllowsMessageEndpoint("*");
+			return AllowsMessageEndpoint(EndpointType.Any);
 		}
 
 		/// <summary>
@@ -602,14 +598,9 @@ namespace Deveel.Messaging
 		/// </summary>
 		/// <param name="endpointType">The type of endpoint to remove.</param>
 		/// <returns>The current schema instance for method chaining.</returns>
-		/// <exception cref="ArgumentNullException">
-		/// Thrown when the endpoint type is null or whitespace.
-		/// </exception>
-		public ChannelSchema RemoveEndpoint(string endpointType)
-		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(endpointType, nameof(endpointType));
-			
-			var endpoint = Endpoints.FirstOrDefault(e => string.Equals(e.Type, endpointType, StringComparison.OrdinalIgnoreCase));
+		public ChannelSchema RemoveEndpoint(EndpointType endpointType)
+		{			
+			var endpoint = Endpoints.FirstOrDefault(e => e.Type == endpointType);
 			if (endpoint != null)
 			{
 				Endpoints.Remove(endpoint);
@@ -751,17 +742,16 @@ namespace Deveel.Messaging
 		/// <param name="updateAction">The action to perform on the endpoint configuration.</param>
 		/// <returns>The current schema instance for method chaining.</returns>
 		/// <exception cref="ArgumentNullException">
-		/// Thrown when endpointType is null or whitespace, or updateAction is null.
+		/// Thrown when updateAction is null.
 		/// </exception>
 		/// <exception cref="InvalidOperationException">
 		/// Thrown when the endpoint with the specified type is not found.
 		/// </exception>
-		public ChannelSchema UpdateEndpoint(string endpointType, Action<ChannelEndpointConfiguration> updateAction)
+		public ChannelSchema UpdateEndpoint(EndpointType endpointType, Action<ChannelEndpointConfiguration> updateAction)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(endpointType, nameof(endpointType));
 			ArgumentNullException.ThrowIfNull(updateAction, nameof(updateAction));
 			
-			var endpoint = Endpoints.FirstOrDefault(e => string.Equals(e.Type, endpointType, StringComparison.OrdinalIgnoreCase));
+			var endpoint = Endpoints.FirstOrDefault(e => e.Type == endpointType);
 			if (endpoint == null)
 			{
 				throw new InvalidOperationException($"Endpoint with type '{endpointType}' not found in the schema.");
@@ -854,8 +844,7 @@ namespace Deveel.Messaging
 			// Validate endpoints are a subset
 			foreach (var endpoint in Endpoints)
 			{
-				var targetEndpoint = targetSchema.Endpoints.FirstOrDefault(e => 
-					string.Equals(e.Type, endpoint.Type, StringComparison.OrdinalIgnoreCase));
+				var targetEndpoint = targetSchema.Endpoints.FirstOrDefault(e => e.Type == endpoint.Type);
 				
 				if (targetEndpoint == null)
 				{
