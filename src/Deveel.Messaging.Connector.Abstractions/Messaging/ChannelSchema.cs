@@ -29,6 +29,10 @@ namespace Deveel.Messaging
 		/// <exception cref="ArgumentNullException">
 		/// Thrown when any of the required parameters is null or whitespace.
 		/// </exception>
+		/// <remarks>
+		/// The schema is created in strict mode by default. Use <see cref="WithFlexibleMode"/> 
+		/// to allow unknown parameters and properties in validation.
+		/// </remarks>
 		public ChannelSchema(string channelProvider, string channelType, string version)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(channelProvider, nameof(channelProvider));
@@ -38,6 +42,7 @@ namespace Deveel.Messaging
 			ChannelProvider = channelProvider;
 			ChannelType = channelType;
 			Version = version;
+			IsStrict = true; // Default to strict mode
 			Parameters = new List<ChannelParameter>();
 			MessageProperties = new List<MessagePropertyConfiguration>();
 			ContentTypes = new List<MessageContentType>();
@@ -69,6 +74,7 @@ namespace Deveel.Messaging
 			ChannelProvider = sourceSchema.ChannelProvider;
 			ChannelType = sourceSchema.ChannelType;
 			Version = sourceSchema.Version;
+			IsStrict = sourceSchema.IsStrict; // Copy strict mode from source
 			
 			// Set display name - use provided name or derive from source
 			DisplayName = derivedDisplayName ?? $"{sourceSchema.DisplayName} (Copy)";
@@ -133,6 +139,9 @@ namespace Deveel.Messaging
 
 		/// <inheritdoc/>
 		public string? DisplayName { get; set; }
+
+		/// <inheritdoc/>
+		public bool IsStrict { get; set; }
 
 		/// <inheritdoc/>
 		public ChannelCapability Capabilities { get; set; }
@@ -302,6 +311,41 @@ namespace Deveel.Messaging
 		}
 
 		/// <summary>
+		/// Sets the strict mode for the schema.
+		/// </summary>
+		/// <param name="isStrict">
+		/// A value indicating whether the schema operates in strict mode.
+		/// When <c>true</c>, validation will reject unknown parameters and properties.
+		/// When <c>false</c>, unknown parameters and properties are allowed.
+		/// </param>
+		/// <returns>The current schema instance for method chaining.</returns>
+		public ChannelSchema WithStrictMode(bool isStrict)
+		{
+			IsStrict = isStrict;
+			return this;
+		}
+
+		/// <summary>
+		/// Enables strict mode for the schema.
+		/// In strict mode, validation will reject unknown parameters and properties.
+		/// </summary>
+		/// <returns>The current schema instance for method chaining.</returns>
+		public ChannelSchema WithStrictMode()
+		{
+			return WithStrictMode(true);
+		}
+
+		/// <summary>
+		/// Disables strict mode for the schema.
+		/// When strict mode is disabled, unknown parameters and properties are allowed.
+		/// </summary>
+		/// <returns>The current schema instance for method chaining.</returns>
+		public ChannelSchema WithFlexibleMode()
+		{
+			return WithStrictMode(false);
+		}
+
+		/// <summary>
 		/// Validates the specified connection settings against this channel schema
 		/// to ensure compatibility and compliance with the defined requirements.
 		/// </summary>
@@ -327,8 +371,11 @@ namespace Deveel.Messaging
 			// Validate parameter types and constraints
 			ValidateParameterTypesAndConstraints(connectionSettings, validationResults);
 
-			// Validate unknown parameters (parameters not defined in schema)
-			ValidateUnknownParameters(connectionSettings, validationResults);
+			// Validate unknown parameters (parameters not defined in schema) - only in strict mode
+			if (IsStrict)
+			{
+				ValidateUnknownParameters(connectionSettings, validationResults);
+			}
 
 			return validationResults;
 		}
@@ -359,8 +406,11 @@ namespace Deveel.Messaging
 			// Validate message property types and constraints
 			ValidateMessagePropertyTypesAndConstraints(messageProperties, validationResults);
 
-			// Validate unknown message properties (properties not defined in schema)
-			ValidateUnknownMessageProperties(messageProperties, validationResults);
+			// Validate unknown message properties (properties not defined in schema) - only in strict mode
+			if (IsStrict)
+			{
+				ValidateUnknownMessageProperties(messageProperties, validationResults);
+			}
 
 			return validationResults;
 		}

@@ -41,6 +41,16 @@ namespace Deveel.Messaging
 		string? DisplayName { get; }
 
 		/// <summary>
+		/// Gets a value indicating whether the schema operates in strict mode.
+		/// </summary>
+		/// <remarks>
+		/// When <c>true</c>, validation will reject unknown parameters in connection settings 
+		/// and unknown properties in message properties. When <c>false</c>, unknown parameters 
+		/// and properties are allowed and will not cause validation errors.
+		/// </remarks>
+		bool IsStrict { get; }
+
+		/// <summary>
 		/// Gets the list of capabilities supported by the channel.
 		/// </summary>
 		ChannelCapability Capabilities { get; }
