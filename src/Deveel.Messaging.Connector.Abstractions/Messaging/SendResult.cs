@@ -43,7 +43,12 @@ namespace Deveel.Messaging
 		/// <summary>
 		/// Gets the current status of the operation.
 		/// </summary>
-		public string? Status { get; set; }
+		public MessageStatus? Status { get; set; }
+
+		/// <summary>
+		/// Gets the timestamp when the message was sent or processed.
+		/// </summary>
+		public DateTimeOffset? Timestamp { get; set; }
 
 		/// <summary>
 		/// Gets a collection of additional data associated with the result.

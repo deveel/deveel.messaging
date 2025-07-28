@@ -23,6 +23,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0F91077D-AC4
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Deveel.Messaging.Connector.Abstractions.XUnit", "test\Deveel.Messaging.Connector.Abstractions.XUnit\Deveel.Messaging.Connector.Abstractions.XUnit.csproj", "{82E69A88-5CC5-14D6-7B53-49AC0C426B4E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Deveel.Messaging.Connector.Twilio", "src\Deveel.Messaging.Connector.Twilio\Deveel.Messaging.Connector.Twilio.csproj", "{CA2F7FC9-8687-E717-9C28-8BFC7974EB50}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Deveel.Messaging.Connector.Twilio.XUnit", "test\Deveel.Messaging.Connector.Twilio.XUnit\Deveel.Messaging.Connector.Twilio.XUnit.csproj", "{29B04B95-B476-6906-729A-D74BBB3216D5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +49,14 @@ Global
 		{82E69A88-5CC5-14D6-7B53-49AC0C426B4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{82E69A88-5CC5-14D6-7B53-49AC0C426B4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{82E69A88-5CC5-14D6-7B53-49AC0C426B4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA2F7FC9-8687-E717-9C28-8BFC7974EB50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA2F7FC9-8687-E717-9C28-8BFC7974EB50}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA2F7FC9-8687-E717-9C28-8BFC7974EB50}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA2F7FC9-8687-E717-9C28-8BFC7974EB50}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29B04B95-B476-6906-729A-D74BBB3216D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29B04B95-B476-6906-729A-D74BBB3216D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29B04B95-B476-6906-729A-D74BBB3216D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29B04B95-B476-6906-729A-D74BBB3216D5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,6 +66,7 @@ Global
 		{6595BD22-11FF-410F-9AAE-3B8440ED9D02} = {0F91077D-AC47-4319-96FF-09CA6EE50CC6}
 		{1AEF73AA-ED79-47EC-849C-C074B96DB429} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{82E69A88-5CC5-14D6-7B53-49AC0C426B4E} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{29B04B95-B476-6906-729A-D74BBB3216D5} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {64BF9420-C7A8-4D2B-804F-41EB2E83437F}

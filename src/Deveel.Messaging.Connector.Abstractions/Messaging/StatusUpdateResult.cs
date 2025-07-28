@@ -21,17 +21,28 @@ namespace Deveel.Messaging
 		/// Constructs a new instance of <see cref="StatusUpdateResult"/>
 		/// that represents the status of a message update.
 		/// </summary>
+		/// <param name="messageId">
+		/// The unique identifier for the message whose status is being updated.
+		/// </param>
 		/// <param name="status">
 		/// The status of the message update.
 		/// </param>
 		/// <param name="timestamp">
 		/// The timestamp of the status update.
 		/// </param>
-		public StatusUpdateResult(MessageStatus status, DateTimeOffset? timestamp = null)
+		public StatusUpdateResult(string messageId, MessageStatus status, DateTimeOffset? timestamp = null)
 		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(messageId, nameof(messageId));
+
+			MessageId = messageId;
 			Status = status;
 			Timestamp = timestamp ?? DateTimeOffset.UtcNow;
 		}
+
+		/// <summary>
+		/// Gets the unique identifier for the message.
+		/// </summary>
+		public string MessageId { get; }
 
 		/// <summary>
 		/// Gets the current status of the message.
@@ -51,6 +62,6 @@ namespace Deveel.Messaging
 		/// <summary>
 		/// Gets a collection of additional data associated with the status update.
 		/// </summary>
-		public IDictionary<string, object>? AdditionalData { get; } = new Dictionary<string, object>();
+		public IDictionary<string, object> AdditionalData { get; } = new Dictionary<string, object>();
 	}
 }

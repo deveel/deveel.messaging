@@ -112,7 +112,7 @@ public class ChannelConnectorUsageExamples
 		{
 			// Simulate sending email
 			var result = new SendResult(message.Id, $"email-{Guid.NewGuid()}");
-			result.Status = "sent";
+			result.Status = MessageStatus.Sent;
 			return Task.FromResult(ConnectorResult<SendResult>.Success(result));
 		}
 
@@ -141,7 +141,7 @@ public class ChannelConnectorUsageExamples
 		protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 		{
 			var result = new SendResult(message.Id, $"sms-{Guid.NewGuid()}");
-			result.Status = "queued";
+			result.Status = MessageStatus.Queued;
 			return Task.FromResult(ConnectorResult<SendResult>.Success(result));
 		}
 
@@ -154,7 +154,7 @@ public class ChannelConnectorUsageExamples
 		// Override to provide status query capability
 		protected override Task<ConnectorResult<StatusUpdatesResult>> GetMessageStatusCoreAsync(string messageId, CancellationToken cancellationToken)
 		{
-			var statusUpdate = new StatusUpdateResult(MessageStatus.Delivered);
+			var statusUpdate = new StatusUpdateResult(messageId, MessageStatus.Delivered);
 			var result = new StatusUpdatesResult(messageId, new[] { statusUpdate });
 			return Task.FromResult(ConnectorResult<StatusUpdatesResult>.Success(result));
 		}

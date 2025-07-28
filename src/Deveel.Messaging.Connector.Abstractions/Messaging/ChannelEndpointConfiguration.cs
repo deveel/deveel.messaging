@@ -47,6 +47,11 @@
 		public bool CanReceive { get; set; } = true;
 
 		/// <summary>
+		/// Gets or sets a description of this endpoint configuration.
+		/// </summary>
+		public string? Description { get; set; }
+
+		/// <summary>
 		/// Represents a configuration for a channel endpoint that 
 		/// matches any endpoint.
 		/// </summary>

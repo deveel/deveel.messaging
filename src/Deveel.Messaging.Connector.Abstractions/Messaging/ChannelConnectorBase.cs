@@ -102,7 +102,7 @@ namespace Deveel.Messaging
 		{
 			if (State != ConnectorState.Uninitialized)
 			{
-				return ConnectorResult<bool>.Fail("ALREADY_INITIALIZED", 
+				return ConnectorResult<bool>.Fail(ConnectorErrorCodes.AlreadyInitialized, 
 					"The connector has already been initialized.");
 			}
 
@@ -126,7 +126,7 @@ namespace Deveel.Messaging
 			catch (Exception ex)
 			{
 				SetState(ConnectorState.Error);
-				return ConnectorResult<bool>.Fail("INITIALIZATION_ERROR", ex.Message);
+				return ConnectorResult<bool>.Fail(ConnectorErrorCodes.InitializationError, ex.Message);
 			}
 		}
 
@@ -148,7 +148,7 @@ namespace Deveel.Messaging
 			}
 			catch (Exception ex)
 			{
-				return ConnectorResult<bool>.Fail("CONNECTION_TEST_ERROR", ex.Message);
+				return ConnectorResult<bool>.Fail(ConnectorErrorCodes.ConnectionTestError, ex.Message);
 			}
 		}
 
@@ -181,7 +181,7 @@ namespace Deveel.Messaging
 				// If there are validation errors, return a failure result
 				if (validationErrors.Count > 0)
 				{
-					return ConnectorResult<SendResult>.ValidationFailed("MESSAGE_VALIDATION_FAILED", 
+					return ConnectorResult<SendResult>.ValidationFailed(ConnectorErrorCodes.MessageValidationFailed, 
 						"The message failed validation", validationErrors);
 				}
 
@@ -189,7 +189,7 @@ namespace Deveel.Messaging
 			}
 			catch (Exception ex)
 			{
-				return ConnectorResult<SendResult>.Fail("SEND_MESSAGE_ERROR", ex.Message);
+				return ConnectorResult<SendResult>.Fail(ConnectorErrorCodes.SendMessageError, ex.Message);
 			}
 		}
 
@@ -240,7 +240,7 @@ namespace Deveel.Messaging
 						["MessageValidationResults"] = messageValidationResults
 					};
 					
-					return ConnectorResult<BatchSendResult>.ValidationFailed("BATCH_VALIDATION_FAILED", 
+					return ConnectorResult<BatchSendResult>.ValidationFailed(ConnectorErrorCodes.BatchValidationFailed, 
 						$"Validation failed for {messageValidationResults.Count} message(s) in the batch", 
 						allValidationErrors);
 				}
@@ -249,7 +249,7 @@ namespace Deveel.Messaging
 			}
 			catch (Exception ex)
 			{
-				return ConnectorResult<BatchSendResult>.Fail("SEND_BATCH_ERROR", ex.Message);
+				return ConnectorResult<BatchSendResult>.Fail(ConnectorErrorCodes.SendBatchError, ex.Message);
 			}
 		}
 
@@ -274,7 +274,7 @@ namespace Deveel.Messaging
 			}
 			catch (Exception ex)
 			{
-				return ConnectorResult<StatusInfo>.Fail("GET_STATUS_ERROR", ex.Message);
+				return ConnectorResult<StatusInfo>.Fail(ConnectorErrorCodes.GetStatusError, ex.Message);
 			}
 		}
 
@@ -298,7 +298,7 @@ namespace Deveel.Messaging
 			}
 			catch (Exception ex)
 			{
-				return ConnectorResult<StatusUpdatesResult>.Fail("GET_MESSAGE_STATUS_ERROR", ex.Message);
+				return ConnectorResult<StatusUpdatesResult>.Fail(ConnectorErrorCodes.GetMessageStatusError, ex.Message);
 			}
 		}
 
@@ -435,7 +435,7 @@ namespace Deveel.Messaging
 			}
 			catch (Exception ex)
 			{
-				return Task.FromResult(ConnectorResult<StatusUpdateResult>.Fail("RECEIVE_STATUS_ERROR", ex.Message));
+				return Task.FromResult(ConnectorResult<StatusUpdateResult>.Fail(ConnectorErrorCodes.ReceiveStatusError, ex.Message));
 			}
 		}
 
@@ -463,7 +463,7 @@ namespace Deveel.Messaging
 			}
 			catch (Exception ex)
 			{
-				return Task.FromResult(ConnectorResult<ReceiveResult>.Fail("RECEIVE_MESSAGES_ERROR", ex.Message));
+				return Task.FromResult(ConnectorResult<ReceiveResult>.Fail(ConnectorErrorCodes.ReceiveMessagesError, ex.Message));
 			}
 		}
 
@@ -490,7 +490,7 @@ namespace Deveel.Messaging
 			}
 			catch (Exception ex)
 			{
-				return ConnectorResult<ConnectorHealth>.Fail("GET_HEALTH_ERROR", ex.Message);
+				return ConnectorResult<ConnectorHealth>.Fail(ConnectorErrorCodes.GetHealthError, ex.Message);
 			}
 		}
 

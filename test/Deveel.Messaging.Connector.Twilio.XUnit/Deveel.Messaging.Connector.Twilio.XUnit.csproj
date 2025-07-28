@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Unit tests for the Deveel Twilio SMS connector implementation</Description>
+    <PackageTags>messaging;twilio;sms;connector;tests;deveel</PackageTags>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Deveel.Messaging.Connector.Twilio\Deveel.Messaging.Connector.Twilio.csproj" />
+    <ProjectReference Include="..\..\src\Deveel.Messaging.Connector.Abstractions\Deveel.Messaging.Connector.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
+    <PackageReference Include="Moq" Version="4.20.70" />
+  </ItemGroup>
+</Project>
