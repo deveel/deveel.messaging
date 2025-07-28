@@ -64,7 +64,7 @@ public class TwilioSmsConnectorTests
         var logger = new TestLogger<TwilioSmsConnector>();
 
         // Act
-        var connector = new TwilioSmsConnector(schema, connectionSettings, logger);
+        var connector = new TwilioSmsConnector(schema, connectionSettings, null, logger);
 
         // Assert
         Assert.Same(schema, connector.Schema);

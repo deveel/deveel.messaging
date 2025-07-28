@@ -5,8 +5,6 @@
 
 using Microsoft.Extensions.Logging;
 
-using Twilio;
-using Twilio.Rest.Api.V2010;
 using Twilio.Rest.Api.V2010.Account;
 using Twilio.Types;
 
@@ -24,6 +22,7 @@ namespace Deveel.Messaging
     {
         private readonly ConnectionSettings _connectionSettings;
         private readonly ILogger<TwilioSmsConnector>? _logger;
+        private readonly ITwilioService _twilioService;
         private readonly DateTime _startTime = DateTime.UtcNow;
 
         private string? _accountSid;
@@ -40,12 +39,14 @@ namespace Deveel.Messaging
         /// </summary>
         /// <param name="schema">The channel schema that defines the connector's capabilities and configuration.</param>
         /// <param name="connectionSettings">The connection settings containing Twilio credentials and configuration.</param>
+        /// <param name="twilioService">The Twilio service for API operations.</param>
         /// <param name="logger">Optional logger for diagnostic and operational logging.</param>
         /// <exception cref="ArgumentNullException">Thrown when schema or connectionSettings is null.</exception>
-        public TwilioSmsConnector(IChannelSchema schema, ConnectionSettings connectionSettings, ILogger<TwilioSmsConnector>? logger = null)
+        public TwilioSmsConnector(IChannelSchema schema, ConnectionSettings connectionSettings, ITwilioService? twilioService = null, ILogger<TwilioSmsConnector>? logger = null)
             : base(schema)
         {
             _connectionSettings = connectionSettings ?? throw new ArgumentNullException(nameof(connectionSettings));
+            _twilioService = twilioService ?? new TwilioService();
             _logger = logger;
         }
 
@@ -53,10 +54,11 @@ namespace Deveel.Messaging
         /// Initializes a new instance of the <see cref="TwilioSmsConnector"/> class using one of the predefined schemas.
         /// </summary>
         /// <param name="connectionSettings">The connection settings containing Twilio credentials and configuration.</param>
+        /// <param name="twilioService">The Twilio service for API operations.</param>
         /// <param name="logger">Optional logger for diagnostic and operational logging.</param>
         /// <exception cref="ArgumentNullException">Thrown when connectionSettings is null.</exception>
-        public TwilioSmsConnector(ConnectionSettings connectionSettings, ILogger<TwilioSmsConnector>? logger = null)
-            : this(TwilioChannelSchemas.TwilioSms, connectionSettings, logger)
+        public TwilioSmsConnector(ConnectionSettings connectionSettings, ITwilioService? twilioService = null, ILogger<TwilioSmsConnector>? logger = null)
+            : this(TwilioChannelSchemas.TwilioSms, connectionSettings, twilioService, logger)
         {
         }
 
@@ -118,7 +120,7 @@ namespace Deveel.Messaging
                 }
 
                 // Initialize Twilio client
-                TwilioClient.Init(_accountSid, _authToken);
+                _twilioService.Initialize(_accountSid, _authToken);
 
                 _logger?.LogInformation("Twilio SMS connector initialized successfully");
                 return ConnectorResult<bool>.Success(true);
@@ -138,7 +140,7 @@ namespace Deveel.Messaging
                 _logger?.LogDebug("Testing Twilio connection...");
 
                 // Test connection by fetching account information
-                var account = await AccountResource.FetchAsync(_accountSid);
+                var account = await _twilioService.FetchAccountAsync(_accountSid!, cancellationToken);
                 
                 if (account == null)
                 {
@@ -204,7 +206,7 @@ namespace Deveel.Messaging
                 ApplyMessageSettings(createMessageOptions, message);
 
                 // Send the message
-                var messageResource = await MessageResource.CreateAsync(createMessageOptions);
+                var messageResource = await _twilioService.CreateMessageAsync(createMessageOptions, cancellationToken);
 
                 _logger?.LogInformation("SMS message sent successfully. MessageSid: {MessageSid}, Status: {Status}", 
                     messageResource.Sid, messageResource.Status);
@@ -245,7 +247,7 @@ namespace Deveel.Messaging
                 _logger?.LogDebug("Querying status for message {MessageId}", messageId);
 
                 // Assume messageId is the Twilio SID
-                var messageResource = await MessageResource.FetchAsync(messageId);
+                var messageResource = await _twilioService.FetchMessageAsync(messageId, cancellationToken);
                 var timestamp = messageResource.DateUpdated ?? messageResource.DateCreated ?? DateTime.UtcNow;
                 var status = MapTwilioStatusToMessageStatus(messageResource.Status);
 
