@@ -20,7 +20,7 @@ namespace Deveel.Messaging
 	/// It supports various content types, including binary, JSON, XML, and
 	/// plain text.
 	/// </remarks>
-	public readonly ref struct MessageSource
+	public readonly struct MessageSource
 	{
 		/// <summary>
 		/// Constructs a new instance of <see cref="MessageSource"/> with the specified 
@@ -30,14 +30,15 @@ namespace Deveel.Messaging
 		/// The type of content provided by the message source.
 		/// </param>
 		/// <param name="rawData">
-		/// The raw data of the message content, represented as a byte array.
+		/// The raw data of the message content, represented as a readonly memory of bytes.
 		/// </param>
 		/// <param name="contentEncoding">
 		/// The encoding used for the message content, if applicable.
 		/// </param>
 		/// <exception cref="ArgumentNullException">
+		/// Thrown when contentType is null or whitespace.
 		/// </exception>
-		public MessageSource(string contentType, ReadOnlySpan<byte> rawData, string? contentEncoding = null)
+		public MessageSource(string contentType, ReadOnlyMemory<byte> rawData, string? contentEncoding = null)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(contentType, nameof(contentType));
 
@@ -58,9 +59,23 @@ namespace Deveel.Messaging
 		public string? ContentEncoding { get; }
 
 		/// <summary>
-		/// Gets the raw content of the message as a byte array.
+		/// Gets the raw content of the message as a readonly memory of bytes.
 		/// </summary>
-		public ReadOnlySpan<byte> Content { get; }
+		/// <remarks>
+		/// This provides efficient access to the underlying data without copying,
+		/// and is compatible with async/await operations.
+		/// </remarks>
+		public ReadOnlyMemory<byte> Content { get; }
+
+		/// <summary>
+		/// Gets the raw content of the message as a readonly span of bytes
+		/// for high-performance operations.
+		/// </summary>
+		/// <remarks>
+		/// This provides zero-copy access to the underlying data for performance-critical scenarios.
+		/// Use this when you need direct span operations and are not crossing async boundaries.
+		/// </remarks>
+		public ReadOnlySpan<byte> Span => Content.Span;
 
 		/// <summary>
 		/// Represents the MIME type for binary data.
@@ -102,10 +117,10 @@ namespace Deveel.Messaging
 		private string AsEncodedString()
 		{
 			if (ContentEncoding is null)
-				return Encoding.UTF8.GetString(Content);
+				return Encoding.UTF8.GetString(Span);
 
 			var encoding = Encoding.GetEncoding(ContentEncoding);
-			return encoding.GetString(Content);
+			return encoding.GetString(Span);
 		}
 
 		/// <summary>
@@ -192,11 +207,12 @@ namespace Deveel.Messaging
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(contentType, nameof(contentType));
 			ArgumentNullException.ThrowIfNull(content, nameof(content));
 
-			return new MessageSource(contentType, (encoding ?? Encoding.UTF8).GetBytes(content), (encoding ?? Encoding.UTF8).WebName);
+			var bytes = (encoding ?? Encoding.UTF8).GetBytes(content);
+			return new MessageSource(contentType, bytes.AsMemory(), (encoding ?? Encoding.UTF8).WebName);
 		}
 
 		/// <summary>
-		/// Constucts a new <see cref="MessageSource"/> that is containing
+		/// Constructs a new <see cref="MessageSource"/> that contains
 		/// binary data.
 		/// </summary>
 		/// <param name="content">
@@ -204,13 +220,27 @@ namespace Deveel.Messaging
 		/// </param>
 		/// <returns>
 		/// Returns a new <see cref="MessageSource"/> that represents
-		/// a binary content.
+		/// binary content.
 		/// </returns>
 		public static MessageSource Binary(byte[] content)
+			=> new MessageSource(BinaryContentType, content.AsMemory());
+
+		/// <summary>
+		/// Constructs a new <see cref="MessageSource"/> that contains
+		/// binary data from a memory segment.
+		/// </summary>
+		/// <param name="content">
+		/// The binary content of the source as a readonly memory.
+		/// </param>
+		/// <returns>
+		/// Returns a new <see cref="MessageSource"/> that represents
+		/// binary content.
+		/// </returns>
+		public static MessageSource Binary(ReadOnlyMemory<byte> content)
 			=> new MessageSource(BinaryContentType, content);
 
 		/// <summary>
-		/// Constructs a new <see cref="MessageSource"/> that is containing
+		/// Constructs a new <see cref="MessageSource"/> that contains
 		/// a JSON string.
 		/// </summary>
 		/// <param name="json">
@@ -221,7 +251,7 @@ namespace Deveel.Messaging
 		/// </param>
 		/// <returns>
 		/// Returns a new <see cref="MessageSource"/> that represents
-		/// a JSON content.
+		/// JSON content.
 		/// </returns>
 		public static MessageSource Json(string json, Encoding? encoding = null)
 			=> FromString(JsonContentType, json, encoding);
