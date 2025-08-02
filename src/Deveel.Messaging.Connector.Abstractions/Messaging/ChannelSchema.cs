@@ -371,6 +371,9 @@ namespace Deveel.Messaging
 			// Validate parameter types and constraints
 			ValidateParameterTypesAndConstraints(connectionSettings, validationResults);
 
+			// Validate authentication requirements
+			ValidateAuthenticationRequirements(connectionSettings, validationResults);
+
 			// Validate unknown parameters (parameters not defined in schema) - only in strict mode
 			if (IsStrict)
 			{
@@ -470,9 +473,222 @@ namespace Deveel.Messaging
 			}
 		}
 
+		private void ValidateAuthenticationRequirements(ConnectionSettings connectionSettings, List<ValidationResult> validationResults)
+		{
+			// Skip authentication validation if no authentication types are defined
+			if (!AuthenticationTypes.Any())
+			{
+				return;
+			}
+
+			// If None is the only authentication type, no authentication parameters are required
+			if (AuthenticationTypes.Count == 1 && AuthenticationTypes.Contains(AuthenticationType.None))
+			{
+				return;
+			}
+
+			// Check if at least one authentication type's requirements are satisfied
+			bool hasValidAuthentication = false;
+			var authenticationErrors = new List<string>();
+
+			foreach (var authType in AuthenticationTypes.Where(a => a != AuthenticationType.None))
+			{
+				var authValidationResults = ValidateAuthenticationTypeRequirements(authType, connectionSettings);
+				
+				if (!authValidationResults.Any())
+				{
+					hasValidAuthentication = true;
+					break; // Found valid authentication, no need to check others
+				}
+				else
+				{
+					authenticationErrors.Add($"{authType}: {string.Join(", ", authValidationResults)}");
+				}
+			}
+
+			// If no valid authentication was found and None is not supported, add validation error
+			if (!hasValidAuthentication && !AuthenticationTypes.Contains(AuthenticationType.None))
+			{
+				validationResults.Add(new ValidationResult(
+					$"Connection settings do not satisfy any of the supported authentication types. " +
+					$"Supported types: {string.Join(", ", AuthenticationTypes)}. " +
+					$"Validation errors: {string.Join("; ", authenticationErrors)}",
+					new[] { "Authentication" }));
+			}
+		}
+
+		/// <summary>
+		/// Validates the authentication requirements for a specific authentication type.
+		/// </summary>
+		/// <param name="authenticationType">The authentication type to validate.</param>
+		/// <param name="connectionSettings">The connection settings to check.</param>
+		/// <returns>A list of validation error messages for this authentication type.</returns>
+		private List<string> ValidateAuthenticationTypeRequirements(AuthenticationType authenticationType, ConnectionSettings connectionSettings)
+		{
+			var errors = new List<string>();
+			switch (authenticationType)
+			{
+				case AuthenticationType.Basic:
+					ValidateBasicAuthentication(connectionSettings, errors);
+					break;
+				case AuthenticationType.ApiKey:
+					ValidateApiKeyAuthentication(connectionSettings, errors);
+					break;
+				case AuthenticationType.Token:
+					ValidateTokenAuthentication(connectionSettings, errors);
+					break;
+				case AuthenticationType.ClientCredentials:
+					ValidateClientCredentialsAuthentication(connectionSettings, errors);
+					break;
+				case AuthenticationType.Certificate:
+					ValidateCertificateAuthentication(connectionSettings, errors);
+					break;
+				case AuthenticationType.Custom:
+					ValidateCustomAuthentication(connectionSettings, errors);
+					break;
+			}
+
+			return errors;
+		}
+
+		/// <summary>
+		/// Validates Basic authentication requirements (username/password or AccountSid/AuthToken for Twilio-like services).
+		/// </summary>
+		private void ValidateBasicAuthentication(ConnectionSettings connectionSettings, List<string> errors)
+		{
+			// Check for standard Basic authentication (username/password)
+			var username = connectionSettings.GetParameter("Username");
+			var password = connectionSettings.GetParameter("Password");
+			
+			// Check for Twilio-style Basic authentication (AccountSid/AuthToken)
+			var accountSid = connectionSettings.GetParameter("AccountSid");
+			var authToken = connectionSettings.GetParameter("AuthToken");
+
+			// Check for other common Basic auth variations
+			var user = connectionSettings.GetParameter("User");
+			var pass = connectionSettings.GetParameter("Pass");
+			var clientId = connectionSettings.GetParameter("ClientId");
+			var clientSecret = connectionSettings.GetParameter("ClientSecret");
+
+			bool hasValidBasicAuth = 
+				(username != null && password != null) ||
+				(accountSid != null && authToken != null) ||
+				(user != null && pass != null) ||
+				(clientId != null && clientSecret != null);
+
+			if (!hasValidBasicAuth)
+			{
+				errors.Add("Basic authentication requires one of the following parameter pairs: " +
+						  "(Username, Password), (AccountSid, AuthToken), (User, Pass), or (ClientId, ClientSecret)");
+			}
+		}
+
+		/// <summary>
+		/// Validates API Key authentication requirements.
+		/// </summary>
+		private void ValidateApiKeyAuthentication(ConnectionSettings connectionSettings, List<string> errors)
+		{
+			var apiKey = connectionSettings.GetParameter("ApiKey");
+			var key = connectionSettings.GetParameter("Key");
+			var accessKey = connectionSettings.GetParameter("AccessKey");
+
+			if (apiKey == null && key == null && accessKey == null)
+			{
+				errors.Add("API Key authentication requires one of the following parameters: ApiKey, Key, or AccessKey");
+			}
+		}
+
+		/// <summary>
+		/// Validates Token authentication requirements.
+		/// </summary>
+		private void ValidateTokenAuthentication(ConnectionSettings connectionSettings, List<string> errors)
+		{
+			var token = connectionSettings.GetParameter("Token");
+			var accessToken = connectionSettings.GetParameter("AccessToken");
+			var bearerToken = connectionSettings.GetParameter("BearerToken");
+			var authToken = connectionSettings.GetParameter("AuthToken");
+
+			if (token == null && accessToken == null && bearerToken == null && authToken == null)
+			{
+				errors.Add("Token authentication requires one of the following parameters: Token, AccessToken, BearerToken, or AuthToken");
+			}
+		}
+
+		/// <summary>
+		/// Validates Client Credentials authentication requirements.
+		/// </summary>
+		private void ValidateClientCredentialsAuthentication(ConnectionSettings connectionSettings, List<string> errors)
+		{
+			var clientId = connectionSettings.GetParameter("ClientId");
+			var clientSecret = connectionSettings.GetParameter("ClientSecret");
+
+			if (clientId == null || clientSecret == null)
+			{
+				errors.Add("Client Credentials authentication requires both ClientId and ClientSecret parameters");
+			}
+		}
+
+		/// <summary>
+		/// Validates Certificate authentication requirements.
+		/// </summary>
+		private void ValidateCertificateAuthentication(ConnectionSettings connectionSettings, List<string> errors)
+		{
+			var certificate = connectionSettings.GetParameter("Certificate");
+			var certificatePath = connectionSettings.GetParameter("CertificatePath");
+			var certificateThumbprint = connectionSettings.GetParameter("CertificateThumbprint");
+			var pfxFile = connectionSettings.GetParameter("PfxFile");
+
+			if (certificate == null && certificatePath == null && certificateThumbprint == null && pfxFile == null)
+			{
+				errors.Add("Certificate authentication requires one of the following parameters: " +
+						  "Certificate, CertificatePath, CertificateThumbprint, or PfxFile");
+				return; // Don't check for passwords if no certificate is provided
+			}
+
+			// Only check for password if PFX file is specifically provided
+			// Other certificate types may not require passwords
+			if (pfxFile != null)
+			{
+				var certificatePassword = connectionSettings.GetParameter("CertificatePassword");
+				var pfxPassword = connectionSettings.GetParameter("PfxPassword");
+				
+				// Note: We make password optional as some PFX files may not be password protected
+				// This is just a warning in the comment, not an actual validation error
+			}
+		}
+
+		/// <summary>
+		/// Validates Custom authentication requirements.
+		/// </summary>
+		private void ValidateCustomAuthentication(ConnectionSettings connectionSettings, List<string> errors)
+		{
+			// For custom authentication, we look for any authentication-related parameters
+			// This is more flexible to accommodate various custom authentication schemes
+			var authParams = new []
+			{
+				"CustomAuth", "AuthenticationData", "Credentials", "AuthConfig",
+				"SecretKey", "PrivateKey", "Signature", "Hash"
+			};
+
+			bool hasCustomAuthParam = authParams.Any(param => connectionSettings.GetParameter(param) != null);
+
+			if (!hasCustomAuthParam)
+			{
+				errors.Add("Custom authentication requires at least one authentication parameter. " +
+						  $"Common parameters include: {string.Join(", ", authParams)}");
+			}
+		}
+
 		private void ValidateUnknownParameters(ConnectionSettings connectionSettings, List<ValidationResult> validationResults)
 		{
 			var schemaParameterNames = Parameters.Select(p => p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+			
+			// Add authentication-related parameter names that should be considered "known"
+			var authenticationParameterNames = GetAllAuthenticationParameterNames();
+			foreach (var authParam in authenticationParameterNames)
+			{
+				schemaParameterNames.Add(authParam);
+			}
 			
 			foreach (var parameterKey in connectionSettings.Parameters.Keys)
 			{
@@ -483,6 +699,68 @@ namespace Deveel.Messaging
 						new[] { parameterKey }));
 				}
 			}
+		}
+
+		/// <summary>
+		/// Gets all parameter names that are considered valid for authentication purposes.
+		/// </summary>
+		/// <returns>A set of authentication parameter names that should not be considered "unknown".</returns>
+		private HashSet<string> GetAllAuthenticationParameterNames()
+		{
+			var authParams = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+			// Only include authentication parameters if corresponding authentication types are supported
+			foreach (var authType in AuthenticationTypes)
+			{
+				switch (authType)
+				{
+					case AuthenticationType.Basic:
+						authParams.Add("Username");
+						authParams.Add("Password");
+						authParams.Add("AccountSid");
+						authParams.Add("AuthToken");
+						authParams.Add("User");
+						authParams.Add("Pass");
+						authParams.Add("ClientId");
+						authParams.Add("ClientSecret");
+						break;
+					case AuthenticationType.ApiKey:
+						authParams.Add("ApiKey");
+						authParams.Add("Key");
+						authParams.Add("AccessKey");
+						break;
+					case AuthenticationType.Token:
+						authParams.Add("Token");
+						authParams.Add("AccessToken");
+						authParams.Add("BearerToken");
+						authParams.Add("AuthToken");
+						break;
+					case AuthenticationType.ClientCredentials:
+						authParams.Add("ClientId");
+						authParams.Add("ClientSecret");
+						break;
+					case AuthenticationType.Certificate:
+						authParams.Add("Certificate");
+						authParams.Add("CertificatePath");
+						authParams.Add("CertificateThumbprint");
+						authParams.Add("PfxFile");
+						authParams.Add("CertificatePassword");
+						authParams.Add("PfxPassword");
+						break;
+					case AuthenticationType.Custom:
+						authParams.Add("CustomAuth");
+						authParams.Add("AuthenticationData");
+						authParams.Add("Credentials");
+						authParams.Add("AuthConfig");
+						authParams.Add("SecretKey");
+						authParams.Add("PrivateKey");
+						authParams.Add("Signature");
+						authParams.Add("Hash");
+						break;
+				}
+			}
+
+			return authParams;
 		}
 
 		private void ValidateRequiredMessageProperties(IDictionary<string, object?> messageProperties, List<ValidationResult> validationResults)

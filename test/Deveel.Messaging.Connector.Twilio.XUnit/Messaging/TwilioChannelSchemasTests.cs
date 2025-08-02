@@ -624,4 +624,70 @@ public class TwilioChannelSchemasTests
         Assert.Empty(validResults);
         Assert.Empty(invalidResults); // No specific validations currently implemented
     }
+
+    [Fact]
+    public void TwilioSms_AuthenticationValidation_ValidCredentials_PassesValidation()
+    {
+        // Arrange
+        var schema = TwilioChannelSchemas.TwilioSms;
+        var connectionSettings = new ConnectionSettings()
+            .SetParameter("AccountSid", "AC123456789abcdef123456789abcdef12")
+            .SetParameter("AuthToken", "your_auth_token_here");
+
+        // Act
+        var results = schema.ValidateConnectionSettings(connectionSettings);
+
+        // Assert
+        Assert.Empty(results);
+    }
+
+    [Fact]
+    public void TwilioSms_AuthenticationValidation_MissingAuthToken_FailsValidation()
+    {
+        // Arrange
+        var schema = TwilioChannelSchemas.TwilioSms;
+        var connectionSettings = new ConnectionSettings()
+            .SetParameter("AccountSid", "AC123456789abcdef123456789abcdef12");
+
+        // Act
+        var results = schema.ValidateConnectionSettings(connectionSettings).ToList();
+
+        // Assert
+        Assert.True(results.Count >= 1);
+        Assert.Contains(results, r => r.ErrorMessage!.Contains("Required parameter 'AuthToken'") || 
+                                     r.ErrorMessage!.Contains("Basic authentication requires"));
+    }
+
+    [Fact]
+    public void TwilioWhatsApp_AuthenticationValidation_ValidCredentials_PassesValidation()
+    {
+        // Arrange
+        var schema = TwilioChannelSchemas.TwilioWhatsApp;
+        var connectionSettings = new ConnectionSettings()
+            .SetParameter("AccountSid", "AC123456789abcdef123456789abcdef12")
+            .SetParameter("AuthToken", "your_auth_token_here");
+
+        // Act
+        var results = schema.ValidateConnectionSettings(connectionSettings);
+
+        // Assert
+        Assert.Empty(results);
+    }
+
+    [Fact]
+    public void TwilioWhatsApp_AuthenticationValidation_MissingAccountSid_FailsValidation()
+    {
+        // Arrange
+        var schema = TwilioChannelSchemas.TwilioWhatsApp;
+        var connectionSettings = new ConnectionSettings()
+            .SetParameter("AuthToken", "your_auth_token_here");
+
+        // Act
+        var results = schema.ValidateConnectionSettings(connectionSettings).ToList();
+
+        // Assert
+        Assert.True(results.Count >= 1);
+        Assert.Contains(results, r => r.ErrorMessage!.Contains("Required parameter 'AccountSid'") || 
+                                     r.ErrorMessage!.Contains("Basic authentication requires"));
+    }
 }
