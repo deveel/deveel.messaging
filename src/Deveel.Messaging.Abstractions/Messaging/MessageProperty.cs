@@ -1,4 +1,9 @@
-﻿namespace Deveel.Messaging
+﻿//
+// Copyright (c) Antonello Provenzano and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for details.
+//
+
+namespace Deveel.Messaging
 {
 	/// <summary>
 	/// Represents a property of a message, which can be used to

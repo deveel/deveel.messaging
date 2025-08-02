@@ -1,8 +1,3 @@
-//
-// Copyright (c) Antonello Provenzano and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
-//
-
 using Moq;
 using System.Reflection;
 using Twilio.Rest.Api.V2010.Account;
