@@ -78,16 +78,9 @@ namespace Deveel.Messaging
                 CanReceive = true
             })
             .AddAuthenticationType(AuthenticationType.Basic)
-            .AddMessageProperty(new MessagePropertyConfiguration("Body", ParameterType.String)
-            {
-                IsRequired = false,
-                Description = "The text content of the message (up to 1,600 characters)"
-            })
-            .AddMessageProperty(new MessagePropertyConfiguration("MediaUrl", ParameterType.String)
-            {
-                IsRequired = false,
-                Description = "URL of media to send with the message"
-            })
+            // Body and MediaUrl are derived from message content, not separate message properties
+            // Body comes from TextContent.Text when ContentType = PlainText
+            // MediaUrl comes from MediaContent.FileUrl when ContentType = Media
             .AddMessageProperty(new MessagePropertyConfiguration("ValidityPeriod", ParameterType.Integer)
             {
                 IsRequired = false,
@@ -158,16 +151,6 @@ namespace Deveel.Messaging
                 IsRequired = false,
                 Description = "URL to receive delivery status callbacks for sent WhatsApp messages"
             })
-            .AddParameter(new ChannelParameter("ContentSid", ParameterType.String)
-            {
-                IsRequired = false,
-                Description = "Twilio Content SID for approved WhatsApp template messages"
-            })
-            .AddParameter(new ChannelParameter("ContentVariables", ParameterType.String)
-            {
-                IsRequired = false,
-                Description = "JSON string containing variables for WhatsApp template messages"
-            })
             .AddContentType(MessageContentType.PlainText)
             .AddContentType(MessageContentType.Media)
             .AddContentType(MessageContentType.Template)
@@ -183,26 +166,6 @@ namespace Deveel.Messaging
                 CanReceive = true
             })
             .AddAuthenticationType(AuthenticationType.Basic)
-            .AddMessageProperty(new MessagePropertyConfiguration("Body", ParameterType.String)
-            {
-                IsRequired = false,
-                Description = "The text content of the WhatsApp message"
-            })
-            .AddMessageProperty(new MessagePropertyConfiguration("MediaUrl", ParameterType.String)
-            {
-                IsRequired = false,
-                Description = "URL of media to send with the WhatsApp message (images, documents, audio, video)"
-            })
-            .AddMessageProperty(new MessagePropertyConfiguration("ContentSid", ParameterType.String)
-            {
-                IsRequired = false,
-                Description = "Twilio Content SID for WhatsApp template messages"
-            })
-            .AddMessageProperty(new MessagePropertyConfiguration("ContentVariables", ParameterType.String)
-            {
-                IsRequired = false,
-                Description = "JSON string containing variables for WhatsApp template messages"
-            })
             .AddMessageProperty(new MessagePropertyConfiguration("ProvideCallback", ParameterType.Boolean)
             {
                 IsRequired = false,
@@ -225,7 +188,6 @@ namespace Deveel.Messaging
             .RemoveParameter("StatusCallback")
             .RemoveParameter("MessagingServiceSid")
             .RemoveContentType(MessageContentType.Media)
-            .RemoveMessageProperty("MediaUrl")
             .RemoveMessageProperty("ProvideCallback")
             .RemoveMessageProperty("PersistentAction")
             .RemoveMessageProperty("SmartEncoded");
@@ -238,7 +200,6 @@ namespace Deveel.Messaging
             .RemoveCapability(ChannelCapability.ReceiveMessages)
             .RemoveParameter("WebhookUrl")
             .RemoveContentType(MessageContentType.Media)
-            .RemoveMessageProperty("MediaUrl")
             .RemoveMessageProperty("PersistentAction");
 
         /// <summary>
@@ -264,11 +225,8 @@ namespace Deveel.Messaging
             .RemoveCapability(ChannelCapability.Templates)
             .RemoveParameter("WebhookUrl")
             .RemoveParameter("StatusCallback")
-            .RemoveParameter("ContentSid")
-            .RemoveParameter("ContentVariables")
+            // ContentSid and ContentVariables are no longer parameters or message properties
             .RemoveContentType(MessageContentType.Template)
-            .RemoveMessageProperty("ContentSid")
-            .RemoveMessageProperty("ContentVariables")
             .RemoveMessageProperty("ProvideCallback")
             .RemoveMessageProperty("PersistentAction");
 
@@ -279,8 +237,7 @@ namespace Deveel.Messaging
         public static ChannelSchema WhatsAppTemplates => new ChannelSchema(TwilioWhatsApp, "Twilio WhatsApp Templates")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
             .RemoveCapability(ChannelCapability.MediaAttachments)
-            .UpdateParameter("ContentSid", param => param.IsRequired = true) // Template messaging requires Content SID
-            .RemoveContentType(MessageContentType.Media)
-            .RemoveMessageProperty("MediaUrl");
+            // ContentSid is now derived from TemplateContent.TemplateId, not a separate parameter
+            .RemoveContentType(MessageContentType.Media);
     }
 }

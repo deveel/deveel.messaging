@@ -28,8 +28,6 @@ namespace Deveel.Messaging
         private string? _authToken;
         private string? _webhookUrl;
         private string? _statusCallback;
-        private string? _contentSid;
-        private string? _contentVariables;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TwilioWhatsAppConnector"/> class.
@@ -73,8 +71,7 @@ namespace Deveel.Messaging
                 // Extract optional parameters
                 _webhookUrl = _connectionSettings.GetParameter("WebhookUrl") as string;
                 _statusCallback = _connectionSettings.GetParameter("StatusCallback") as string;
-                _contentSid = _connectionSettings.GetParameter("ContentSid") as string;
-                _contentVariables = _connectionSettings.GetParameter("ContentVariables") as string;
+                // ContentSid and ContentVariables are now extracted from ITemplateContent, not connection parameters
 
                 // Perform custom validation logic
                 if (string.IsNullOrWhiteSpace(_accountSid) || string.IsNullOrWhiteSpace(_authToken))
@@ -194,20 +191,32 @@ namespace Deveel.Messaging
                 };
 
                 // Handle different content types
-                if (message.Content?.ContentType == MessageContentType.Template)
+                if (message.Content?.ContentType == MessageContentType.Template && message.Content is ITemplateContent templateContent)
                 {
-                    // Template message - use ContentSid
-                    var contentSid = ExtractContentSid(message);
+                    // Template message - use ContentSid from TemplateId and ContentVariables from Parameters
+                    var contentSid = templateContent.TemplateId;
                     if (!string.IsNullOrWhiteSpace(contentSid))
                     {
                         createMessageOptions.ContentSid = contentSid;
                         
-                        // Add content variables if provided
-                        var contentVariables = ExtractContentVariables(message);
-                        if (!string.IsNullOrWhiteSpace(contentVariables))
+                        // Convert template parameters to JSON string for ContentVariables
+                        if (templateContent.Parameters != null && templateContent.Parameters.Count > 0)
                         {
-                            createMessageOptions.ContentVariables = contentVariables;
+                            try
+                            {
+                                var contentVariables = System.Text.Json.JsonSerializer.Serialize(templateContent.Parameters);
+                                createMessageOptions.ContentVariables = contentVariables;
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger?.LogWarning(ex, "Failed to serialize template parameters to JSON for message {MessageId}", message.Id);
+                            }
                         }
+                    }
+                    else
+                    {
+                        return ConnectorResult<SendResult>.Fail(TwilioErrorCodes.InvalidMessage, 
+                            "Template content must have a valid TemplateId (ContentSid) for WhatsApp template messages");
                     }
                 }
                 else
@@ -309,7 +318,7 @@ namespace Deveel.Messaging
                 var statusInfo = new StatusInfo($"Twilio WhatsApp Connector (Account: {_accountSid})");
 
                 statusInfo.AdditionalData["AccountSid"] = _accountSid ?? "";
-                statusInfo.AdditionalData["ContentSid"] = _contentSid ?? "";
+                // ContentSid is now extracted from template content, not stored as connection setting
                 statusInfo.AdditionalData["State"] = State.ToString();
                 statusInfo.AdditionalData["Uptime"] = DateTime.UtcNow - _startTime;
                 statusInfo.AdditionalData["Channel"] = "WhatsApp";
@@ -380,15 +389,9 @@ namespace Deveel.Messaging
 
             // Note: Sender and To are now handled as endpoints (message.Sender/message.Receiver)
             // not as message properties, so we don't extract them here
+            // Body and MediaUrl are also extracted from content, not properties
 
-            // Add Body property from message content
-            var body = ExtractMessageBody(message);
-            if (!string.IsNullOrWhiteSpace(body))
-            {
-                properties["Body"] = body;
-            }
-
-            // Add other properties from message.Properties if they exist
+            // Add properties from message.Properties if they exist
             if (message.Properties != null)
             {
                 foreach (var property in message.Properties)
@@ -402,46 +405,31 @@ namespace Deveel.Messaging
 
         private string? ExtractMessageBody(IMessage message)
         {
-            if (message.Content?.ContentType == MessageContentType.PlainText)
+            if (message.Content?.ContentType == MessageContentType.PlainText && message.Content is ITextContent textContent)
             {
-                return message.Content.ToString();
+                return textContent.Text;
             }
             return null;
         }
 
         private List<Uri>? ExtractMediaUrls(IMessage message)
         {
-            if (message.Content?.ContentType == MessageContentType.Media)
+            if (message.Content?.ContentType == MessageContentType.Media && message.Content is IMediaContent mediaContent)
             {
-                // In a real implementation, you'd extract media URLs from the content
-                // For now, return null - this would be enhanced based on the actual media content structure
-                return null;
+                if (!string.IsNullOrWhiteSpace(mediaContent.FileUrl))
+                {
+                    try
+                    {
+                        return new List<Uri> { new Uri(mediaContent.FileUrl) };
+                    }
+                    catch (UriFormatException ex)
+                    {
+                        _logger?.LogWarning(ex, "Invalid media URL format: {MediaUrl}", mediaContent.FileUrl);
+                        return null;
+                    }
+                }
             }
             return null;
-        }
-
-        private string? ExtractContentSid(IMessage message)
-        {
-            // First check message properties
-            if (message.Properties?.ContainsKey("ContentSid") == true)
-            {
-                return message.Properties["ContentSid"]?.ToString();
-            }
-
-            // Fall back to connector-level ContentSid
-            return _contentSid;
-        }
-
-        private string? ExtractContentVariables(IMessage message)
-        {
-            // First check message properties
-            if (message.Properties?.ContainsKey("ContentVariables") == true)
-            {
-                return message.Properties["ContentVariables"]?.ToString();
-            }
-
-            // Fall back to connector-level ContentVariables
-            return _contentVariables;
         }
 
         private void ApplyMessageSettings(CreateMessageOptions options, IMessage message)

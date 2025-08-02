@@ -360,22 +360,29 @@ namespace Deveel.Messaging
 
         private string? ExtractMessageBody(IMessage message)
         {
-            if (message.Content?.ContentType == MessageContentType.PlainText)
+            if (message.Content?.ContentType == MessageContentType.PlainText && message.Content is ITextContent textContent)
             {
-                // In a real implementation, you'd extract the text content
-                // For now, return a placeholder
-                return message.Content.ToString();
+                return textContent.Text;
             }
             return null;
         }
 
         private List<Uri>? ExtractMediaUrls(IMessage message)
         {
-            if (message.Content?.ContentType == MessageContentType.Media)
+            if (message.Content?.ContentType == MessageContentType.Media && message.Content is IMediaContent mediaContent)
             {
-                // In a real implementation, you'd extract media URLs from the content
-                // For now, return null
-                return null;
+                if (!string.IsNullOrWhiteSpace(mediaContent.FileUrl))
+                {
+                    try
+                    {
+                        return new List<Uri> { new Uri(mediaContent.FileUrl) };
+                    }
+                    catch (UriFormatException ex)
+                    {
+                        _logger?.LogWarning(ex, "Invalid media URL format: {MediaUrl}", mediaContent.FileUrl);
+                        return null;
+                    }
+                }
             }
             return null;
         }
@@ -386,15 +393,9 @@ namespace Deveel.Messaging
 
             // Note: Sender and To are now handled as endpoints (message.Sender/message.Receiver)
             // not as message properties, so we don't extract them here
+            // Body and MediaUrl are also extracted from content, not properties
 
-            // Add Body property from message content
-            var body = ExtractMessageBody(message);
-            if (!string.IsNullOrWhiteSpace(body))
-            {
-                properties["Body"] = body;
-            }
-
-            // Add other properties from message.Properties if they exist
+            // Add properties from message.Properties if they exist
             if (message.Properties != null)
             {
                 foreach (var property in message.Properties)

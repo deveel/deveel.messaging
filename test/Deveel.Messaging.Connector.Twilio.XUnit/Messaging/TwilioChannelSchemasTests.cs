@@ -120,12 +120,11 @@ public class TwilioChannelSchemasTests
 
         // Assert
         var optionalParams = schema.Parameters.Where(p => !p.IsRequired).ToList();
-        Assert.True(optionalParams.Count >= 4);
+        Assert.True(optionalParams.Count >= 2); // WebhookUrl and StatusCallback
         
         Assert.Contains(optionalParams, p => p.Name == "WebhookUrl");
         Assert.Contains(optionalParams, p => p.Name == "StatusCallback");
-        Assert.Contains(optionalParams, p => p.Name == "ContentSid");
-        Assert.Contains(optionalParams, p => p.Name == "ContentVariables");
+        // ContentSid and ContentVariables are now extracted from ITemplateContent, not parameters
     }
 
     [Fact]
@@ -224,12 +223,16 @@ public class TwilioChannelSchemasTests
         // Assert
         Assert.True(schema.MessageProperties.Count >= 6);
         
-        // Note: Sender and To are no longer message properties - they are validated as endpoints
+        // Note: Body and MediaUrl are no longer message properties - they are extracted from message content
+        // Body comes from TextContent.Text when ContentType = PlainText
+        // MediaUrl comes from MediaContent.FileUrl when ContentType = Media
         var optionalProps = schema.MessageProperties.Where(p => !p.IsRequired).ToList();
-        Assert.Contains(optionalProps, p => p.Name == "Body");
-        Assert.Contains(optionalProps, p => p.Name == "MediaUrl");
         Assert.Contains(optionalProps, p => p.Name == "ValidityPeriod");
         Assert.Contains(optionalProps, p => p.Name == "MaxPrice");
+        Assert.Contains(optionalProps, p => p.Name == "ProvideCallback");
+        Assert.Contains(optionalProps, p => p.Name == "AttemptLimits");
+        Assert.Contains(optionalProps, p => p.Name == "SmartEncoded");
+        Assert.Contains(optionalProps, p => p.Name == "PersistentAction");
     }
 
     [Fact]
@@ -239,14 +242,13 @@ public class TwilioChannelSchemasTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
 
         // Assert
-        Assert.True(schema.MessageProperties.Count >= 4);
+        Assert.True(schema.MessageProperties.Count >= 2);
         
-        // Note: Sender and To are no longer message properties - they are validated as endpoints
+        // Note: ContentSid and ContentVariables are now extracted from ITemplateContent, not message properties
+        // TemplateId maps to ContentSid, Parameters map to ContentVariables JSON
         var optionalProps = schema.MessageProperties.Where(p => !p.IsRequired).ToList();
-        Assert.Contains(optionalProps, p => p.Name == "Body");
-        Assert.Contains(optionalProps, p => p.Name == "MediaUrl");
-        Assert.Contains(optionalProps, p => p.Name == "ContentSid");
-        Assert.Contains(optionalProps, p => p.Name == "ContentVariables");
+        Assert.Contains(optionalProps, p => p.Name == "ProvideCallback");
+        Assert.Contains(optionalProps, p => p.Name == "PersistentAction");
     }
 
     [Fact]
@@ -310,8 +312,7 @@ public class TwilioChannelSchemasTests
         // Parameters should be reduced
         Assert.DoesNotContain(simplifiedSchema.Parameters, p => p.Name == "WebhookUrl");
         Assert.DoesNotContain(simplifiedSchema.Parameters, p => p.Name == "StatusCallback");
-        Assert.DoesNotContain(simplifiedSchema.Parameters, p => p.Name == "ContentSid");
-        Assert.DoesNotContain(simplifiedSchema.Parameters, p => p.Name == "ContentVariables");
+        // ContentSid and ContentVariables are no longer parameters
 
         // Content types should be reduced
         Assert.Equal(2, simplifiedSchema.ContentTypes.Count);
@@ -344,10 +345,7 @@ public class TwilioChannelSchemasTests
         Assert.False(templateSchema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
         Assert.False(templateSchema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
 
-        // ContentSid should be required for template messaging
-        var contentSidParam = templateSchema.Parameters.FirstOrDefault(p => p.Name == "ContentSid");
-        Assert.NotNull(contentSidParam);
-        Assert.True(contentSidParam.IsRequired);
+        // ContentSid is now derived from TemplateContent.TemplateId, not a parameter
 
         // Content types should be reduced
         Assert.Equal(2, templateSchema.ContentTypes.Count);
@@ -504,8 +502,8 @@ public class TwilioChannelSchemasTests
         var bulkValidationResults = TwilioChannelSchemas.BulkSms.ValidateConnectionSettings(validBulkSettings);
         Assert.Empty(bulkValidationResults);
 
-        // Test template schema separately with content SID
-        var templateValidationResults = TwilioChannelSchemas.WhatsAppTemplates.ValidateConnectionSettings(validTemplateSettings);
+        // Test template schema separately - no longer requires ContentSid parameter
+        var templateValidationResults = TwilioChannelSchemas.WhatsAppTemplates.ValidateConnectionSettings(validWhatsAppSettings);
         Assert.Empty(templateValidationResults);
     }
 
@@ -517,8 +515,9 @@ public class TwilioChannelSchemasTests
 
         var validProps = new Dictionary<string, object?>
         {
-            // Note: Sender and To are no longer message properties - they are validated as endpoints
-            ["Body"] = "Test message",
+            // Note: Body and MediaUrl are no longer message properties - they are extracted from message content
+            // Body comes from TextContent.Text when ContentType = PlainText
+            // MediaUrl comes from MediaContent.FileUrl when ContentType = Media
             ["ValidityPeriod"] = 3600,
             ["MaxPrice"] = 0.05m,
             ["ProvideCallback"] = true
@@ -526,7 +525,6 @@ public class TwilioChannelSchemasTests
 
         var invalidProps = new Dictionary<string, object?>
         {
-            ["Body"] = "Test message",
             ["ValidityPeriod"] = "invalid", // Wrong type
             ["UnknownProperty"] = "value"
         };
@@ -550,17 +548,13 @@ public class TwilioChannelSchemasTests
 
         var validProps = new Dictionary<string, object?>
         {
-            // Note: Sender and To are no longer message properties - they are validated as endpoints
-            ["Body"] = "Test WhatsApp message",
-            ["ContentSid"] = "HX1234567890123456789012345678901234",
-            ["ContentVariables"] = "{\"name\":\"John\",\"code\":\"123\"}",
+            // Note: ContentSid and ContentVariables are now extracted from ITemplateContent, not message properties
+            // TemplateId maps to ContentSid, Parameters map to ContentVariables JSON
             ["ProvideCallback"] = true
         };
 
         var invalidProps = new Dictionary<string, object?>
         {
-            ["Body"] = "Test message",
-            ["ContentSid"] = 123, // Wrong type
             ["UnknownProperty"] = "value"
         };
 
@@ -571,7 +565,6 @@ public class TwilioChannelSchemasTests
         // Assert
         Assert.Empty(validResults);
         Assert.NotEmpty(invalidResults);
-        Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Message property 'ContentSid' has an incompatible type"));
         Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Unknown message property 'UnknownProperty'"));
     }
 
@@ -581,8 +574,8 @@ public class TwilioChannelSchemasTests
         // Arrange
         var validProps = new Dictionary<string, object?>
         {
-            // Note: Since Sender and To validation moved to endpoints, this method now validates other properties
-            ["Body"] = "Test message",
+            // Note: Body and MediaUrl are no longer message properties - they are extracted from message content
+            // This method now validates other properties specific to Twilio SMS
             ["ValidityPeriod"] = 3600
         };
 
@@ -606,9 +599,9 @@ public class TwilioChannelSchemasTests
         // Arrange
         var validProps = new Dictionary<string, object?>
         {
-            // Note: Since Sender and To validation moved to endpoints, this method now validates other properties
-            ["Body"] = "Test WhatsApp message",
-            ["ContentSid"] = "HX1234567890123456789012345678901234"
+            // Note: ContentSid and ContentVariables are now extracted from ITemplateContent, not message properties
+            // This method now validates other properties specific to Twilio WhatsApp
+            ["ProvideCallback"] = true
         };
 
         var invalidProps = new Dictionary<string, object?>

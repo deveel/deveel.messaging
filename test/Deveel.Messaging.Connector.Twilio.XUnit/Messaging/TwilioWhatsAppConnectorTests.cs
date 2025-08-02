@@ -407,8 +407,8 @@ public class TwilioWhatsAppConnectorTests
     {
         return new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
-            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("ContentSid", "HX1234567890123456789012345678901234");
+            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
+            // ContentSid is now provided via TemplateContent, not connection settings
     }
 
     private static TestMessage CreateWhatsAppTestMessage(string? id = null)
@@ -427,14 +427,13 @@ public class TwilioWhatsAppConnectorTests
         var message = new TestMessage
         {
             Id = id ?? "test-template-message-id",
-            Sender = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
+            Sender = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"),
             Receiver = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1987654321"),
-            Content = new TestMessageContent(MessageContentType.Template, "Template Content"),
-            Properties = new Dictionary<string, IMessageProperty>
+            Content = new TestTemplateContent("HX1234567890123456789012345678901234", new Dictionary<string, object?>
             {
-                { "ContentSid", new TestMessageProperty("ContentSid", "HX1234567890123456789012345678901234") },
-                { "ContentVariables", new TestMessageProperty("ContentVariables", "{\"name\":\"John\",\"code\":\"123\"}") }
-            }
+                { "name", "John" },
+                { "code", "123" }
+            })
         };
 
         return message;
@@ -475,6 +474,19 @@ public class TwilioWhatsAppConnectorTests
         public MessageContentType ContentType { get; }
 
         public override string ToString() => _content;
+    }
+
+    private class TestTemplateContent : ITemplateContent
+    {
+        public TestTemplateContent(string templateId, IDictionary<string, object?> parameters)
+        {
+            TemplateId = templateId;
+            Parameters = parameters;
+        }
+
+        public string TemplateId { get; }
+        public IDictionary<string, object?> Parameters { get; }
+        public MessageContentType ContentType => MessageContentType.Template;
     }
 
     private class TestMessageProperty : IMessageProperty
