@@ -65,6 +65,47 @@ namespace Deveel.Messaging
 
         #endregion
 
+        #region WhatsApp Specific
+
+        /// <summary>
+        /// Indicates that a required WhatsApp template Content SID is missing.
+        /// </summary>
+        /// <remarks>
+        /// This error occurs when attempting to send a WhatsApp template message
+        /// without providing the required Twilio Content SID for the approved template.
+        /// </remarks>
+        public const string MissingContentSid = "MISSING_CONTENT_SID";
+
+        /// <summary>
+        /// Indicates that the WhatsApp phone number format is invalid.
+        /// </summary>
+        /// <remarks>
+        /// This error occurs when the WhatsApp phone number does not follow the
+        /// required format (whatsapp:+1234567890) or is not a verified WhatsApp Business number.
+        /// </remarks>
+        public const string InvalidWhatsAppNumber = "INVALID_WHATSAPP_NUMBER";
+
+        /// <summary>
+        /// Indicates that sending a WhatsApp message through Twilio failed.
+        /// </summary>
+        /// <remarks>
+        /// This error occurs when the Twilio API call to send a WhatsApp message fails,
+        /// either due to API errors, invalid parameters, or WhatsApp-specific restrictions.
+        /// </remarks>
+        public const string SendWhatsAppMessageFailed = "SEND_WHATSAPP_MESSAGE_FAILED";
+
+        /// <summary>
+        /// Indicates that querying WhatsApp message status from Twilio failed.
+        /// </summary>
+        /// <remarks>
+        /// This error occurs when attempting to retrieve the status of a previously
+        /// sent WhatsApp message from the Twilio API fails, typically due to invalid message
+        /// SID or API connectivity issues.
+        /// </remarks>
+        public const string WhatsAppStatusQueryFailed = "WHATSAPP_STATUS_QUERY_FAILED";
+
+        #endregion
+
         #region API Operations
 
         /// <summary>
