@@ -121,12 +121,6 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - dotnet: '7.0.x'
-            dotnet-framework: 'net7.0'
-            os: ubuntu-latest
-          - dotnet: '7.0.x'
-            dotnet-framework: 'net7.0'
-            os: windows-latest
           - dotnet: '8.0.x'
             dotnet-framework: 'net8.0'
             os: ubuntu-latest
