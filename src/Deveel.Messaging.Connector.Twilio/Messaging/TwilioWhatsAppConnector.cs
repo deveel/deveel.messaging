@@ -26,7 +26,6 @@ namespace Deveel.Messaging
 
         private string? _accountSid;
         private string? _authToken;
-        private string? _fromNumber;
         private string? _webhookUrl;
         private string? _statusCallback;
         private string? _contentSid;
@@ -70,7 +69,6 @@ namespace Deveel.Messaging
                 // Extract required parameters
                 _accountSid = _connectionSettings.GetParameter("AccountSid") as string;
                 _authToken = _connectionSettings.GetParameter("AuthToken") as string;
-                _fromNumber = _connectionSettings.GetParameter("FromNumber") as string;
 
                 // Extract optional parameters
                 _webhookUrl = _connectionSettings.GetParameter("WebhookUrl") as string;
@@ -83,19 +81,6 @@ namespace Deveel.Messaging
                 {
                     return ConnectorResult<bool>.Fail(TwilioErrorCodes.MissingCredentials, 
                         "Account SID and Auth Token are required");
-                }
-
-                // WhatsApp requires a from number
-                if (string.IsNullOrWhiteSpace(_fromNumber))
-                {
-                    return ConnectorResult<bool>.Fail(TwilioErrorCodes.MissingFromNumber, 
-                        "FromNumber is required for WhatsApp messaging");
-                }
-
-                // Ensure WhatsApp number format
-                if (!_fromNumber.StartsWith("whatsapp:"))
-                {
-                    _fromNumber = $"whatsapp:{_fromNumber}";
                 }
 
                 // Validate connection settings against schema
@@ -158,18 +143,54 @@ namespace Deveel.Messaging
             {
                 _logger?.LogDebug("Sending WhatsApp message {MessageId}", message.Id);
 
+                // Extract and validate message properties before processing
+                var messageProperties = ExtractMessageProperties(message);
+
+                // Validate message properties against schema first
+                if (Schema is ChannelSchema channelSchema)
+                {
+                    var baseValidationResults = channelSchema.ValidateMessageProperties(messageProperties);
+                    var baseValidationErrors = baseValidationResults.ToList();
+                    if (baseValidationErrors.Count > 0)
+                    {
+                        _logger?.LogError("WhatsApp message properties validation failed: {Errors}", 
+                            string.Join(", ", baseValidationErrors.Select(e => e.ErrorMessage)));
+                        return ConnectorResult<SendResult>.ValidationFailed(TwilioErrorCodes.InvalidMessage, 
+                            "WhatsApp message properties validation failed", baseValidationErrors);
+                    }
+                }
+
+                // Perform Twilio WhatsApp-specific validation (phone number format validation)
+                var twilioValidationResults = TwilioMessagePropertyConfigurations.ValidateTwilioWhatsAppProperties(messageProperties);
+                var twilioValidationErrors = twilioValidationResults.ToList();
+                if (twilioValidationErrors.Count > 0)
+                {
+                    _logger?.LogError("Twilio WhatsApp properties validation failed: {Errors}", 
+                        string.Join(", ", twilioValidationErrors.Select(e => e.ErrorMessage)));
+                    return ConnectorResult<SendResult>.ValidationFailed(TwilioErrorCodes.InvalidMessage, 
+                        "Twilio WhatsApp properties validation failed", twilioValidationErrors);
+                }
+
+                // Extract sender WhatsApp number from message.Sender
+                var senderNumber = ExtractWhatsAppNumber(message.Sender);
+                if (string.IsNullOrWhiteSpace(senderNumber))
+                {
+                    return ConnectorResult<SendResult>.Fail(TwilioErrorCodes.MissingFromNumber, 
+                        "Sender WhatsApp phone number is required and must be in format 'whatsapp:+1234567890'");
+                }
+
                 // Extract recipient phone number
                 var toNumber = ExtractWhatsAppNumber(message.Receiver);
                 if (string.IsNullOrWhiteSpace(toNumber))
                 {
                     return ConnectorResult<SendResult>.Fail(TwilioErrorCodes.InvalidRecipient, 
-                        "Recipient WhatsApp phone number is required and must be in E.164 format");
+                        "Recipient WhatsApp phone number is required and must be in format 'whatsapp:+1234567890'");
                 }
 
                 // Build message creation options
                 var createMessageOptions = new CreateMessageOptions(new PhoneNumber(toNumber))
                 {
-                    From = new PhoneNumber(_fromNumber!)
+                    From = new PhoneNumber(senderNumber)
                 };
 
                 // Handle different content types
@@ -225,7 +246,7 @@ namespace Deveel.Messaging
                 result.AdditionalData["TwilioSid"] = messageResource.Sid;
                 result.AdditionalData["TwilioStatus"] = messageResource.Status.ToString();
                 result.AdditionalData["To"] = messageResource.To;
-                result.AdditionalData["From"] = messageResource.From ?? _fromNumber ?? "";
+                result.AdditionalData["From"] = messageResource.From ?? senderNumber ?? "";
                 result.AdditionalData["NumSegments"] = messageResource.NumSegments ?? "0";
                 result.AdditionalData["Channel"] = "WhatsApp";
 
@@ -288,7 +309,6 @@ namespace Deveel.Messaging
                 var statusInfo = new StatusInfo($"Twilio WhatsApp Connector (Account: {_accountSid})");
 
                 statusInfo.AdditionalData["AccountSid"] = _accountSid ?? "";
-                statusInfo.AdditionalData["FromNumber"] = _fromNumber ?? "";
                 statusInfo.AdditionalData["ContentSid"] = _contentSid ?? "";
                 statusInfo.AdditionalData["State"] = State.ToString();
                 statusInfo.AdditionalData["Uptime"] = DateTime.UtcNow - _startTime;
@@ -352,6 +372,32 @@ namespace Deveel.Messaging
                 }
             }
             return null;
+        }
+
+        private Dictionary<string, object?> ExtractMessageProperties(IMessage message)
+        {
+            var properties = new Dictionary<string, object?>();
+
+            // Note: Sender and To are now handled as endpoints (message.Sender/message.Receiver)
+            // not as message properties, so we don't extract them here
+
+            // Add Body property from message content
+            var body = ExtractMessageBody(message);
+            if (!string.IsNullOrWhiteSpace(body))
+            {
+                properties["Body"] = body;
+            }
+
+            // Add other properties from message.Properties if they exist
+            if (message.Properties != null)
+            {
+                foreach (var property in message.Properties)
+                {
+                    properties[property.Key] = property.Value.Value;
+                }
+            }
+
+            return properties;
         }
 
         private string? ExtractMessageBody(IMessage message)

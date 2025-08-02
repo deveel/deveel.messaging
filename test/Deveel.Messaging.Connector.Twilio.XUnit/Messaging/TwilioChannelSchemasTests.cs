@@ -75,11 +75,10 @@ public class TwilioChannelSchemasTests
 
         // Assert
         var requiredParams = schema.Parameters.Where(p => p.IsRequired).ToList();
-        Assert.Equal(2, requiredParams.Count); // Changed from 3 to 2 since FromNumber is now optional
+        Assert.Equal(2, requiredParams.Count); // AccountSid and AuthToken only
         
         Assert.Contains(requiredParams, p => p.Name == "AccountSid" && p.DataType == ParameterType.String);
         Assert.Contains(requiredParams, p => p.Name == "AuthToken" && p.DataType == ParameterType.String && p.IsSensitive);
-        // FromNumber is now optional in the base schema
     }
 
     [Fact]
@@ -90,11 +89,10 @@ public class TwilioChannelSchemasTests
 
         // Assert
         var requiredParams = schema.Parameters.Where(p => p.IsRequired).ToList();
-        Assert.Equal(3, requiredParams.Count);
+        Assert.Equal(2, requiredParams.Count); // AccountSid and AuthToken only
         
         Assert.Contains(requiredParams, p => p.Name == "AccountSid" && p.DataType == ParameterType.String);
         Assert.Contains(requiredParams, p => p.Name == "AuthToken" && p.DataType == ParameterType.String && p.IsSensitive);
-        Assert.Contains(requiredParams, p => p.Name == "FromNumber" && p.DataType == ParameterType.String);
     }
 
     [Fact]
@@ -224,12 +222,9 @@ public class TwilioChannelSchemasTests
         var schema = TwilioChannelSchemas.TwilioSms;
 
         // Assert
-        Assert.True(schema.MessageProperties.Count >= 8);
+        Assert.True(schema.MessageProperties.Count >= 6);
         
-        var requiredProps = schema.MessageProperties.Where(p => p.IsRequired).ToList();
-        Assert.Single(requiredProps);
-        Assert.Contains(requiredProps, p => p.Name == "To" && p.DataType == ParameterType.String);
-
+        // Note: Sender and To are no longer message properties - they are validated as endpoints
         var optionalProps = schema.MessageProperties.Where(p => !p.IsRequired).ToList();
         Assert.Contains(optionalProps, p => p.Name == "Body");
         Assert.Contains(optionalProps, p => p.Name == "MediaUrl");
@@ -244,12 +239,9 @@ public class TwilioChannelSchemasTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
 
         // Assert
-        Assert.True(schema.MessageProperties.Count >= 6);
+        Assert.True(schema.MessageProperties.Count >= 4);
         
-        var requiredProps = schema.MessageProperties.Where(p => p.IsRequired).ToList();
-        Assert.Single(requiredProps);
-        Assert.Contains(requiredProps, p => p.Name == "To" && p.DataType == ParameterType.String);
-
+        // Note: Sender and To are no longer message properties - they are validated as endpoints
         var optionalProps = schema.MessageProperties.Where(p => !p.IsRequired).ToList();
         Assert.Contains(optionalProps, p => p.Name == "Body");
         Assert.Contains(optionalProps, p => p.Name == "MediaUrl");
@@ -418,8 +410,10 @@ public class TwilioChannelSchemasTests
         Assert.NotNull(messagingServiceParam);
         Assert.True(messagingServiceParam.IsRequired);
 
-        // FromNumber should be removed (messaging service handles sender selection)
-        Assert.DoesNotContain(bulkSchema.Parameters, p => p.Name == "FromNumber");
+        // Phone number endpoint should be optional in bulk messaging (messaging service handles sender selection)
+        var phoneEndpoint = bulkSchema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.PhoneNumber);
+        Assert.NotNull(phoneEndpoint);
+        Assert.False(phoneEndpoint.IsRequired);
     }
 
     [Fact]
@@ -463,13 +457,11 @@ public class TwilioChannelSchemasTests
         // Arrange
         var validSmsSettings = new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
-            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("FromNumber", "+1234567890");
+            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
 
         var validWhatsAppSettings = new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
-            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("FromNumber", "whatsapp:+1234567890");
+            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
 
         var validBulkSettings = new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
@@ -479,7 +471,6 @@ public class TwilioChannelSchemasTests
         var validTemplateSettings = new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("FromNumber", "whatsapp:+1234567890")
             .SetParameter("ContentSid", "HX1234567890123456789012345678901234");
 
         var smsSchemas = new[]
@@ -526,7 +517,7 @@ public class TwilioChannelSchemasTests
 
         var validProps = new Dictionary<string, object?>
         {
-            ["To"] = "+1234567890",
+            // Note: Sender and To are no longer message properties - they are validated as endpoints
             ["Body"] = "Test message",
             ["ValidityPeriod"] = 3600,
             ["MaxPrice"] = 0.05m,
@@ -536,7 +527,6 @@ public class TwilioChannelSchemasTests
         var invalidProps = new Dictionary<string, object?>
         {
             ["Body"] = "Test message",
-            // Missing required "To" property
             ["ValidityPeriod"] = "invalid", // Wrong type
             ["UnknownProperty"] = "value"
         };
@@ -548,7 +538,6 @@ public class TwilioChannelSchemasTests
         // Assert
         Assert.Empty(validResults);
         Assert.NotEmpty(invalidResults);
-        Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Required message property 'To' is missing"));
         Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Message property 'ValidityPeriod' has an incompatible type"));
         Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Unknown message property 'UnknownProperty'"));
     }
@@ -561,7 +550,7 @@ public class TwilioChannelSchemasTests
 
         var validProps = new Dictionary<string, object?>
         {
-            ["To"] = "whatsapp:+1234567890",
+            // Note: Sender and To are no longer message properties - they are validated as endpoints
             ["Body"] = "Test WhatsApp message",
             ["ContentSid"] = "HX1234567890123456789012345678901234",
             ["ContentVariables"] = "{\"name\":\"John\",\"code\":\"123\"}",
@@ -571,7 +560,6 @@ public class TwilioChannelSchemasTests
         var invalidProps = new Dictionary<string, object?>
         {
             ["Body"] = "Test message",
-            // Missing required "To" property
             ["ContentSid"] = 123, // Wrong type
             ["UnknownProperty"] = "value"
         };
@@ -583,8 +571,57 @@ public class TwilioChannelSchemasTests
         // Assert
         Assert.Empty(validResults);
         Assert.NotEmpty(invalidResults);
-        Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Required message property 'To' is missing"));
         Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Message property 'ContentSid' has an incompatible type"));
         Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Unknown message property 'UnknownProperty'"));
+    }
+
+    [Fact]
+    public void TwilioMessagePropertyConfigurations_ValidatesSmsPhoneNumbers()
+    {
+        // Arrange
+        var validProps = new Dictionary<string, object?>
+        {
+            // Note: Since Sender and To validation moved to endpoints, this method now validates other properties
+            ["Body"] = "Test message",
+            ["ValidityPeriod"] = 3600
+        };
+
+        var invalidProps = new Dictionary<string, object?>
+        {
+            // Currently no specific validations are implemented for SMS properties
+        };
+
+        // Act
+        var validResults = TwilioMessagePropertyConfigurations.ValidateTwilioSmsProperties(validProps);
+        var invalidResults = TwilioMessagePropertyConfigurations.ValidateTwilioSmsProperties(invalidProps).ToList();
+
+        // Assert
+        Assert.Empty(validResults);
+        Assert.Empty(invalidResults); // No specific validations currently implemented
+    }
+
+    [Fact]
+    public void TwilioMessagePropertyConfigurations_ValidatesWhatsAppPhoneNumbers()
+    {
+        // Arrange
+        var validProps = new Dictionary<string, object?>
+        {
+            // Note: Since Sender and To validation moved to endpoints, this method now validates other properties
+            ["Body"] = "Test WhatsApp message",
+            ["ContentSid"] = "HX1234567890123456789012345678901234"
+        };
+
+        var invalidProps = new Dictionary<string, object?>
+        {
+            // Currently no specific validations are implemented for WhatsApp properties
+        };
+
+        // Act
+        var validResults = TwilioMessagePropertyConfigurations.ValidateTwilioWhatsAppProperties(validProps);
+        var invalidResults = TwilioMessagePropertyConfigurations.ValidateTwilioWhatsAppProperties(invalidProps).ToList();
+
+        // Assert
+        Assert.Empty(validResults);
+        Assert.Empty(invalidResults); // No specific validations currently implemented
     }
 }

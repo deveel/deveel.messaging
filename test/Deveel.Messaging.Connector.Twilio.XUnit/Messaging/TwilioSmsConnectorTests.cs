@@ -92,8 +92,7 @@ public class TwilioSmsConnectorTests
     {
         // Arrange
         var schema = TwilioChannelSchemas.SimpleSms;
-        var connectionSettings = new ConnectionSettings()
-            .SetParameter("FromNumber", "+1234567890");
+        var connectionSettings = new ConnectionSettings(); // Empty settings
         var connector = new TwilioSmsConnector(schema, connectionSettings);
 
         // Act
@@ -119,9 +118,8 @@ public class TwilioSmsConnectorTests
         var result = await connector.InitializeAsync(CancellationToken.None);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Equal("MISSING_FROM_NUMBER", result.Error?.ErrorCode);
-        Assert.Equal(ConnectorState.Error, connector.State);
+        Assert.True(result.Successful); // Should succeed now since FromNumber is no longer required at connection level
+        Assert.Equal(ConnectorState.Ready, connector.State);
     }
 
     [Fact]
@@ -295,8 +293,7 @@ public class TwilioSmsConnectorTests
     {
         return new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
-            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("FromNumber", "+1234567890");
+            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
     }
 
     private static TestMessage CreateTestMessage()
@@ -304,6 +301,7 @@ public class TwilioSmsConnectorTests
         return new TestMessage
         {
             Id = "test-message-id",
+            Sender = new TestEndpoint(EndpointType.PhoneNumber, "+1234567890"), // Add required Sender
             Receiver = new TestEndpoint(EndpointType.PhoneNumber, "+1987654321"),
             Content = new TestMessageContent(MessageContentType.PlainText, "Hello World")
         };

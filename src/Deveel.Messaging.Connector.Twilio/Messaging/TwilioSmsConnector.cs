@@ -27,7 +27,6 @@ namespace Deveel.Messaging
 
         private string? _accountSid;
         private string? _authToken;
-        private string? _fromNumber;
         private string? _webhookUrl;
         private string? _statusCallback;
         private int? _validityPeriod;
@@ -72,7 +71,6 @@ namespace Deveel.Messaging
                 // Extract required parameters first - use nullable versions to avoid exceptions
                 _accountSid = _connectionSettings.GetParameter("AccountSid") as string;
                 _authToken = _connectionSettings.GetParameter("AuthToken") as string;
-                _fromNumber = _connectionSettings.GetParameter("FromNumber") as string;
 
                 // Extract optional parameters
                 _webhookUrl = _connectionSettings.GetParameter("WebhookUrl") as string;
@@ -88,14 +86,7 @@ namespace Deveel.Messaging
                         "Account SID and Auth Token are required");
                 }
 
-                // If no messaging service is specified, FromNumber is required
-                if (string.IsNullOrWhiteSpace(_messagingServiceSid) && string.IsNullOrWhiteSpace(_fromNumber))
-                {
-                    return ConnectorResult<bool>.Fail(TwilioErrorCodes.MissingFromNumber, 
-                        "FromNumber is required when MessagingServiceSid is not provided");
-                }
-
-                // Validate connection settings against schema only after custom validation passes
+                // Validate connection settings against schema
                 if (Schema is ChannelSchema channelSchema)
                 {
                     var validationResults = channelSchema.ValidateConnectionSettings(_connectionSettings);
@@ -104,18 +95,8 @@ namespace Deveel.Messaging
                     {
                         _logger?.LogError("Connection settings validation failed: {Errors}", 
                             string.Join(", ", validationErrors.Select(e => e.ErrorMessage)));
-                        // Don't return validation failed here if it's just missing FromNumber and we have MessagingServiceSid
-                        var missingFromNumber = validationErrors.Any(e => e.ErrorMessage?.Contains("FromNumber") == true);
-                        if (missingFromNumber && !string.IsNullOrWhiteSpace(_messagingServiceSid))
-                        {
-                            // This is acceptable - messaging service can replace FromNumber
-                            _logger?.LogDebug("FromNumber validation ignored because MessagingServiceSid is provided");
-                        }
-                        else
-                        {
-                            return ConnectorResult<bool>.ValidationFailed(TwilioErrorCodes.InvalidConnectionSettings, 
-                                "Connection settings validation failed", validationErrors);
-                        }
+                        return ConnectorResult<bool>.ValidationFailed(TwilioErrorCodes.InvalidConnectionSettings, 
+                            "Connection settings validation failed", validationErrors);
                     }
                 }
 
@@ -165,6 +146,42 @@ namespace Deveel.Messaging
             {
                 _logger?.LogDebug("Sending SMS message {MessageId}", message.Id);
 
+                // Extract and validate message properties before processing
+                var messageProperties = ExtractMessageProperties(message);
+
+                // Validate message properties against schema first
+                if (Schema is ChannelSchema channelSchema)
+                {
+                    var baseValidationResults = channelSchema.ValidateMessageProperties(messageProperties);
+                    var baseValidationErrors = baseValidationResults.ToList();
+                    if (baseValidationErrors.Count > 0)
+                    {
+                        _logger?.LogError("Message properties validation failed: {Errors}", 
+                            string.Join(", ", baseValidationErrors.Select(e => e.ErrorMessage)));
+                        return ConnectorResult<SendResult>.ValidationFailed(TwilioErrorCodes.InvalidMessage, 
+                            "Message properties validation failed", baseValidationErrors);
+                    }
+                }
+
+                // Perform Twilio-specific validation (phone number format validation)
+                var twilioValidationResults = TwilioMessagePropertyConfigurations.ValidateTwilioSmsProperties(messageProperties);
+                var twilioValidationErrors = twilioValidationResults.ToList();
+                if (twilioValidationErrors.Count > 0)
+                {
+                    _logger?.LogError("Twilio SMS properties validation failed: {Errors}", 
+                        string.Join(", ", twilioValidationErrors.Select(e => e.ErrorMessage)));
+                    return ConnectorResult<SendResult>.ValidationFailed(TwilioErrorCodes.InvalidMessage, 
+                        "Twilio SMS properties validation failed", twilioValidationErrors);
+                }
+
+                // Extract sender phone number from message.Sender
+                var senderNumber = ExtractPhoneNumber(message.Sender);
+                if (string.IsNullOrWhiteSpace(senderNumber) && string.IsNullOrWhiteSpace(_messagingServiceSid))
+                {
+                    return ConnectorResult<SendResult>.Fail(TwilioErrorCodes.MissingFromNumber, 
+                        "Sender phone number is required when MessagingServiceSid is not configured");
+                }
+
                 // Extract recipient phone number
                 var toNumber = ExtractPhoneNumber(message.Receiver);
                 if (string.IsNullOrWhiteSpace(toNumber))
@@ -179,14 +196,14 @@ namespace Deveel.Messaging
                 // Build message creation options
                 var createMessageOptions = new CreateMessageOptions(new PhoneNumber(toNumber));
 
-                // Set sender (FromNumber or MessagingServiceSid)
+                // Set sender (Sender phone number or MessagingServiceSid)
                 if (!string.IsNullOrWhiteSpace(_messagingServiceSid))
                 {
                     createMessageOptions.MessagingServiceSid = _messagingServiceSid;
                 }
-                else if (!string.IsNullOrWhiteSpace(_fromNumber))
+                else if (!string.IsNullOrWhiteSpace(senderNumber))
                 {
-                    createMessageOptions.From = new PhoneNumber(_fromNumber);
+                    createMessageOptions.From = new PhoneNumber(senderNumber);
                 }
 
                 // Set message content
@@ -221,7 +238,7 @@ namespace Deveel.Messaging
                 result.AdditionalData["TwilioSid"] = messageResource.Sid;
                 result.AdditionalData["TwilioStatus"] = messageResource.Status.ToString();
                 result.AdditionalData["To"] = messageResource.To;
-                result.AdditionalData["From"] = messageResource.From ?? _fromNumber ?? "";
+                result.AdditionalData["From"] = messageResource.From ?? senderNumber ?? "";
                 result.AdditionalData["NumSegments"] = messageResource.NumSegments ?? "0";
 
                 if (!string.IsNullOrWhiteSpace(messageResource.Price))
@@ -282,7 +299,6 @@ namespace Deveel.Messaging
                 var statusInfo = new StatusInfo($"Twilio SMS Connector (Account: {_accountSid})");
 
                 statusInfo.AdditionalData["AccountSid"] = _accountSid ?? "";
-                statusInfo.AdditionalData["FromNumber"] = _fromNumber ?? "";
                 statusInfo.AdditionalData["MessagingServiceSid"] = _messagingServiceSid ?? "";
                 statusInfo.AdditionalData["State"] = State.ToString();
                 statusInfo.AdditionalData["Uptime"] = DateTime.UtcNow - _startTime;
@@ -364,6 +380,43 @@ namespace Deveel.Messaging
             return null;
         }
 
+        private Dictionary<string, object?> ExtractMessageProperties(IMessage message)
+        {
+            var properties = new Dictionary<string, object?>();
+
+            // Note: Sender and To are now handled as endpoints (message.Sender/message.Receiver)
+            // not as message properties, so we don't extract them here
+
+            // Add Body property from message content
+            var body = ExtractMessageBody(message);
+            if (!string.IsNullOrWhiteSpace(body))
+            {
+                properties["Body"] = body;
+            }
+
+            // Add other properties from message.Properties if they exist
+            if (message.Properties != null)
+            {
+                foreach (var property in message.Properties)
+                {
+                    properties[property.Key] = property.Value.Value;
+                }
+            }
+
+            return properties;
+        }
+
+        private bool IsValidPhoneNumber(string phoneNumber)
+        {
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+                return false;
+
+            // E.164 format validation: should start with + followed by 1-15 digits
+            // This is a basic validation - in a real implementation you might want to use a more sophisticated library
+            var e164Pattern = @"^\+[1-9]\d{1,14}$";
+            return System.Text.RegularExpressions.Regex.IsMatch(phoneNumber, e164Pattern);
+        }
+
         private void ApplyMessageSettings(CreateMessageOptions options, IMessage message)
         {
             // Apply validity period
@@ -392,19 +445,19 @@ namespace Deveel.Messaging
                     switch (property.Key.ToLowerInvariant())
                     {
                         case "validityperiod":
-                            if (int.TryParse(property.Value?.ToString(), out var validityPeriod))
+                            if (int.TryParse(property.Value?.Value?.ToString(), out var validityPeriod))
                             {
                                 options.ValidityPeriod = validityPeriod;
                             }
                             break;
                         case "maxprice":
-                            if (decimal.TryParse(property.Value?.ToString(), out var maxPrice))
+                            if (decimal.TryParse(property.Value?.Value?.ToString(), out var maxPrice))
                             {
                                 options.MaxPrice = maxPrice;
                             }
                             break;
                         case "providecallback":
-                            if (bool.TryParse(property.Value?.ToString(), out var provideCallback) && 
+                            if (bool.TryParse(property.Value?.Value?.ToString(), out var provideCallback) && 
                                 provideCallback && !string.IsNullOrWhiteSpace(_statusCallback))
                             {
                                 options.StatusCallback = new Uri(_statusCallback);

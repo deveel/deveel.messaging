@@ -101,7 +101,7 @@ public class TwilioWhatsAppConnectorTests
     }
 
     [Fact]
-    public async Task InitializeAsync_WithMissingFromNumber_ReturnsFailure()
+    public async Task InitializeAsync_WithMissingFromNumber_ReturnsSuccess()
     {
         // Arrange
         var schema = TwilioChannelSchemas.SimpleWhatsApp;
@@ -115,8 +115,8 @@ public class TwilioWhatsAppConnectorTests
         var result = await connector.InitializeAsync(CancellationToken.None);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Equal(TwilioErrorCodes.MissingFromNumber, result.Error?.ErrorCode);
+        Assert.True(result.Successful); // Initialization should succeed without FromNumber
+        Assert.Equal(ConnectorState.Ready, connector.State);
     }
 
     [Fact]
@@ -126,8 +126,7 @@ public class TwilioWhatsAppConnectorTests
         var schema = TwilioChannelSchemas.SimpleWhatsApp;
         var connectionSettings = new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
-            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("FromNumber", "+1234567890"); // Without whatsapp: prefix
+            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
         
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings, _mockTwilioService.Object, _mockLogger.Object);
 
@@ -224,6 +223,7 @@ public class TwilioWhatsAppConnectorTests
         var message = new TestMessage
         {
             Id = "test-message-id",
+            Sender = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
             Receiver = new TestEndpoint(EndpointType.EmailAddress, "invalid@email.com"), // Invalid endpoint type
             Content = new TestMessageContent(MessageContentType.PlainText, "Hello WhatsApp")
         };
@@ -252,6 +252,7 @@ public class TwilioWhatsAppConnectorTests
         var message = new TestMessage
         {
             Id = "test-message-id",
+            Sender = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
             Receiver = new TestEndpoint(EndpointType.PhoneNumber, ""), // Valid endpoint type but empty address
             Content = new TestMessageContent(MessageContentType.PlainText, "Hello WhatsApp")
         };
@@ -266,7 +267,7 @@ public class TwilioWhatsAppConnectorTests
         Assert.Equal(TwilioErrorCodes.InvalidRecipient, result.Error?.ErrorCode);
         Assert.Contains("WhatsApp phone number is required", result.Error?.ErrorMessage);
         
-        // Verify Twilio service was not called due to invalid phone number
+        // Verify Twilio service was not called due to validation failure
         _mockTwilioService.Verify(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -399,8 +400,7 @@ public class TwilioWhatsAppConnectorTests
     {
         return new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
-            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("FromNumber", "whatsapp:+1234567890");
+            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
     }
 
     private static ConnectionSettings CreateValidTemplateConnectionSettings()
@@ -408,7 +408,6 @@ public class TwilioWhatsAppConnectorTests
         return new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("FromNumber", "whatsapp:+1234567890")
             .SetParameter("ContentSid", "HX1234567890123456789012345678901234");
     }
 
@@ -417,6 +416,7 @@ public class TwilioWhatsAppConnectorTests
         return new TestMessage
         {
             Id = id ?? "test-whatsapp-message-id",
+            Sender = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
             Receiver = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1987654321"),
             Content = new TestMessageContent(MessageContentType.PlainText, "Hello WhatsApp!")
         };
@@ -427,6 +427,7 @@ public class TwilioWhatsAppConnectorTests
         var message = new TestMessage
         {
             Id = id ?? "test-template-message-id",
+            Sender = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
             Receiver = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1987654321"),
             Content = new TestMessageContent(MessageContentType.Template, "Template Content"),
             Properties = new Dictionary<string, IMessageProperty>

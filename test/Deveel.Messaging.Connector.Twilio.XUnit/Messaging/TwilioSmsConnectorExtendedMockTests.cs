@@ -87,8 +87,7 @@ public class TwilioSmsConnectorExtendedMockTests
         var mockTwilioService = TwilioMockFactory.CreateMockTwilioServiceForConnectionTest("AC9999888877776666555544443333222211", "Production Account");
         var connectionSettings = new ConnectionSettings()
             .SetParameter("AccountSid", "AC9999888877776666555544443333222211")
-            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("FromNumber", "+1234567890");
+            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
 
         var connector = new TwilioSmsConnector(
             TwilioChannelSchemas.SimpleSms,
@@ -301,8 +300,7 @@ public class TwilioSmsConnectorExtendedMockTests
     {
         return new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
-            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("FromNumber", "+1234567890");
+            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
     }
 
     private static TestMessage CreateTestMessage(string? id = null)
@@ -310,6 +308,7 @@ public class TwilioSmsConnectorExtendedMockTests
         return new TestMessage
         {
             Id = id ?? "test-message-id",
+            Sender = new TestEndpoint(EndpointType.PhoneNumber, "+1234567890"), // Add required Sender
             Receiver = new TestEndpoint(EndpointType.PhoneNumber, "+1987654321"),
             Content = new TestMessageContent(MessageContentType.PlainText, "Hello World")
         };

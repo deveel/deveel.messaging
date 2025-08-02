@@ -38,11 +38,6 @@ namespace Deveel.Messaging
                 IsSensitive = true,
                 Description = "Twilio Auth Token - found in your Twilio Console Dashboard"
             })
-            .AddParameter(new ChannelParameter("FromNumber", ParameterType.String)
-            {
-                IsRequired = false, // Changed to false since MessagingServiceSid can replace it
-                Description = "Sender phone number in E.164 format (e.g., +1234567890) - must be a Twilio phone number. Required unless MessagingServiceSid is provided."
-            })
             .AddParameter(new ChannelParameter("WebhookUrl", ParameterType.String)
             {
                 IsRequired = false,
@@ -67,14 +62,15 @@ namespace Deveel.Messaging
             .AddParameter(new ChannelParameter("MessagingServiceSid", ParameterType.String)
             {
                 IsRequired = false,
-                Description = "The SID of the Messaging Service to use for the message. Can replace FromNumber for sending."
+                Description = "The SID of the Messaging Service to use for the message. Can replace Sender for sending."
             })
             .AddContentType(MessageContentType.PlainText)
             .AddContentType(MessageContentType.Media)
             .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
             {
                 CanSend = true,
-                CanReceive = true
+                CanReceive = true,
+                IsRequired = true // Phone number is required for both sending and receiving
             })
             .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
             {
@@ -82,11 +78,6 @@ namespace Deveel.Messaging
                 CanReceive = true
             })
             .AddAuthenticationType(AuthenticationType.Basic)
-            .AddMessageProperty(new MessagePropertyConfiguration("To", ParameterType.String)
-            {
-                IsRequired = true,
-                Description = "Destination phone number in E.164 format"
-            })
             .AddMessageProperty(new MessagePropertyConfiguration("Body", ParameterType.String)
             {
                 IsRequired = false,
@@ -157,11 +148,6 @@ namespace Deveel.Messaging
                 IsSensitive = true,
                 Description = "Twilio Auth Token - found in your Twilio Console Dashboard"
             })
-            .AddParameter(new ChannelParameter("FromNumber", ParameterType.String)
-            {
-                IsRequired = true,
-                Description = "WhatsApp Business phone number in E.164 format (e.g., whatsapp:+1234567890) - must be a verified WhatsApp Business number"
-            })
             .AddParameter(new ChannelParameter("WebhookUrl", ParameterType.String)
             {
                 IsRequired = false,
@@ -188,7 +174,8 @@ namespace Deveel.Messaging
             .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
             {
                 CanSend = true,
-                CanReceive = true
+                CanReceive = true,
+                IsRequired = true // WhatsApp phone number is required for both sending and receiving
             })
             .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
             {
@@ -196,11 +183,6 @@ namespace Deveel.Messaging
                 CanReceive = true
             })
             .AddAuthenticationType(AuthenticationType.Basic)
-            .AddMessageProperty(new MessagePropertyConfiguration("To", ParameterType.String)
-            {
-                IsRequired = true,
-                Description = "Destination WhatsApp phone number in E.164 format (e.g., whatsapp:+1234567890)"
-            })
             .AddMessageProperty(new MessagePropertyConfiguration("Body", ParameterType.String)
             {
                 IsRequired = false,
@@ -242,7 +224,6 @@ namespace Deveel.Messaging
             .RemoveParameter("WebhookUrl")
             .RemoveParameter("StatusCallback")
             .RemoveParameter("MessagingServiceSid")
-            .UpdateParameter("FromNumber", param => param.IsRequired = true) // Make FromNumber required since MessagingServiceSid is removed
             .RemoveContentType(MessageContentType.Media)
             .RemoveMessageProperty("MediaUrl")
             .RemoveMessageProperty("ProvideCallback")
@@ -267,7 +248,11 @@ namespace Deveel.Messaging
         public static ChannelSchema BulkSms => new ChannelSchema(TwilioSms, "Twilio Bulk SMS")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
             .UpdateParameter("MessagingServiceSid", param => param.IsRequired = true)
-            .RemoveParameter("FromNumber") // Messaging Service handles sender selection
+            .UpdateEndpoint(EndpointType.PhoneNumber, endpoint => 
+            {
+                endpoint.IsRequired = false; // Not required when MessagingServiceSid is used
+                endpoint.CanReceive = false; // Send-only
+            })
             .RemoveMessageProperty("PersistentAction");
 
         /// <summary>

@@ -45,14 +45,33 @@ namespace Deveel.Messaging
         /// </summary>
         /// <remarks>
         /// This error occurs when no MessagingServiceSid is configured and the
-        /// FromNumber parameter is missing or empty. At least one of these parameters
+        /// Sender property is missing or empty. At least one of these parameters
         /// must be provided to send SMS messages through Twilio.
         /// </remarks>
         public const string MissingFromNumber = "MISSING_FROM_NUMBER";
 
+        /// <summary>
+        /// Indicates that the sender phone number is invalid.
+        /// </summary>
+        /// <remarks>
+        /// This error occurs when the message sender endpoint does not contain
+        /// a valid phone number in E.164 format, which is required for SMS delivery.
+        /// </remarks>
+        public const string InvalidSender = "INVALID_SENDER";
+
         #endregion
 
         #region Message Validation
+
+        /// <summary>
+        /// Indicates that message validation failed.
+        /// </summary>
+        /// <remarks>
+        /// This error occurs when the message properties do not meet the
+        /// requirements defined by the Twilio SMS channel schema, such as missing
+        /// required properties or invalid property values.
+        /// </remarks>
+        public const string InvalidMessage = "INVALID_MESSAGE";
 
         /// <summary>
         /// Indicates that the recipient phone number is invalid or missing.

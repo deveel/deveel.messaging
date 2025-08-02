@@ -59,12 +59,12 @@ public class TwilioSmsConnectorMockTests
     [Fact]
     public async Task SendMessageAsync_WithMessagingService_UsesMessagingServiceSid()
     {
-        // Arrange
-        var schema = TwilioChannelSchemas.BulkSms;
+        // Arrange - Use SimpleSms schema but add MessagingServiceSid to test the messaging service functionality
+        var schema = TwilioChannelSchemas.SimpleSms; // This schema doesn't restrict receiving
         var connectionSettings = new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("MessagingServiceSid", "MG1234567890123456789012345678901234");
+            .SetParameter("MessagingServiceSid", "MG1234567890123456789012345678901234"); // Add messaging service
 
         var connector = new TwilioSmsConnector(schema, connectionSettings, _mockTwilioService.Object, _mockLogger.Object);
 
@@ -72,14 +72,21 @@ public class TwilioSmsConnectorMockTests
         _mockTwilioService.Setup(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockMessageResource);
 
-        var message = CreateTestMessage();
+        var message = new TestMessage
+        {
+            Id = "test-message-id",
+            Sender = new TestEndpoint(EndpointType.PhoneNumber, "+1234567890"), 
+            Receiver = new TestEndpoint(EndpointType.PhoneNumber, "+1987654321"),
+            Content = new TestMessageContent(MessageContentType.PlainText, "Hello World")
+        };
+        
         await connector.InitializeAsync(CancellationToken.None);
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.Successful, $"Expected successful result but got error: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
         
         // Verify the Twilio service was called
         _mockTwilioService.Verify(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -257,11 +264,18 @@ public class TwilioSmsConnectorMockTests
         _mockTwilioService.Setup(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockMessageResource);
 
-        var message = CreateTestMessage();
-        message.Properties = new Dictionary<string, IMessageProperty>
+        // Create a message that should pass validation
+        var message = new TestMessage
         {
-            { "ValidityPeriod", new TestMessageProperty("ValidityPeriod", "3600") },
-            { "MaxPrice", new TestMessageProperty("MaxPrice", "0.05") }
+            Id = "test-message-id",
+            Sender = new TestEndpoint(EndpointType.PhoneNumber, "+1234567890"), // Valid E.164 format
+            Receiver = new TestEndpoint(EndpointType.PhoneNumber, "+1987654321"), // Valid E.164 format
+            Content = new TestMessageContent(MessageContentType.PlainText, "Hello World"),
+            Properties = new Dictionary<string, IMessageProperty>
+            {
+                { "ValidityPeriod", new TestMessageProperty("ValidityPeriod", 3600) }, // Use integer instead of string
+                { "MaxPrice", new TestMessageProperty("MaxPrice", 0.05m) } // Use decimal instead of string
+            }
         };
 
         await connector.InitializeAsync(CancellationToken.None);
@@ -270,7 +284,7 @@ public class TwilioSmsConnectorMockTests
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.Successful, $"Expected successful result but got error: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
 
         // Verify the Twilio service was called
         _mockTwilioService.Verify(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -280,8 +294,7 @@ public class TwilioSmsConnectorMockTests
     {
         return new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
-            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("FromNumber", "+1234567890");
+            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
     }
 
     private static TestMessage CreateTestMessage()
@@ -289,6 +302,7 @@ public class TwilioSmsConnectorMockTests
         return new TestMessage
         {
             Id = "test-message-id",
+            Sender = new TestEndpoint(EndpointType.PhoneNumber, "+1234567890"), // Add required Sender
             Receiver = new TestEndpoint(EndpointType.PhoneNumber, "+1987654321"),
             Content = new TestMessageContent(MessageContentType.PlainText, "Hello World")
         };

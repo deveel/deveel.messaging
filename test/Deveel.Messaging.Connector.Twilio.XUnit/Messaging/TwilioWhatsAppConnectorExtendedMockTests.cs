@@ -90,8 +90,7 @@ public class TwilioWhatsAppConnectorExtendedMockTests
         var mockTwilioService = TwilioMockFactory.CreateMockTwilioServiceForConnectionTest("AC9999888877776666555544443333222211", "Production Account");
         var connectionSettings = new ConnectionSettings()
             .SetParameter("AccountSid", "AC9999888877776666555544443333222211")
-            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("FromNumber", "whatsapp:+1234567890");
+            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
 
         var connector = new TwilioWhatsAppConnector(
             TwilioChannelSchemas.SimpleWhatsApp,
@@ -211,6 +210,7 @@ public class TwilioWhatsAppConnectorExtendedMockTests
         var message = new TestMessage
         {
             Id = "test-message-id",
+            Sender = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
             Receiver = new TestEndpoint(EndpointType.PhoneNumber, "+1987654321"), // No whatsapp: prefix
             Content = new TestMessageContent(MessageContentType.PlainText, "Hello WhatsApp!")
         };
@@ -360,6 +360,7 @@ public class TwilioWhatsAppConnectorExtendedMockTests
         var message = new TestMessage
         {
             Id = "test-media-message-id",
+            Sender = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
             Receiver = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1987654321"),
             Content = new TestMessageContent(MessageContentType.Media, "Media content")
         };
@@ -377,8 +378,7 @@ public class TwilioWhatsAppConnectorExtendedMockTests
     {
         return new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
-            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("FromNumber", "whatsapp:+1234567890");
+            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
     }
 
     private static ConnectionSettings CreateValidTemplateConnectionSettings()
@@ -386,7 +386,6 @@ public class TwilioWhatsAppConnectorExtendedMockTests
         return new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("FromNumber", "whatsapp:+1234567890")
             .SetParameter("ContentSid", "HX1234567890123456789012345678901234");
     }
 
@@ -395,6 +394,7 @@ public class TwilioWhatsAppConnectorExtendedMockTests
         return new TestMessage
         {
             Id = id ?? "test-whatsapp-message-id",
+            Sender = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
             Receiver = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1987654321"),
             Content = new TestMessageContent(MessageContentType.PlainText, "Hello WhatsApp!")
         };
@@ -402,9 +402,10 @@ public class TwilioWhatsAppConnectorExtendedMockTests
 
     private static TestMessage CreateWhatsAppTemplateMessage(string? id = null)
     {
-        return new TestMessage
+        var message = new TestMessage
         {
             Id = id ?? "test-template-message-id",
+            Sender = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
             Receiver = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1987654321"),
             Content = new TestMessageContent(MessageContentType.Template, "Template Content"),
             Properties = new Dictionary<string, IMessageProperty>
@@ -413,6 +414,8 @@ public class TwilioWhatsAppConnectorExtendedMockTests
                 { "ContentVariables", new TestMessageProperty("ContentVariables", "{\"name\":\"John\",\"code\":\"123\"}") }
             }
         };
+
+        return message;
     }
 
     // Test helper classes
