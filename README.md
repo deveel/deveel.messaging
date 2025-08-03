@@ -1,194 +1,332 @@
 ﻿# Deveel Messaging Framework
 
-A comprehensive .NET messaging framework that provides abstractions and connector interfaces for building robust messaging systems. This framework enables developers to create standardized messaging solutions that can work with various messaging providers and protocols.
+![Deveel Logo](deveel-logo.png)
 
-## Overview
+[![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%209.0-512BD4)](https://dotnet.microsoft.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![NuGet](https://img.shields.io/badge/NuGet-Available-blue)](https://www.nuget.org/)
 
-The Deveel Messaging Framework consists of two main packages:
+A modern, extensible messaging framework for .NET that provides a unified abstraction layer for various messaging providers including SMS, email, and push notifications. The framework offers strong type safety, comprehensive validation, and flexible connector architecture.
 
-- **Deveel.Messaging.Abstractions** - Core messaging abstractions including messages, endpoints, and content types
-- **Deveel.Messaging.Connector.Abstractions** - Connector interfaces for implementing messaging system integrations
+## 🚀 Motivation
 
-## Features
+Modern applications often need to send notifications through multiple channels (SMS, email, push notifications, webhooks). Each provider has different APIs, authentication methods, and message formats. The Deveel Messaging Framework solves this by:
 
-- 🚀 **Unified Messaging Interface** - Standardized contracts for messaging operations
-- 🔌 **Connector Architecture** - Pluggable connector system for different messaging providers
-- 📧 **Multiple Content Types** - Support for text, HTML, multipart, and template-based content
-- ⚡ **Async/Await Support** - Full asynchronous operation support with cancellation tokens
-- 🔍 **Message Validation** - Built-in message validation with detailed error reporting
-- 📊 **Health Monitoring** - Comprehensive health checking and status reporting
-- 🔄 **Batch Operations** - Support for bulk message sending and receiving
-- 🎯 **Type Safety** - Strongly-typed interfaces and result objects
-- 🔧 **Schema Derivation** - Create specialized schemas from base configurations
-- 📋 **Endpoint Type Safety** - Strongly-typed endpoint configuration using enums
+- **Unified API**: Single interface for all messaging providers
+- **Type Safety**: Strongly-typed endpoints and configurations prevent runtime errors
+- **Extensibility**: Easy to add new providers and message types
+- **Validation**: Built-in message and configuration validation
+- **Testability**: Comprehensive mocking and testing support
+- **Performance**: Async/await throughout with efficient resource usage
 
-## Target Frameworks
+## 📦 NuGet Packages
 
-- .NET 8.0
-- .NET 9.0
-- C# 12.0
+| Package | Description | NuGet |
+|---------|-------------|-------|
+| `Deveel.Messaging.Abstractions` | Core messaging abstractions and models | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Abstractions.svg)](https://www.nuget.org/packages/Deveel.Messaging.Abstractions/) |
+| `Deveel.Messaging.Connector.Abstractions` | Base classes and interfaces for connectors | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Abstractions.svg)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Abstractions/) |
+| `Deveel.Messaging.Connector.Twilio` | Twilio SMS connector implementation | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Twilio.svg)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Twilio/) |
+| `Deveel.Messaging.Connector.Sendgrid` | SendGrid email connector implementation | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Sendgrid.svg)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Sendgrid/) |
 
-## Quick Start
+## 🔧 Installation
 
-### 1. Channel Schema Configuration
+### Install Core Packages
 
-Create a schema that defines your connector's capabilities and configuration:
+```bash
+# Core messaging abstractions
+dotnet add package Deveel.Messaging.Abstractions
+
+# Connector base classes (if building custom connectors)
+dotnet add package Deveel.Messaging.Connector.Abstractions
+```
+
+### Install Provider-Specific Connectors
+
+```bash
+# Twilio SMS connector
+dotnet add package Deveel.Messaging.Connector.Twilio
+
+# SendGrid email connector
+dotnet add package Deveel.Messaging.Connector.Sendgrid
+```
+
+## 🏁 Quick Start
+
+### 1. Define a Channel Schema
 
 ```csharp
 using Deveel.Messaging;
 
-// Create an email connector schema
-var emailSchema = new ChannelSchema("SMTP", "Email", "1.0.0")
-    .WithDisplayName("SMTP Email Connector")
+var emailSchema = new ChannelSchema("SendGrid", "Email", "1.0.0")
+    .WithDisplayName("SendGrid Email Connector")
     .WithCapabilities(
         ChannelCapability.SendMessages | 
         ChannelCapability.Templates | 
         ChannelCapability.MediaAttachments)
-    .AddParameter(new ChannelParameter("Host", ParameterType.String)
+    .AddParameter(new ChannelParameter("ApiKey", ParameterType.String)
     {
         IsRequired = true,
-        Description = "SMTP server hostname"
-    })
-    .AddParameter(new ChannelParameter("Port", ParameterType.Integer)
-    {
-        IsRequired = true,
-        DefaultValue = 587,
-        Description = "SMTP server port"
+        IsSensitive = true,
+        Description = "SendGrid API key"
     })
     .AddContentType(MessageContentType.PlainText)
     .AddContentType(MessageContentType.Html)
     .AllowsMessageEndpoint(EndpointType.EmailAddress)
-    .AddAuthenticationType(AuthenticationType.Basic);
+    .AddAuthenticationType(AuthenticationType.Token);
 ```
 
-### 2. Implement a Channel Connector
+### 2. Create and Send Messages
 
 ```csharp
-public class SmtpConnector : ChannelConnectorBase
+// Create a message using the fluent builder
+var message = new MessageBuilder()
+    .WithId("welcome-email-001")
+    .WithEmailSender("noreply@company.com")
+    .WithEmailReceiver("user@example.com")
+    .WithHtmlContent("<h1>Welcome!</h1><p>Thank you for joining us.</p>")
+    .WithProperty("Subject", "Welcome to Our Service")
+    .Message;
+
+// Initialize and use a connector
+var connector = new SendGridConnector(emailSchema);
+await connector.InitializeAsync(cancellationToken);
+
+var result = await connector.SendMessageAsync(message, cancellationToken);
+if (result.IsSuccess)
 {
-    public SmtpConnector(IChannelSchema schema) : base(schema)
-    {
-    }
+    Console.WriteLine($"Message sent with ID: {result.Value?.MessageId}");
+}
+```
+
+### 3. SMS Example with Twilio
+
+```csharp
+var smsSchema = new ChannelSchema("Twilio", "SMS", "2.1.0")
+    .WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.MessageStatusQuery)
+    .AddParameter(new ChannelParameter("AccountSid", ParameterType.String) { IsRequired = true })
+    .AddParameter(new ChannelParameter("AuthToken", ParameterType.String) { IsRequired = true, IsSensitive = true })
+    .AddContentType(MessageContentType.PlainText)
+    .AllowsMessageEndpoint(EndpointType.PhoneNumber);
+
+var smsMessage = new MessageBuilder()
+    .WithId("sms-notification-001")
+    .WithPhoneSender("+1234567890")
+    .WithPhoneReceiver("+0987654321")
+    .WithTextContent("Your verification code is: 123456")
+    .Message;
+
+var twilioConnector = new TwilioConnector(smsSchema);
+await twilioConnector.InitializeAsync(cancellationToken);
+var smsResult = await twilioConnector.SendMessageAsync(smsMessage, cancellationToken);
+```
+
+## 🎯 Core Features
+
+### Strongly-Typed Endpoints
+
+Use the `EndpointType` enumeration for type-safe endpoint configuration:
+
+```csharp
+// Type-safe endpoint creation
+var emailEndpoint = Endpoint.EmailAddress("user@example.com");
+var phoneEndpoint = Endpoint.PhoneNumber("+1234567890");
+var webhookEndpoint = Endpoint.Url("https://api.example.com/webhook");
+
+// Builder pattern with type safety
+var message = new MessageBuilder()
+    .WithEmailSender("sender@company.com")
+    .WithPhoneReceiver("+1234567890")
+    .WithTextContent("Hello from our service!")
+    .Message;
+```
+
+### Content Types and Templates
+
+Support for various content types and templating:
+
+```csharp
+// HTML content
+.WithHtmlContent("<h1>Welcome</h1><p>{{username}}, thanks for joining!</p>")
+
+// Template content with parameters
+.WithTemplateContent("welcome-template", new { username = "John", company = "Acme Corp" })
+
+// Multipart content with attachments
+.WithMultipartContent(content => content
+    .AddTextPart("Please find the report attached.")
+    .AddAttachment("report.pdf", pdfBytes, "application/pdf"))
+```
+
+### Connector Capabilities
+
+Declare and validate connector capabilities:
+
+```csharp
+var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+    .WithCapabilities(
+        ChannelCapability.SendMessages |        // Can send messages
+        ChannelCapability.ReceiveMessages |     // Can receive messages
+        ChannelCapability.MessageStatusQuery |  // Can track delivery status
+        ChannelCapability.BulkMessaging |       // Supports batch operations
+        ChannelCapability.Templates |           // Supports templating
+        ChannelCapability.MediaAttachments |    // Supports file attachments
+        ChannelCapability.HealthCheck)          // Provides health monitoring
+```
+
+### Error Handling and Results
+
+Comprehensive error handling with detailed result objects:
+
+```csharp
+var result = await connector.SendMessageAsync(message, cancellationToken);
+if (result.IsSuccess)
+{
+    var messageResult = result.Value;
+    Console.WriteLine($"Message ID: {messageResult.MessageId}");
+    Console.WriteLine($"Status: {messageResult.Status}");
+}
+else
+{
+    Console.WriteLine($"Error: {result.ErrorMessage}");
+    Console.WriteLine($"Error Code: {result.ErrorCode}");
+}
+```
+
+## 🏗️ Custom Connector Development
+
+Create custom connectors by extending the base connector class:
+
+```csharp
+public class CustomConnector : ChannelConnectorBase
+{
+    public CustomConnector(IChannelSchema schema) : base(schema) { }
 
     protected override async Task<ConnectorResult<bool>> InitializeCoreAsync(CancellationToken cancellationToken)
     {
-        // Initialize SMTP client
-        // Validate configuration parameters
-        // Set up authentication
-        
+        // Initialize your connector
         SetState(ConnectorState.Connected);
-        return ConnectorResult<bool>.Success(true);
-    }
-
-    protected override async Task<ConnectorResult<bool>> TestConnectionCoreAsync(CancellationToken cancellationToken)
-    {
-        // Test SMTP connection
         return ConnectorResult<bool>.Success(true);
     }
 
     protected override async Task<ConnectorResult<MessageResult>> SendMessageCoreAsync(
         IMessage message, CancellationToken cancellationToken)
     {
-        // Send email message
-        var messageId = Guid.NewGuid().ToString();
-        return ConnectorResult<MessageResult>.Success(new MessageResult(messageId, MessageStatus.Sent));
+        // Implement your message sending logic
+        var messageId = await SendToProvider(message);
+        return ConnectorResult<MessageResult>.Success(
+            new MessageResult(messageId, MessageStatus.Sent));
     }
+
+    // Implement other abstract methods...
 }
 ```
 
-### 3. Use the Connector
+## 📚 Documentation
 
-```csharp
-// Create and configure the connector
-var connector = new SmtpConnector(emailSchema);
+- **[Getting Started Guide](docs/getting-started.md)** - Basic setup and usage
+- **[Channel Schema Guide](docs/ChannelSchema-Usage.md)** - Complete schema configuration
+- **[Connector Implementation Guide](docs/ChannelConnector-Usage.md)** - Building custom connectors
+- **[Schema Derivation Guide](docs/ChannelSchema-Derivation-Guide.md)** - Advanced schema patterns
+- **[Endpoint Type Safety Guide](docs/EndpointType-Usage.md)** - Working with typed endpoints
+- **[Migration Guide](docs/migration-guide.md)** - Upgrading from previous versions
 
-// Initialize the connector
-var initResult = await connector.InitializeAsync(CancellationToken.None);
-if (!initResult.IsSuccess)
-{
-    Console.WriteLine($"Failed to initialize: {initResult.ErrorMessage}");
-    return;
-}
+## 🔗 GitHub Packages
 
-// Create and send a message
-var message = new MessageBuilder()
-    .WithId("msg-001")
-    .WithEmailSender("sender@example.com")
-    .WithEmailReceiver("recipient@example.com")
-    .WithTextContent("Hello, World!")
-    .Message;
+This project publishes packages to both NuGet.org and GitHub Packages. To use GitHub Packages:
 
-var sendResult = await connector.SendMessageAsync(message, CancellationToken.None);
-if (sendResult.IsSuccess)
-{
-    Console.WriteLine($"Message sent with ID: {sendResult.Value?.MessageId}");
-}
+```xml
+<!-- Add to your NuGet.config -->
+<packageSources>
+    <add key="github-deveel" value="https://nuget.pkg.github.com/deveel/index.json" />
+</packageSources>
 ```
 
-## Core Concepts
+```bash
+# Authenticate with GitHub Packages
+dotnet nuget add source --username YOUR_USERNAME --password YOUR_PAT --store-password-in-clear-text --name github-deveel "https://nuget.pkg.github.com/deveel/index.json"
 
-### Messages and Content Types
+# Install from GitHub Packages
+dotnet add package Deveel.Messaging.Abstractions --source github-deveel
+```
 
-The framework supports various content types:
+## 🧪 Testing
 
-- **Text Content** - Plain text messages
-- **HTML Content** - Rich HTML content with attachments
-- **Template Content** - Template-based content with parameters
-- **Multipart Content** - Complex messages with multiple parts
+The framework includes comprehensive test suites:
 
-### Endpoints
+```bash
+# Run all tests
+dotnet test
 
-Endpoints are strongly-typed using the `EndpointType` enumeration:
+# Run tests for specific project
+dotnet test test/Deveel.Messaging.Abstractions.XUnit
+dotnet test test/Deveel.Messaging.Connector.Twilio.XUnit
 
-- `EndpointType.EmailAddress` - Email addresses
-- `EndpointType.PhoneNumber` - Phone numbers for SMS
-- `EndpointType.Url` - URLs for webhooks
-- `EndpointType.UserId` - User identifiers
-- `EndpointType.ApplicationId` - Application identifiers
-- `EndpointType.DeviceId` - Device identifiers
-- `EndpointType.Label` - Alpha-numeric labels
-- `EndpointType.Topic` - Queue/topic names
-- `EndpointType.Any` - Wildcard for any endpoint type
+# Run with coverage
+dotnet test --collect:"XPlat Code Coverage"
+```
 
-### Connectors
+## 🤝 Contributing
 
-Connectors implement the `IChannelConnector` interface and provide:
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-- **Connection Management** - Initialize, test, and manage connections
-- **Message Operations** - Send single messages or batches
-- **Status Monitoring** - Track message delivery and connector health
-- **Validation** - Validate messages before sending
+### Development Requirements
 
-### Connector Capabilities
+- **.NET 8.0 SDK** or later
+- **Visual Studio 2022** or **VS Code** with C# extension
+- **Git** for source control
 
-Connectors can declare their capabilities:
+### Building the Project
 
-- `ChannelCapability.SendMessages` - Can send messages
-- `ChannelCapability.ReceiveMessages` - Can receive messages
-- `ChannelCapability.MessageStatusQuery` - Can query message status
-- `ChannelCapability.BulkMessaging` - Supports batch operations
-- `ChannelCapability.Templates` - Supports template-based content
-- `ChannelCapability.MediaAttachments` - Supports media attachments
-- `ChannelCapability.HealthCheck` - Provides health monitoring
+```bash
+# Clone the repository
+git clone https://github.com/deveel/deveel.message.model.git
+cd deveel.message.model
 
-## Documentation
+# Build the solution
+dotnet build
 
-- [Channel Schema Usage Guide](docs/ChannelSchema-Usage.md)
-- [Channel Connector Implementation Guide](docs/ChannelConnector-Usage.md)
-- [Schema Derivation Guide](docs/ChannelSchema-Derivation-Guide.md)
-- [Endpoint Type Safety Guide](docs/EndpointType-Usage.md)
+# Run tests
+dotnet test
 
-## Examples
+# Pack NuGet packages
+dotnet pack --configuration Release
+```
 
-Check the test projects for comprehensive examples:
-- `test\Deveel.Messaging.Abstractions.XUnit` - Core messaging examples
-- `test\Deveel.Messaging.Connector.Abstractions.XUnit` - Connector implementation examples
+### Code Standards
 
-## Contributing
+- Follow Microsoft's C# coding conventions
+- Use C# 12.0 language features where appropriate
+- Include comprehensive unit tests for new features
+- Update documentation for public API changes
+- Ensure nullable reference types are properly handled
 
-This project follows Microsoft's coding standards and uses C# 12.0 features. All contributions should include appropriate unit tests and documentation updates.
+### Submitting Changes
 
-## License
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Add tests for your changes
+5. Ensure all tests pass (`dotnet test`)
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
 
-Licensed under the MIT License. See LICENSE file for details.
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🏢 About Deveel
+
+Deveel is committed to creating high-quality, open-source software solutions for the .NET ecosystem. Visit us at [deveel.com](https://deveel.com) for more projects and services.
+
+## 📞 Support
+
+- **Documentation**: [docs/README.md](docs/README.md)
+- **Issues**: [GitHub Issues](https://github.com/deveel/deveel.message.model/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/deveel/deveel.message.model/discussions)
+- **Email**: support@deveel.com
+
+---
+
+*Built with ❤️ by the Deveel team*
 
