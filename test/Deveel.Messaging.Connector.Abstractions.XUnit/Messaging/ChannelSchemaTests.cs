@@ -791,7 +791,7 @@ public class ChannelSchemaTests
 	#endregion
 
 	[Fact]
-	public void EndpointConfiguration_WithSendOnlyEndpoint_ConfiguredCorrectly()
+	public void EndpointConfiguration_WithReceiveOnlyEndpoint_ConfiguredCorrectly()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
@@ -799,8 +799,8 @@ public class ChannelSchemaTests
 		// Act
 		schema.HandlesMessageEndpoint(EndpointType.Id, e =>
 		{
-			e.CanSend = true;
-			e.CanReceive = false;
+			e.CanSend = false;
+			e.CanReceive = true;
 		});
 
 		// Assert
@@ -808,12 +808,12 @@ public class ChannelSchemaTests
 		
 		var endpoint = schema.Endpoints.First();
 		Assert.Equal(EndpointType.Id, endpoint.Type);
-		Assert.True(endpoint.CanSend);
-		Assert.False(endpoint.CanReceive);
+		Assert.False(endpoint.CanSend);
+		Assert.True(endpoint.CanReceive);
 	}
 
 	[Fact]
-	public void EndpointConfiguration_WithReceiveOnlyEndpoint_ConfiguredCorrectly()
+	public void EndpointConfiguration_WithSendOnlyEndpoint_ConfiguredCorrectly()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
