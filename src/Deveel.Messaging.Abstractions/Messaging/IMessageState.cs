@@ -37,13 +37,13 @@ namespace Deveel.Messaging {
 		/// returns the error that is associated to the
 		/// message by the messaging system.
 		/// </summary>
-		IMessageError? Error { get; }
+		IMessagingError? Error { get; }
 
 		/// <summary>
 		/// When an error occurred in the remote provider,
 		/// this returns the instance of the error.
 		/// </summary>
-		IMessageError? RemoteError { get; }
+		IMessagingError? RemoteError { get; }
 
 		/// <summary>
 		/// Gets the exact time when the message state

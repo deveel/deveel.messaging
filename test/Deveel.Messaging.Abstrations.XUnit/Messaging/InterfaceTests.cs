@@ -76,8 +76,8 @@ public class InterfaceContractTests
     {
         // Arrange
         var timestamp = DateTimeOffset.UtcNow;
-        var error = new MockMessageError { Code = "ERR001", Message = "Test error" };
-        var remoteError = new MockMessageError { Code = "REMOTE001", Message = "Remote error" };
+        var error = new MockMessageError { ErrorCode = "ERR001", ErrorMessage = "Test error" };
+        var remoteError = new MockMessageError { ErrorCode = "REMOTE001", ErrorMessage = "Remote error" };
         var mockState = new MockMessageState
         {
             Id = "state-789",
@@ -126,61 +126,6 @@ public class InterfaceContractTests
         Assert.Null(state.Properties);
     }
 
-    [Fact]
-    public void IMessageError_HasCorrectProperties()
-    {
-        // Arrange
-        var innerError = new MockMessageError { Code = "INNER001", Message = "Inner error" };
-        var mockError = new MockMessageError
-        {
-            Code = "ERR001",
-            Message = "Test error message",
-            InnerError = innerError
-        };
-
-        // Act & Assert
-        IMessageError error = mockError;
-        Assert.Equal("ERR001", error.Code);
-        Assert.Equal("Test error message", error.Message);
-        Assert.Same(innerError, error.InnerError);
-    }
-
-    [Fact]
-    public void IMessageError_SupportsNullValues()
-    {
-        // Arrange
-        var mockError = new MockMessageError
-        {
-            Code = "ERR002",
-            Message = null,
-            InnerError = null
-        };
-
-        // Act & Assert
-        IMessageError error = mockError;
-        Assert.Equal("ERR002", error.Code);
-        Assert.Null(error.Message);
-        Assert.Null(error.InnerError);
-    }
-
-    [Fact]
-    public void IMessageError_SupportsNestedErrors()
-    {
-        // Arrange
-        var level3Error = new MockMessageError { Code = "L3", Message = "Level 3 error" };
-        var level2Error = new MockMessageError { Code = "L2", Message = "Level 2 error", InnerError = level3Error };
-        var level1Error = new MockMessageError { Code = "L1", Message = "Level 1 error", InnerError = level2Error };
-
-        // Act & Assert
-        IMessageError error = level1Error;
-        Assert.Equal("L1", error.Code);
-        Assert.Equal("Level 1 error", error.Message);
-        Assert.NotNull(error.InnerError);
-        Assert.Equal("L2", error.InnerError.Code);
-        Assert.NotNull(error.InnerError.InnerError);
-        Assert.Equal("L3", error.InnerError.InnerError.Code);
-    }
-
     // Mock implementations for testing interface contracts
     private class MockMessageBatch : IMessageBatch
     {
@@ -202,17 +147,16 @@ public class InterfaceContractTests
         public string Id { get; set; } = "";
         public string MessageId { get; set; } = "";
         public MessageStatus Status { get; set; }
-        public IMessageError? Error { get; set; }
-        public IMessageError? RemoteError { get; set; }
+        public IMessagingError? Error { get; set; }
+        public IMessagingError? RemoteError { get; set; }
         public DateTimeOffset TimeStamp { get; set; }
         public IDictionary<string, object>? Properties { get; set; }
     }
 
-    private class MockMessageError : IMessageError
+    private class MockMessageError : IMessagingError
     {
-        public string Code { get; set; } = "";
-        public string? Message { get; set; }
-        public IMessageError? InnerError { get; set; }
+        public string ErrorCode { get; set; } = "";
+        public string? ErrorMessage { get; set; }
     }
 }
 

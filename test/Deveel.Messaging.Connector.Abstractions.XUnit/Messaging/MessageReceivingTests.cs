@@ -515,11 +515,12 @@ public class MessageReceivingTests
 
         // Act
         cts.Cancel(); // Cancel immediately
-        
+		var result = await connector.ReceiveMessagesAsync(source, cts.Token);
+
         // Assert
-        await Assert.ThrowsAsync<TaskCanceledException>(() => 
-            connector.ReceiveMessagesAsync(source, cts.Token));
-    }
+        Assert.False(result.Successful);
+        Assert.NotNull(result.Error);
+	}
 
     private List<IMessage> ParseJsonMessages(MessageSource source)
     {
@@ -802,24 +803,24 @@ public class TestReceivingConnector : ChannelConnectorBase
 
     protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
     {
-        return Task.FromResult(ConnectorResult<bool>.Success(true));
+        return ConnectorResult<bool>.SuccessTask(true);
     }
 
     protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
     {
-        return Task.FromResult(ConnectorResult<bool>.Success(true));
+        return ConnectorResult<bool>.SuccessTask(true);
     }
 
     protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
     {
         var result = new SendResult(message.Id, $"remote-{message.Id}");
-        return Task.FromResult(ConnectorResult<SendResult>.Success(result));
+        return ConnectorResult<SendResult>.SuccessTask(result);
     }
 
     protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
     {
         var status = new StatusInfo("Test Receiving Connector Status");
-        return Task.FromResult(ConnectorResult<StatusInfo>.Success(status));
+        return ConnectorResult<StatusInfo>.SuccessTask(status);
     }
 
     protected override async Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
@@ -986,12 +987,12 @@ public class TestReceivingConnector : ChannelConnectorBase
                 return Task.FromResult(ConnectorResult<StatusUpdateResult>.Success(statusResult));
             }
 
-            return Task.FromResult(ConnectorResult<StatusUpdateResult>.Fail("UNSUPPORTED_CONTENT_TYPE", 
-                "Only JSON content type is supported for status updates"));
+            return ConnectorResult<StatusUpdateResult>.FailTask("UNSUPPORTED_CONTENT_TYPE", 
+                "Only JSON content type is supported for status updates");
         }
         catch (Exception ex)
         {
-            return Task.FromResult(ConnectorResult<StatusUpdateResult>.Fail("STATUS_RECEIVE_ERROR", ex.Message));
+            return ConnectorResult<StatusUpdateResult>.FailTask("STATUS_RECEIVE_ERROR", ex.Message);
         }
     }
 

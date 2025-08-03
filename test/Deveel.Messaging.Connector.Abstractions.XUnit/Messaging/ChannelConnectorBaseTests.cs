@@ -127,7 +127,11 @@ public class ChannelConnectorBaseTests
 			.WithCapabilities(ChannelCapability.ReceiveMessages); // No send capability
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(CancellationToken.None);
-		var message = new MockMessage();
+		var message = new Message
+		{
+			Id = Guid.NewGuid().ToString(),
+			Content = new TextContent("This is a test message.")
+		};
 
 		// Act & Assert
 		await Assert.ThrowsAsync<NotSupportedException>(() => 
@@ -154,7 +158,11 @@ public class ChannelConnectorBaseTests
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(CancellationToken.None);
-		var message = new MockMessage();
+		var message = new Message
+		{
+			Id = Guid.NewGuid().ToString(),
+			Content = new TextContent("This is a test message.")
+		};
 
 		// Act
 		var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -172,7 +180,10 @@ public class ChannelConnectorBaseTests
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(CancellationToken.None);
-		var batch = new MockMessageBatch();
+		var batch = new MessageBatch { 
+			Id = Guid.NewGuid().ToString(),
+			Messages = new List<IMessage> { new Message { Id = Guid.NewGuid().ToString() } }
+		};
 
 		// Act & Assert
 		await Assert.ThrowsAsync<NotSupportedException>(() => 
@@ -187,7 +198,15 @@ public class ChannelConnectorBaseTests
 			.WithCapability(ChannelCapability.BulkMessaging);
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(CancellationToken.None);
-		var batch = new MockMessageBatch();
+		var batch = new MessageBatch { 
+			Id = Guid.NewGuid().ToString(),
+			Messages = new List<IMessage> { 
+				new Message { 
+					Id = Guid.NewGuid().ToString(), 
+					Content = new TextContent("This is a test message.") 
+				} 
+			}
+		};
 
 		// Act
 		var result = await connector.SendBatchAsync(batch, CancellationToken.None);
@@ -231,7 +250,11 @@ public class ChannelConnectorBaseTests
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
 			.AddContentType(MessageContentType.PlainText);
 		var connector = new TestConnector(schema);
-		var message = new MockMessage();
+		var message = new Message
+		{
+			Id = Guid.NewGuid().ToString(),
+			Content = new TextContent("This is a test message.")
+		};
 
 		// Act
 		var results = new List<ValidationResult>();
@@ -364,7 +387,10 @@ public class ChannelConnectorBaseTests
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
 		connector.SetStatePublic(state);
-		var message = new MockMessage();
+		var message = new Message { 
+			Id = Guid.NewGuid().ToString(), 
+			Content = new TextContent("This is a test message.") 
+		};
 
 		// Act & Assert
 		if (state != ConnectorState.Shutdown && state != ConnectorState.ShuttingDown)
@@ -403,7 +429,11 @@ public class ChannelConnectorBaseTests
 			.AddContentType(MessageContentType.Html); // Only supports HTML, not PlainText
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(CancellationToken.None);
-		var message = new MockMessage(); // This has PlainText content
+		var message = new Message
+		{
+			Id = Guid.NewGuid().ToString(),
+			Content = new TextContent("This is a test message.") // Invalid content type
+		};
 
 		// Act
 		var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -423,8 +453,16 @@ public class ChannelConnectorBaseTests
 			.AddContentType(MessageContentType.Html); // Only supports HTML
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(CancellationToken.None);
-		
-		var batch = new MockMessageBatch(); // Contains messages with PlainText content
+
+		var batch = new MessageBatch { 
+			Id = Guid.NewGuid().ToString(),
+			Messages = new List<IMessage> { 
+				new Message { 
+					Id = Guid.NewGuid().ToString(),
+					Content = new TextContent()
+				} 
+			}
+		};
 
 		// Act
 		var result = await connector.SendBatchAsync(batch, CancellationToken.None);
@@ -442,7 +480,11 @@ public class ChannelConnectorBaseTests
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
 			.AddContentType(MessageContentType.Html); // Only supports HTML
 		var connector = new TestConnector(schema);
-		var message = new MockMessage(); // Has PlainText content
+		var message = new Message
+		{
+			Id = Guid.NewGuid().ToString(),
+			Content = new TextContent("This is a test message.") // Invalid content type
+		};
 
 		// Act
 		var results = new List<ValidationResult>();
@@ -465,7 +507,9 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
-		var message = new MockMessage { Id = "" }; // Empty ID
+		var message = new Message { 
+			Id = "" 
+		}; // Empty ID
 
 		// Act
 		var results = new List<ValidationResult>();
@@ -489,7 +533,11 @@ public class ChannelConnectorBaseTests
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
 			.AddContentType(MessageContentType.PlainText); // Supports PlainText
 		var connector = new TestConnector(schema);
-		var message = new MockMessage(); // Has PlainText content and valid ID
+		var message = new Message
+		{
+			Content = new TextContent("This is a test message."),
+			Id = Guid.NewGuid().ToString()
+		};
 
 		// Act
 		var results = new List<ValidationResult>();
@@ -509,10 +557,10 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
-		var mockEndpoint = new MockEndpoint("email", "test@example.com");
+		var endpoint = Endpoint.EmailAddress("test@example.com");
 
 		// Act
-		var endpointType = connector.GetEndpointTypePublic(mockEndpoint);
+		var endpointType = connector.GetEndpointTypePublic(endpoint);
 
 		// Assert
 		Assert.Equal("email", endpointType);
@@ -569,10 +617,12 @@ public class ChannelConnectorBaseTests
 			});
 		
 		var connector = new TestConnector(schema);
-		var validMessage = new MockMessage
+		var validMessage = new Message
 		{
-			Sender = new MockEndpoint("email", "sender@test.com"),
-			Receiver = new MockEndpoint("email", "receiver@test.com")  // This should fail validation
+			Id = Guid.NewGuid().ToString(),
+			Content = new TextContent("This is a valid message."),
+			Sender = Endpoint.EmailAddress("sender@test.com"),
+			Receiver = Endpoint.EmailAddress("receiver@test.com")  // This should fail validation
 		};
 
 		// Act
@@ -614,78 +664,26 @@ public class ChannelConnectorBaseTests
 				throw new InvalidOperationException("Test initialization failure");
 
 			if (ShouldFailInitialization)
-				return Task.FromResult(ConnectorResult<bool>.Fail("INIT_FAILED", "Initialization failed"));
+				return ConnectorResult<bool>.FailTask("INIT_FAILED", "Initialization failed");
 
-			return Task.FromResult(ConnectorResult<bool>.Success(true));
+			return ConnectorResult<bool>.SuccessTask(true);
 		}
 
 		protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
 		{
-			return Task.FromResult(ConnectorResult<bool>.Success(true));
+			return ConnectorResult<bool>.SuccessTask(true);
 		}
 
 		protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 		{
 			var result = new SendResult(message.Id, $"remote-{message.Id}");
-			return Task.FromResult(ConnectorResult<SendResult>.Success(result));
+			return ConnectorResult<SendResult>.SuccessTask(result);
 		}
 
 		protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
 		{
 			var status = new StatusInfo("Test Status");
-			return Task.FromResult(ConnectorResult<StatusInfo>.Success(status));
+			return ConnectorResult<StatusInfo>.SuccessTask(status);
 		}
-	}
-
-	// Mock message implementation
-	private class MockMessage : IMessage
-	{
-		public string Id { get; set; } = Guid.NewGuid().ToString();
-		public IEndpoint? Sender { get; set; }
-		public IEndpoint? Receiver { get; set; }
-		public IMessageContent? Content { get; set; } = new MockMessageContent();
-		public IDictionary<string, IMessageProperty>? Properties { get; set; }
-	}
-
-	// Mock message content implementation
-	private class MockMessageContent : IMessageContent
-	{
-		public MessageContentType ContentType { get; } = MessageContentType.PlainText;
-	}
-
-	// Mock message batch implementation
-	private class MockMessageBatch : IMessageBatch
-	{
-		public string Id { get; } = Guid.NewGuid().ToString();
-		public IDictionary<string, object>? Properties { get; }
-		public IEnumerable<IMessage> Messages { get; } = new[] { new MockMessage() };
-	}
-
-	// Mock endpoint implementation
-	private class MockEndpoint : IEndpoint
-	{
-		public MockEndpoint(string typeString, string address)
-		{
-			// Convert string type to EndpointType enum for compatibility
-			Type = typeString.ToLowerInvariant() switch
-			{
-				"email" => EndpointType.EmailAddress,
-				"phone" => EndpointType.PhoneNumber,
-				"url" => EndpointType.Url,
-				"user-id" => EndpointType.UserId,
-				"app-id" => EndpointType.ApplicationId,
-				"endpoint-id" => EndpointType.Id,
-				"device-id" => EndpointType.DeviceId,
-				"label" => EndpointType.Label,
-				"topic" => EndpointType.Topic,
-				"sms" => EndpointType.PhoneNumber, // Map sms to phone for testing
-				"webhook" => EndpointType.Url, // Map webhook to URL for testing
-				_ => EndpointType.Id // Default fallback
-			};
-			Address = address;
-		}
-
-		public EndpointType Type { get; }
-		public string Address { get; }
 	}
 }

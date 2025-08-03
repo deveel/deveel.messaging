@@ -69,6 +69,17 @@ namespace Deveel.Messaging
 			=> new ConnectorResult<TValue>(true, value, null, data);
 
 		/// <summary>
+		/// Creates a completed <see cref="Task{TResult}"/> that represents 
+		/// a successful operation.
+		/// </summary>
+		/// <param name="value">The value to associate with the successful result.</param>
+		/// <param name="data">Optional metadata associated with the result.</param>
+		/// <returns>A completed <see cref="Task{TResult}"/> containing a <see cref="ConnectorResult{TValue}"/> 
+		/// that represents a successful operation.</returns>
+		public static Task<ConnectorResult<TValue>> SuccessTask(TValue value, IDictionary<string, object>? data = null)
+			=> Task.FromResult(Success(value, data));
+
+		/// <summary>
 		/// Creates a failed result with the specified error and optional additional data.
 		/// </summary>
 		/// <param name="error">The error that caused the failure. This parameter cannot be null.</param>
@@ -76,6 +87,9 @@ namespace Deveel.Messaging
 		/// <returns>A <see cref="ConnectorResult{TValue}"/> representing a failed operation.</returns>
 		public static ConnectorResult<TValue> Fail(IMessagingError error, IDictionary<string, object>? data = null)
 			=> new ConnectorResult<TValue>(false, default, error, data);
+
+		public static Task<ConnectorResult<TValue>> FailTask(IMessagingError error, IDictionary<string, object>? data = null)
+			=> Task.FromResult(Fail(error, data));
 
 		/// <summary>
 		/// Creates a failed <see cref="ConnectorResult{TValue}"/> with the specified error code and optional error message
@@ -87,6 +101,9 @@ namespace Deveel.Messaging
 		/// <returns>A <see cref="ConnectorResult{TValue}"/> representing a failure, containing the specified error information.</returns>
 		public static ConnectorResult<TValue> Fail(string errorCode, string? errorMessage = null, IDictionary<string, object>? data = null)
 			=> Fail(new MessagingError(errorCode, errorMessage), data);
+
+		public static Task<ConnectorResult<TValue>> FailTask(string errorCode, string? errorMessage = null, IDictionary<string, object>? data = null)
+			=> Task.FromResult(Fail(errorCode, errorMessage, data));
 
 		/// <summary>
 		/// Creates a <see cref="ConnectorResult{TValue}"/> that failed because of validation errors 

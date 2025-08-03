@@ -15,7 +15,7 @@ public class MessageReceivingIntegrationTests
     {
         // Arrange
         var processedMessages = new List<IMessage>();
-        
+
         var schema = new ChannelSchema("IntegrationTest", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.HandlerMessageState)
@@ -49,12 +49,12 @@ public class MessageReceivingIntegrationTests
         // Assert
         Assert.All(results, result => Assert.True(result.Successful));
         Assert.Equal(3, processedMessages.Count);
-        
+
         // Verify message content
         Assert.Equal("Hello World", ((ITextContent)processedMessages[0].Content!).Text);
         Assert.Equal("How are you?", ((ITextContent)processedMessages[1].Content!).Text);
         Assert.Equal("Good morning!", ((ITextContent)processedMessages[2].Content!).Text);
-        
+
         // Verify all senders are different
         var senders = processedMessages.Select(m => m.Sender?.Address).ToHashSet();
         Assert.Equal(3, senders.Count);
@@ -65,7 +65,7 @@ public class MessageReceivingIntegrationTests
     {
         // Arrange
         var messageStatuses = new Dictionary<string, List<MessageStatus>>();
-        
+
         var schema = new ChannelSchema("StatusTracking", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.HandlerMessageState)
@@ -99,7 +99,7 @@ public class MessageReceivingIntegrationTests
         // Assert
         Assert.True(receiveResult.Successful);
         Assert.True(messageStatuses.ContainsKey(messageId));
-        
+
         var statuses = messageStatuses[messageId];
         Assert.Equal(4, statuses.Count); // received + 3 status updates
         Assert.Contains(MessageStatus.Received, statuses);
@@ -113,7 +113,7 @@ public class MessageReceivingIntegrationTests
     {
         // Arrange
         var processedMessages = new List<IMessage>();
-        
+
         var schema = new ChannelSchema("BatchProcessing", "Email", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.BulkMessaging)
@@ -148,7 +148,7 @@ public class MessageReceivingIntegrationTests
         Assert.True(result.Successful);
         Assert.Equal(batchSize, processedMessages.Count);
         Assert.True(processingTime.TotalSeconds < 5); // Should process quickly
-        
+
         // Verify all messages were processed correctly
         for (int i = 1; i <= batchSize; i++)
         {
@@ -194,8 +194,7 @@ public class MessageReceivingIntegrationTests
             if (testCase.ShouldSucceed)
             {
                 Assert.True(result.Successful, $"Expected success for: {testCase.Data}");
-            }
-            else
+            } else
             {
                 Assert.False(result.Successful, $"Expected failure for: {testCase.Data}");
             }
@@ -207,7 +206,7 @@ public class MessageReceivingIntegrationTests
     {
         // Arrange
         var filteredMessages = new List<IMessage>();
-        
+
         var schema = new ChannelSchema("FilterTest", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .AddContentType(MessageContentType.PlainText);
@@ -265,7 +264,7 @@ public class MessageReceivingIntegrationTests
     {
         // Arrange
         var transformedMessages = new List<IMessage>();
-        
+
         var schema = new ChannelSchema("TransformTest", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .AddContentType(MessageContentType.PlainText);
@@ -282,13 +281,13 @@ public class MessageReceivingIntegrationTests
         // Assert
         Assert.True(result.Successful);
         Assert.Single(transformedMessages);
-        
+
         var transformedMessage = transformedMessages.First();
         var content = ((ITextContent)transformedMessage.Content!).Text;
-        
+
         // Should be transformed to uppercase
         Assert.Equal("HELLO WORLD!", content);
-        
+
         // Should have additional properties
         Assert.NotNull(transformedMessage.Properties);
         Assert.True(transformedMessage.Properties.ContainsKey("Transformed"));
@@ -319,8 +318,7 @@ public class MessageReceivingIntegrationTests
                 var messageData = $"MessageSid=SM{i:D10}&From=%2B123456789{i % 10}&To=%2B1987654321&Body=Concurrent%20message%20{i}";
                 var source = MessageSource.UrlPost(messageData);
                 return await connector.ReceiveMessagesAsync(source, CancellationToken.None);
-            }
-            finally
+            } finally
             {
                 semaphore.Release();
             }
@@ -331,7 +329,7 @@ public class MessageReceivingIntegrationTests
         // Assert
         Assert.All(results, result => Assert.True(result.Successful));
         Assert.Equal(messageCount, receivedMessages.Count);
-        
+
         // Verify all message IDs are unique
         var messageIds = receivedMessages.Select(m => m.Id).ToHashSet();
         Assert.Equal(messageCount, messageIds.Count);
@@ -343,7 +341,7 @@ public class MessageReceivingIntegrationTests
     {
         private readonly List<IMessage> _processedMessages;
 
-        public IntegrationTestConnector(IChannelSchema schema, List<IMessage> processedMessages) 
+        public IntegrationTestConnector(IChannelSchema schema, List<IMessage> processedMessages)
             : base(schema)
         {
             _processedMessages = processedMessages;
@@ -365,7 +363,7 @@ public class MessageReceivingIntegrationTests
         {
             var messages = ParseMessages(source);
             _processedMessages.AddRange(messages);
-            
+
             var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
             return Task.FromResult(ConnectorResult<ReceiveResult>.Success(result));
         }
@@ -381,8 +379,7 @@ public class MessageReceivingIntegrationTests
                 {
                     messages.Add(CreateMessage(formData));
                 }
-            }
-            else if (source.ContentType == MessageSource.JsonContentType)
+            } else if (source.ContentType == MessageSource.JsonContentType)
             {
                 var jsonData = source.AsJson<JsonElement>();
                 if (jsonData.TryGetProperty("Messages", out var messagesArray))
@@ -424,7 +421,7 @@ public class MessageReceivingIntegrationTests
     {
         private readonly Dictionary<string, List<MessageStatus>> _messageStatuses;
 
-        public StatusTrackingConnector(IChannelSchema schema, Dictionary<string, List<MessageStatus>> messageStatuses) 
+        public StatusTrackingConnector(IChannelSchema schema, Dictionary<string, List<MessageStatus>> messageStatuses)
             : base(schema)
         {
             _messageStatuses = messageStatuses;
@@ -446,10 +443,10 @@ public class MessageReceivingIntegrationTests
         {
             var formData = source.AsUrlPostData();
             var messageId = formData["MessageSid"];
-            
+
             if (!_messageStatuses.ContainsKey(messageId))
                 _messageStatuses[messageId] = new List<MessageStatus>();
-            
+
             _messageStatuses[messageId].Add(MessageStatus.Received);
 
             var message = new Message
@@ -469,7 +466,7 @@ public class MessageReceivingIntegrationTests
             var formData = source.AsUrlPostData();
             var messageId = formData["MessageSid"];
             var statusString = formData["MessageStatus"];
-            
+
             var status = statusString.ToLowerInvariant() switch
             {
                 "queued" => MessageStatus.Queued,
@@ -481,7 +478,7 @@ public class MessageReceivingIntegrationTests
 
             if (!_messageStatuses.ContainsKey(messageId))
                 _messageStatuses[messageId] = new List<MessageStatus>();
-            
+
             _messageStatuses[messageId].Add(status);
 
             var statusResult = new StatusUpdateResult(messageId, status);
@@ -512,12 +509,12 @@ public class MessageReceivingIntegrationTests
             // Validate required fields
             if (!formData.TryGetValue("MessageSid", out var messageId) || string.IsNullOrEmpty(messageId))
             {
-                return Task.FromResult(ConnectorResult<ReceiveResult>.Fail("MISSING_MESSAGE_ID", "MessageSid is required"));
+                return ConnectorResult<ReceiveResult>.FailTask("MISSING_MESSAGE_ID", "MessageSid is required");
             }
 
             if (!formData.TryGetValue("From", out var from) || !IsValidPhoneNumber(from))
             {
-                return Task.FromResult(ConnectorResult<ReceiveResult>.Fail("INVALID_FROM", "Valid From phone number is required"));
+                return ConnectorResult<ReceiveResult>.FailTask("INVALID_FROM", "Valid From phone number is required");
             }
 
             var message = new Message
@@ -529,7 +526,7 @@ public class MessageReceivingIntegrationTests
             };
 
             var result = new ReceiveResult(Guid.NewGuid().ToString(), new[] { message });
-            return Task.FromResult(ConnectorResult<ReceiveResult>.Success(result));
+            return ConnectorResult<ReceiveResult>.SuccessTask(result);
         }
 
         private bool IsValidPhoneNumber(string phoneNumber)
@@ -542,23 +539,23 @@ public class MessageReceivingIntegrationTests
     {
         private readonly List<IMessage> _filteredMessages;
 
-        public FilteringTestConnector(IChannelSchema schema, List<IMessage> filteredMessages) 
+        public FilteringTestConnector(IChannelSchema schema, List<IMessage> filteredMessages)
             : base(schema)
         {
             _filteredMessages = filteredMessages;
         }
 
         protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+            => ConnectorResult<bool>.SuccessTask(true);
 
         protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+            => ConnectorResult<bool>.SuccessTask(true);
 
         protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<SendResult>.Success(new SendResult(message.Id, $"remote-{message.Id}")));
+            => ConnectorResult<SendResult>.SuccessTask(new SendResult(message.Id, $"remote-{message.Id}"));
 
         protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<StatusInfo>.Success(new StatusInfo("Filtering Test Connector")));
+            => ConnectorResult<StatusInfo>.SuccessTask(new StatusInfo("Filtering Test Connector"));
 
         protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
@@ -580,7 +577,7 @@ public class MessageReceivingIntegrationTests
             }
 
             var result = new ReceiveResult(Guid.NewGuid().ToString(), new[] { message });
-            return Task.FromResult(ConnectorResult<ReceiveResult>.Success(result));
+            return ConnectorResult<ReceiveResult>.SuccessTask(result);
         }
     }
 
@@ -588,34 +585,34 @@ public class MessageReceivingIntegrationTests
     {
         private readonly Func<int> _getAttemptCount;
 
-        public RetryTestConnector(IChannelSchema schema, Func<int> getAttemptCount) 
+        public RetryTestConnector(IChannelSchema schema, Func<int> getAttemptCount)
             : base(schema)
         {
             _getAttemptCount = getAttemptCount;
         }
 
         protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+            => ConnectorResult<bool>.SuccessTask(true);
 
         protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+            => ConnectorResult<bool>.SuccessTask(true);
 
         protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<SendResult>.Success(new SendResult(message.Id, $"remote-{message.Id}")));
+            => ConnectorResult<SendResult>.SuccessTask(new SendResult(message.Id, $"remote-{message.Id}"));
 
         protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<StatusInfo>.Success(new StatusInfo("Retry Test Connector")));
+            => ConnectorResult<StatusInfo>.SuccessTask(new StatusInfo("Retry Test Connector"));
 
         protected override async Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
             // Implement retry logic within the connector itself
             ConnectorResult<ReceiveResult> result;
             int attempts = 0;
-            
+
             do
             {
                 attempts = _getAttemptCount();
-                
+
                 // Fail on first 2 attempts, succeed on 3rd
                 if (attempts < 3)
                 {
@@ -637,7 +634,7 @@ public class MessageReceivingIntegrationTests
                 var receiveResult = new ReceiveResult(Guid.NewGuid().ToString(), new[] { message });
                 result = ConnectorResult<ReceiveResult>.Success(receiveResult);
                 break;
-                
+
             } while (attempts < 3);
 
             return result;
@@ -648,23 +645,23 @@ public class MessageReceivingIntegrationTests
     {
         private readonly List<IMessage> _transformedMessages;
 
-        public TransformationTestConnector(IChannelSchema schema, List<IMessage> transformedMessages) 
+        public TransformationTestConnector(IChannelSchema schema, List<IMessage> transformedMessages)
             : base(schema)
         {
             _transformedMessages = transformedMessages;
         }
 
         protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+            => ConnectorResult<bool>.SuccessTask(true);
 
         protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+            => ConnectorResult<bool>.SuccessTask(true);
 
         protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<SendResult>.Success(new SendResult(message.Id, $"remote-{message.Id}")));
+            => ConnectorResult<SendResult>.SuccessTask(new SendResult(message.Id, $"remote-{message.Id}"));
 
         protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<StatusInfo>.Success(new StatusInfo("Transformation Test Connector")));
+            => ConnectorResult<StatusInfo>.SuccessTask(new StatusInfo("Transformation Test Connector"));
 
         protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
@@ -690,7 +687,7 @@ public class MessageReceivingIntegrationTests
             _transformedMessages.Add(message);
 
             var result = new ReceiveResult(Guid.NewGuid().ToString(), new[] { message });
-            return Task.FromResult(ConnectorResult<ReceiveResult>.Success(result));
+            return ConnectorResult<ReceiveResult>.SuccessTask(result);
         }
     }
 
@@ -698,23 +695,23 @@ public class MessageReceivingIntegrationTests
     {
         private readonly ConcurrentBag<IMessage> _receivedMessages;
 
-        public ConcurrentTestConnector(IChannelSchema schema, ConcurrentBag<IMessage> receivedMessages) 
+        public ConcurrentTestConnector(IChannelSchema schema, ConcurrentBag<IMessage> receivedMessages)
             : base(schema)
         {
             _receivedMessages = receivedMessages;
         }
 
         protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+            => ConnectorResult<bool>.SuccessTask(true);
 
         protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+            => ConnectorResult<bool>.SuccessTask(true);
 
         protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<SendResult>.Success(new SendResult(message.Id, $"remote-{message.Id}")));
+            => ConnectorResult<SendResult>.SuccessTask(new SendResult(message.Id, $"remote-{message.Id}"));
 
         protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<StatusInfo>.Success(new StatusInfo("Concurrent Test Connector")));
+            => ConnectorResult<StatusInfo>.SuccessTask(new StatusInfo("Concurrent Test Connector"));
 
         protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
@@ -740,12 +737,3 @@ public class MessageReceivingIntegrationTests
         }
     }
 }
-
-// Note: This integration test file now uses the default implementations from Deveel.Messaging.Abstractions:
-// - Message instead of TestMessage
-// - Endpoint instead of TestEndpoint  
-// - TextContent instead of TestTextContent
-// - MessageProperty instead of TestMessageProperty
-//
-// This eliminates code duplication and ensures consistency across the codebase while
-// maintaining all the comprehensive integration test scenarios.

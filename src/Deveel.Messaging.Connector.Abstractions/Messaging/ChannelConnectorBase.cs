@@ -435,7 +435,7 @@ namespace Deveel.Messaging
 			}
 			catch (Exception ex)
 			{
-				return Task.FromResult(ConnectorResult<StatusUpdateResult>.Fail(ConnectorErrorCodes.ReceiveStatusError, ex.Message));
+				return ConnectorResult<StatusUpdateResult>.FailTask(ConnectorErrorCodes.ReceiveStatusError, ex.Message);
 			}
 		}
 
@@ -452,18 +452,18 @@ namespace Deveel.Messaging
 		}
 
 		/// <inheritdoc/>
-		public virtual Task<ConnectorResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
+		public virtual async Task<ConnectorResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
 		{
 			ValidateCapability(ChannelCapability.ReceiveMessages);
 			ValidateOperationalState();
 
 			try
 			{
-				return ReceiveMessagesCoreAsync(source, cancellationToken);
+				return await ReceiveMessagesCoreAsync(source, cancellationToken);
 			}
 			catch (Exception ex)
 			{
-				return Task.FromResult(ConnectorResult<ReceiveResult>.Fail(ConnectorErrorCodes.ReceiveMessagesError, ex.Message));
+				return ConnectorResult<ReceiveResult>.Fail(ConnectorErrorCodes.ReceiveMessagesError, ex.Message);
 			}
 		}
 
@@ -515,7 +515,7 @@ namespace Deveel.Messaging
 				health.Issues.Add($"Connector is in {State} state");
 			}
 
-			return Task.FromResult(ConnectorResult<ConnectorHealth>.Success(health));
+			return ConnectorResult<ConnectorHealth>.SuccessTask(health);
 		}
 
 		/// <inheritdoc/>

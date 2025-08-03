@@ -620,26 +620,26 @@ public class TwilioMessageReceivingTests
                     var formData = source.AsUrlPostData();
                     if (!formData.TryGetValue("MessageSid", out var messageSid))
                     {
-                        return Task.FromResult(ConnectorResult<ReceiveResult>.Fail("MISSING_MESSAGE_SID", "MessageSid is required for Twilio webhooks"));
+                        return ConnectorResult<ReceiveResult>.FailTask("MISSING_MESSAGE_SID", "MessageSid is required for Twilio webhooks");
                     }
 
                     var messages = ParseTwilioFormData(source);
                     var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
-                    return Task.FromResult(ConnectorResult<ReceiveResult>.Success(result));
+                    return ConnectorResult<ReceiveResult>.SuccessTask(result);
                 }
                 else if (source.ContentType == MessageSource.JsonContentType)
                 {
                     var messages = ParseTwilioJson(source);
                     var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
-                    return Task.FromResult(ConnectorResult<ReceiveResult>.Success(result));
+                    return ConnectorResult<ReceiveResult>.SuccessTask(result);
                 }
 
-                return Task.FromResult(ConnectorResult<ReceiveResult>.Fail("UNSUPPORTED_CONTENT_TYPE", 
-                    "Only form data and JSON are supported for Twilio message receiving"));
+                return ConnectorResult<ReceiveResult>.FailTask("UNSUPPORTED_CONTENT_TYPE", 
+                    "Only form data and JSON are supported for Twilio message receiving");
             }
             catch (Exception ex)
             {
-                return Task.FromResult(ConnectorResult<ReceiveResult>.Fail("TWILIO_RECEIVE_ERROR", ex.Message));
+                return ConnectorResult<ReceiveResult>.FailTask("TWILIO_RECEIVE_ERROR", ex.Message);
             }
         }
 
@@ -828,12 +828,3 @@ public class TwilioMessageReceivingTests
             });
     }
 }
-
-// Note: This test file now uses the default implementations from Deveel.Messaging.Abstractions:
-// - Message instead of TwilioTestMessage
-// - Endpoint instead of TwilioTestEndpoint  
-// - TextContent instead of TwilioTestTextContent
-// - MessageProperty instead of TwilioTestMessageProperty
-//
-// This eliminates code duplication and ensures consistency across the codebase while
-// maintaining all the enhanced result object assertions for comprehensive code coverage.
