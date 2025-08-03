@@ -782,20 +782,9 @@ namespace Deveel.Messaging
 			{
 				if (messageProperties.TryGetValue(propertyConfig.Name, out var value))
 				{
-					// Skip validation if value is null and property is not required
-					if (value == null && !propertyConfig.IsRequired)
-						continue;
-
-					if (value != null)
-					{
-						// Validate type compatibility
-						if (!IsTypeCompatible(propertyConfig.DataType, value))
-						{
-							validationResults.Add(new ValidationResult(
-								$"Message property '{propertyConfig.Name}' has an incompatible type. Expected: {propertyConfig.DataType}, Actual: {value.GetType().Name}.",
-								new[] { propertyConfig.Name }));
-						}
-					}
+					// Use the property configuration's built-in validation
+					var propertyValidationResults = propertyConfig.Validate(value);
+					validationResults.AddRange(propertyValidationResults);
 				}
 			}
 		}
