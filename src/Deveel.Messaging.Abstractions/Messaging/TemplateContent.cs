@@ -17,7 +17,7 @@ namespace Deveel.Messaging
 		/// <param name="templateId">The unique identifier for the template.</param>
 		/// <param name="parameters">A dictionary containing the parameters to be used 
 		/// with the template for the merge process on the remote service.</param>
-		public TemplateContent(string templateId, IDictionary<string, object?> parameters)
+		public TemplateContent(string templateId, IDictionary<string, object?>? parameters = null)
 		{
 			TemplateId = templateId;
 			Parameters = parameters != null ? new Dictionary<string, object?>(parameters) : new Dictionary<string, object?>();

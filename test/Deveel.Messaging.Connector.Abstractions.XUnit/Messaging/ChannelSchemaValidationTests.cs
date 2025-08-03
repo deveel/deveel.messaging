@@ -22,10 +22,7 @@ public class ChannelSchemaValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("OptionalParam", ParameterType.String)
-			{
-				IsRequired = false
-			});
+			.AddParameter("OptionalParam", DataType.String);
 
 		var connectionSettings = new ConnectionSettings();
 
@@ -41,10 +38,7 @@ public class ChannelSchemaValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("RequiredParam", ParameterType.String)
-			{
-				IsRequired = true
-			});
+			.AddRequiredParameter("RequiredParam", DataType.String);
 
 		var connectionSettings = new ConnectionSettings();
 
@@ -62,14 +56,8 @@ public class ChannelSchemaValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("RequiredParam1", ParameterType.String)
-			{
-				IsRequired = true
-			})
-			.AddParameter(new ChannelParameter("RequiredParam2", ParameterType.Integer)
-			{
-				IsRequired = true
-			});
+			.AddRequiredParameter("RequiredParam1", DataType.String)
+			.AddRequiredParameter("RequiredParam2", DataType.Integer);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("RequiredParam1", "test")
@@ -87,10 +75,7 @@ public class ChannelSchemaValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("StringParam", ParameterType.String)
-			{
-				IsRequired = true
-			});
+			.AddRequiredParameter("StringParam", DataType.String);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("StringParam", 123); // Wrong type: should be string
@@ -109,10 +94,10 @@ public class ChannelSchemaValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("EnumParam", ParameterType.String)
+			.AddParameter("EnumParam", DataType.String, param =>
 			{
-				IsRequired = true,
-				AllowedValues = new object[] { "option1", "option2", "option3" }
+				param.IsRequired = true;
+				param.AllowedValues = new object[] { "option1", "option2", "option3" };
 			});
 
 		var connectionSettings = new ConnectionSettings()
@@ -132,10 +117,10 @@ public class ChannelSchemaValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("EnumParam", ParameterType.String)
+			.AddParameter("EnumParam", DataType.String, param =>
 			{
-				IsRequired = true,
-				AllowedValues = new object[] { "option1", "option2", "option3" }
+				param.IsRequired = true;
+				param.AllowedValues = new object[] { "option1", "option2", "option3" };
 			});
 
 		var connectionSettings = new ConnectionSettings()
@@ -153,7 +138,7 @@ public class ChannelSchemaValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("KnownParam", ParameterType.String));
+			.AddParameter("KnownParam", DataType.String);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("KnownParam", "test")
@@ -173,10 +158,10 @@ public class ChannelSchemaValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("OptionalParam", ParameterType.Integer)
+			.AddParameter("OptionalParam", DataType.Integer, param =>
 			{
-				IsRequired = false,
-				DefaultValue = 30
+				param.IsRequired = false;
+				param.DefaultValue = 30;
 			});
 
 		var connectionSettings = new ConnectionSettings(); // No parameters set
@@ -193,14 +178,8 @@ public class ChannelSchemaValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("RequiredParam", ParameterType.String)
-			{
-				IsRequired = true
-			})
-			.AddParameter(new ChannelParameter("TypedParam", ParameterType.Boolean)
-			{
-				IsRequired = true
-			});
+			.AddRequiredParameter("RequiredParam", DataType.String)
+			.AddRequiredParameter("TypedParam", DataType.Boolean);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("TypedParam", "not_a_boolean") // Wrong type
@@ -218,23 +197,20 @@ public class ChannelSchemaValidationTests
 	}
 
 	[Theory]
-	[InlineData(ParameterType.Boolean, true)]
-	[InlineData(ParameterType.Boolean, false)]
-	[InlineData(ParameterType.String, "test")]
-	[InlineData(ParameterType.Integer, 123)]
-	[InlineData(ParameterType.Integer, (long)456)]
-	[InlineData(ParameterType.Integer, (byte)78)]
-	[InlineData(ParameterType.Number, 123.45)]
-	[InlineData(ParameterType.Number, 678.90f)]
-	[InlineData(ParameterType.Number, 100)]
-	public void ValidateConnectionSettings_WithCompatibleTypes_ReturnsEmpty(ParameterType parameterType, object value)
+	[InlineData(DataType.Boolean, true)]
+	[InlineData(DataType.Boolean, false)]
+	[InlineData(DataType.String, "test")]
+	[InlineData(DataType.Integer, 123)]
+	[InlineData(DataType.Integer, (long)456)]
+	[InlineData(DataType.Integer, (byte)78)]
+	[InlineData(DataType.Number, 123.45)]
+	[InlineData(DataType.Number, 678.90f)]
+	[InlineData(DataType.Number, 100)]
+	public void ValidateConnectionSettings_WithCompatibleTypes_ReturnsEmpty(DataType parameterType, object value)
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("TestParam", parameterType)
-			{
-				IsRequired = true
-			});
+			.AddRequiredParameter("TestParam", parameterType);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("TestParam", value);
@@ -247,20 +223,17 @@ public class ChannelSchemaValidationTests
 	}
 
 	[Theory]
-	[InlineData(ParameterType.Boolean, "not_boolean")]
-	[InlineData(ParameterType.Boolean, 123)]
-	[InlineData(ParameterType.String, true)]
-	[InlineData(ParameterType.Integer, "not_number")]
-	[InlineData(ParameterType.Integer, 123.45)]
-	[InlineData(ParameterType.Number, "not_number")]
-	public void ValidateConnectionSettings_WithIncompatibleTypes_ReturnsValidationError(ParameterType parameterType, object value)
+	[InlineData(DataType.Boolean, "not_boolean")]
+	[InlineData(DataType.Boolean, 123)]
+	[InlineData(DataType.String, true)]
+	[InlineData(DataType.Integer, "not_number")]
+	[InlineData(DataType.Integer, 123.45)]
+	[InlineData(DataType.Number, "not_number")]
+	public void ValidateConnectionSettings_WithIncompatibleTypes_ReturnsValidationError(DataType parameterType, object value)
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("TestParam", parameterType)
-			{
-				IsRequired = true
-			});
+			.AddRequiredParameter("TestParam", parameterType);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("TestParam", value);
@@ -279,29 +252,18 @@ public class ChannelSchemaValidationTests
 	{
 		// Arrange
 		var emailSchema = new ChannelSchema("SMTP", "Email", "1.0.0")
-			.AddParameter(new ChannelParameter("Host", ParameterType.String)
+			.AddRequiredParameter("Host", DataType.String)
+			.AddParameter("Port", DataType.Integer, param =>
 			{
-				IsRequired = true,
-				Description = "SMTP server hostname"
+				param.IsRequired = true;
+				param.DefaultValue = 587;
 			})
-			.AddParameter(new ChannelParameter("Port", ParameterType.Integer)
+			.AddRequiredParameter("Username", DataType.String)
+			.AddRequiredParameter("Password", DataType.String, true)
+			.AddParameter("EnableSsl", DataType.Boolean, param =>
 			{
-				IsRequired = true,
-				DefaultValue = 587
-			})
-			.AddParameter(new ChannelParameter("Username", ParameterType.String)
-			{
-				IsRequired = true
-			})
-			.AddParameter(new ChannelParameter("Password", ParameterType.String)
-			{
-				IsRequired = true,
-				IsSensitive = true
-			})
-			.AddParameter(new ChannelParameter("EnableSsl", ParameterType.Boolean)
-			{
-				IsRequired = false,
-				DefaultValue = true
+				param.IsRequired = false;
+				param.DefaultValue = true;
 			});
 
 		var validConnectionSettings = new ConnectionSettings()
@@ -335,10 +297,7 @@ public class ChannelSchemaValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("TestParam", ParameterType.String)
-			{
-				IsRequired = true
-			});
+			.AddRequiredParameter("TestParam", DataType.String);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("testparam", "value"); // Different case
@@ -358,10 +317,7 @@ public class ChannelSchemaValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("RequiredParam", ParameterType.String)
-			{
-				IsRequired = true
-			});
+			.AddRequiredParameter("RequiredParam", DataType.String);
 
 		var connectionSettings = new ConnectionSettings();
 
@@ -387,20 +343,16 @@ public class ChannelSchemaValidationTests
 	{
 		// Arrange - Create an email schema with various parameter types and constraints
 		var emailSchema = new ChannelSchema("SMTP", "Email", "1.2.0")
-			.AddParameter(new ChannelParameter("Host", ParameterType.String) 
-			{ 
-				IsRequired = true 
+			.AddRequiredParameter("Host", DataType.String)
+			.AddParameter("Port", DataType.Integer, param =>
+			{
+				param.IsRequired = true;
+				param.DefaultValue = 587;
+				param.AllowedValues = new object[] { 25, 465, 587, 2525 };
 			})
-			.AddParameter(new ChannelParameter("Port", ParameterType.Integer) 
-			{ 
-				IsRequired = true, 
-				DefaultValue = 587,
-				AllowedValues = new object[] { 25, 465, 587, 2525 }
-			})
-			.AddParameter(new ChannelParameter("EnableSsl", ParameterType.Boolean) 
-			{ 
-				IsRequired = false, 
-				DefaultValue = true 
+			.AddParameter("EnableSsl", DataType.Boolean, param =>
+			{
+				param.DefaultValue = true;
 			});
 
 		var connectionSettings = new ConnectionSettings()

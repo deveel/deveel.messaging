@@ -17,45 +17,45 @@ public class ChannelSchemaIntegrationTests
 				ChannelCapability.Templates | 
 				ChannelCapability.MediaAttachments |
 				ChannelCapability.HealthCheck)
-			.AddParameter(new ChannelParameter("Host", ParameterType.String)
+			.AddParameter("Host", DataType.String, param =>
 			{
-				IsRequired = true,
-				Description = "SMTP server hostname"
+				param.IsRequired = true;
+				param.Description = "SMTP server hostname";
 			})
-			.AddParameter(new ChannelParameter("Port", ParameterType.Integer)
+			.AddParameter("Port", DataType.Integer, param =>
 			{
-				IsRequired = true,
-				DefaultValue = 587,
-				Description = "SMTP server port"
+				param.IsRequired = true;
+				param.DefaultValue = 587;
+				param.Description = "SMTP server port";
 			})
-			.AddParameter(new ChannelParameter("Username", ParameterType.String)
+			.AddParameter("Username", DataType.String, param =>
 			{
-				IsRequired = true,
-				Description = "SMTP authentication username"
+				param.IsRequired = true;
+				param.Description = "SMTP authentication username";
 			})
-			.AddParameter(new ChannelParameter("Password", ParameterType.String)
+			.AddParameter("Password", DataType.String, param =>
 			{
-				IsRequired = true,
-				IsSensitive = true,
-				Description = "SMTP authentication password"
+				param.IsRequired = true;
+				param.IsSensitive = true;
+				param.Description = "SMTP authentication password";
 			})
-			.AddParameter(new ChannelParameter("EnableSsl", ParameterType.Boolean)
+			.AddParameter("EnableSsl", DataType.Boolean, param =>
 			{
-				DefaultValue = true,
-				Description = "Enable SSL/TLS encryption"
+				param.DefaultValue = true;
+				param.Description = "Enable SSL/TLS encryption";
 			})
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
 			.AddContentType(MessageContentType.Multipart)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+			.HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
 			{
-				CanSend = true,
-				CanReceive = false
+				e.CanSend = true;
+				e.CanReceive = false;
 			})
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			.HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
 			{
-				CanSend = true,
-				CanReceive = false
+				e.CanSend = true;
+				e.CanReceive = false;
 			})
 			.AddAuthenticationType(AuthenticationType.Basic);
 
@@ -74,11 +74,11 @@ public class ChannelSchemaIntegrationTests
 
 		// Verify parameters
 		Assert.Equal(5, emailSchema.Parameters.Count);
-		AssertParameterExists(emailSchema, "Host", ParameterType.String, isRequired: true);
-		AssertParameterExists(emailSchema, "Port", ParameterType.Integer, isRequired: true, defaultValue: 587);
-		AssertParameterExists(emailSchema, "Username", ParameterType.String, isRequired: true);
-		AssertParameterExists(emailSchema, "Password", ParameterType.String, isRequired: true, isSensitive: true);
-		AssertParameterExists(emailSchema, "EnableSsl", ParameterType.Boolean, defaultValue: true);
+		AssertParameterExists(emailSchema, "Host", DataType.String, isRequired: true);
+		AssertParameterExists(emailSchema, "Port", DataType.Integer, isRequired: true, defaultValue: 587);
+		AssertParameterExists(emailSchema, "Username", DataType.String, isRequired: true);
+		AssertParameterExists(emailSchema, "Password", DataType.String, isRequired: true, isSensitive: true);
+		AssertParameterExists(emailSchema, "EnableSsl", DataType.Boolean, defaultValue: true);
 
 		// Verify content types
 		Assert.Equal(3, emailSchema.ContentTypes.Count);
@@ -107,32 +107,27 @@ public class ChannelSchemaIntegrationTests
 				ChannelCapability.ReceiveMessages |
 				ChannelCapability.MessageStatusQuery |
 				ChannelCapability.BulkMessaging)
-			.AddParameter(new ChannelParameter("AccountSid", ParameterType.String)
+			.AddParameter("AccountSid", DataType.String, param =>
 			{
-				IsRequired = true,
-				Description = "Twilio Account SID"
+				param.IsRequired = true;
+				param.Description = "Twilio Account SID";
 			})
-			.AddParameter(new ChannelParameter("AuthToken", ParameterType.String)
+			.AddParameter("AuthToken", DataType.String, param =>
 			{
-				IsRequired = true,
-				IsSensitive = true,
-				Description = "Twilio Auth Token"
-			})
-			.AddParameter(new ChannelParameter("FromNumber", ParameterType.String)
-			{
-				IsRequired = true,
-				Description = "Sender phone number"
+				param.IsRequired = true;
+				param.IsSensitive = true;
+				param.Description = "Twilio Auth Token";
 			})
 			.AddContentType(MessageContentType.PlainText)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			.HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
 			{
-				CanSend = true,
-				CanReceive = true
+				e.CanSend = true;
+				e.CanReceive = true;
 			})
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
+			.HandlesMessageEndpoint(EndpointType.Url, e =>
 			{
-				CanSend = false,
-				CanReceive = true
+				e.CanSend = false;
+				e.CanReceive = true;
 			})
 			.AddAuthenticationType(AuthenticationType.Token);
 
@@ -148,7 +143,7 @@ public class ChannelSchemaIntegrationTests
 		Assert.True(smsSchema.Capabilities.HasFlag(ChannelCapability.MessageStatusQuery));
 		Assert.True(smsSchema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
 
-		Assert.Equal(3, smsSchema.Parameters.Count);
+		Assert.Equal(2, smsSchema.Parameters.Count);
 		Assert.Single(smsSchema.ContentTypes);
 		Assert.Equal(2, smsSchema.Endpoints.Count);
 		Assert.Single(smsSchema.AuthenticationTypes);
@@ -229,50 +224,50 @@ public class ChannelSchemaIntegrationTests
 	{
 		// Arrange & Act
 		var schema = new ChannelSchema("Complex", "Test", "1.0.0")
-			.AddParameter(new ChannelParameter("BoolParam", ParameterType.Boolean)
+			.AddParameter("BoolParam", DataType.Boolean, param =>
 			{
-				DefaultValue = false,
-				Description = "Boolean parameter"
+				param.DefaultValue = false;
+				param.Description = "Boolean parameter";
 			})
-			.AddParameter(new ChannelParameter("IntParam", ParameterType.Integer)
+			.AddParameter("IntParam", DataType.Integer, param =>
 			{
-				IsRequired = true,
-				AllowedValues = new object[] { 1, 2, 3, 4, 5 },
-				Description = "Integer parameter with allowed values"
+				param.IsRequired = true;
+				param.AllowedValues = new object[] { 1, 2, 3, 4, 5 };
+				param.Description = "Integer parameter with allowed values";
 			})
-			.AddParameter(new ChannelParameter("NumberParam", ParameterType.Number)
+			.AddParameter("NumberParam", DataType.Number, param =>
 			{
-				DefaultValue = 3.14,
-				Description = "Decimal number parameter"
+				param.DefaultValue = 3.14;
+				param.Description = "Decimal number parameter";
 			})
-			.AddParameter(new ChannelParameter("StringParam", ParameterType.String)
+			.AddParameter("StringParam", DataType.String, param =>
 			{
-				IsRequired = true,
-				IsSensitive = true,
-				AllowedValues = new object[] { "dev", "test", "prod" },
-				Description = "String parameter with environment values"
+				param.IsRequired = true;
+				param.IsSensitive = true;
+				param.AllowedValues = new object[] { "dev", "test", "prod" };
+				param.Description = "String parameter with environment values";
 			});
 
 		// Assert
 		Assert.Equal(4, schema.Parameters.Count);
 		
 		var boolParam = schema.Parameters.First(p => p.Name == "BoolParam");
-		Assert.Equal(ParameterType.Boolean, boolParam.DataType);
+		Assert.Equal(DataType.Boolean, boolParam.DataType);
 		Assert.Equal(false, boolParam.DefaultValue);
 		Assert.False(boolParam.IsRequired);
 
 		var intParam = schema.Parameters.First(p => p.Name == "IntParam");
-		Assert.Equal(ParameterType.Integer, intParam.DataType);
+		Assert.Equal(DataType.Integer, intParam.DataType);
 		Assert.True(intParam.IsRequired);
 		Assert.NotNull(intParam.AllowedValues);
 		Assert.Equal(5, intParam.AllowedValues.Length);
 
 		var numberParam = schema.Parameters.First(p => p.Name == "NumberParam");
-		Assert.Equal(ParameterType.Number, numberParam.DataType);
+		Assert.Equal(DataType.Number, numberParam.DataType);
 		Assert.Equal(3.14, numberParam.DefaultValue);
 
 		var stringParam = schema.Parameters.First(p => p.Name == "StringParam");
-		Assert.Equal(ParameterType.String, stringParam.DataType);
+		Assert.Equal(DataType.String, stringParam.DataType);
 		Assert.True(stringParam.IsRequired);
 		Assert.True(stringParam.IsSensitive);
 		Assert.NotNull(stringParam.AllowedValues);
@@ -355,23 +350,23 @@ public class ChannelSchemaIntegrationTests
 				ChannelCapability.ReceiveMessages |
 				ChannelCapability.MessageStatusQuery |
 				ChannelCapability.HealthCheck)
-			.AddParameter(new ChannelParameter("BaseUrl", ParameterType.String)
+			.AddParameter("BaseUrl", DataType.String, param =>
 			{
-				IsRequired = true,
-				Description = "Base URL for the API"
+				param.IsRequired = true;
+				param.Description = "Base URL for the API";
 			})
-			.AddParameter(new ChannelParameter("Timeout", ParameterType.Integer)
+			.AddParameter("Timeout", DataType.Integer, param =>
 			{
-				DefaultValue = 30,
-				Description = "Request timeout in seconds"
+				param.DefaultValue = 30;
+				param.Description = "Request timeout in seconds";
 			})
 			.AddContentType(MessageContentType.Json)
 			.AddContentType(MessageContentType.PlainText)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
+			.HandlesMessageEndpoint(EndpointType.Url, e =>
 			{
-				CanSend = false,
-				CanReceive = true,
-				IsRequired = true
+				e.CanSend = false;
+				e.CanReceive = true;
+				e.IsRequired = true;
 			})
 			.AddAuthenticationType(AuthenticationType.Token)
 			.AddAuthenticationType(AuthenticationType.Basic);
@@ -407,28 +402,23 @@ public class ChannelSchemaIntegrationTests
 				ChannelCapability.SendMessages | 
 				ChannelCapability.ReceiveMessages |
 				ChannelCapability.BulkMessaging)
-			.AddParameter(new ChannelParameter("ConnectionString", ParameterType.String)
-			{
-				IsRequired = true,
-				IsSensitive = true,
-				Description = "RabbitMQ connection string"
-			})
+			.AddRequiredParameter("ConnectionString", DataType.String, true)
 			.AddContentType(MessageContentType.Json)
 			.AddContentType(MessageContentType.Binary)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Topic)
+			.HandlesMessageEndpoint(EndpointType.Topic, e =>
 			{
-				CanSend = true,
-				CanReceive = true
+				e.CanSend = true;
+				e.CanReceive = true;
 			})
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Id)
+			.HandlesMessageEndpoint(EndpointType.Id, e =>
 			{
-				CanSend = true,
-				CanReceive = false
+				e.CanSend = true;
+				e.CanReceive = false;
 			})
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Label)
+			.HandlesMessageEndpoint(EndpointType.Label, e =>
 			{
-				CanSend = true,
-				CanReceive = true
+				e.CanSend = true;
+				e.CanReceive = true;
 			})
 			.AddAuthenticationType(AuthenticationType.Basic);
 
@@ -502,45 +492,41 @@ public class ChannelSchemaIntegrationTests
 				ChannelCapability.Templates | 
 				ChannelCapability.MediaAttachments |
 				ChannelCapability.HealthCheck)
-			.AddParameter(new ChannelParameter("Host", ParameterType.String)
+			.AddRequiredParameter("Host", DataType.String)
+			.AddParameter("Port", DataType.Integer, param =>
 			{
-				IsRequired = true,
-				Description = "SMTP server hostname"
-			})
-			.AddParameter(new ChannelParameter("Port", ParameterType.Integer)
-			{
-				IsRequired = true,
-				DefaultValue = 587,
-				Description = "SMTP server port"
+				param.IsRequired = true;
+				param.DefaultValue = 587;
+				param.Description = "SMTP server port";
 			})
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
 			.AddContentType(MessageContentType.Multipart)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+			.HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
 			{
-				CanSend = true,
-				CanReceive = false
+				e.CanSend = true;
+				e.CanReceive = false;
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Priority", ParameterType.Integer)
+			.AddMessageProperty("Priority", DataType.Integer, p =>
 			{
-				IsRequired = true,
-				Description = "Email priority level (1-5)"
+				p.IsRequired = true;
+				p.Description = "Email priority level (1-5)";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Subject", ParameterType.String)
+			.AddMessageProperty("Subject", DataType.String, p =>
 			{
-				IsRequired = true,
-				Description = "Email subject line"
+				p.IsRequired = true;
+				p.Description = "Email subject line";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("IsHtml", ParameterType.Boolean)
+			.AddMessageProperty("IsHtml", DataType.Boolean, p =>
 			{
-				IsRequired = false,
-				Description = "Whether email content is HTML formatted"
+				p.IsRequired = false;
+				p.Description = "Whether email content is HTML formatted";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Sensitivity", ParameterType.String)
+			.AddMessageProperty("Sensitivity", DataType.String, p =>
 			{
-				IsRequired = false,
-				IsSensitive = true,
-				Description = "Email sensitivity level for compliance"
+				p.IsRequired = false;
+				p.IsSensitive = true;
+				p.Description = "Email sensitivity level for compliance";
 			})
 			.AddAuthenticationType(AuthenticationType.Basic);
 
@@ -555,23 +541,23 @@ public class ChannelSchemaIntegrationTests
 		
 		var priorityProperty = emailSchema.MessageProperties.FirstOrDefault(p => p.Name == "Priority");
 		Assert.NotNull(priorityProperty);
-		Assert.Equal(ParameterType.Integer, priorityProperty.DataType);
+		Assert.Equal(DataType.Integer, priorityProperty.DataType);
 		Assert.True(priorityProperty.IsRequired);
 		Assert.False(priorityProperty.IsSensitive);
 		
 		var subjectProperty = emailSchema.MessageProperties.FirstOrDefault(p => p.Name == "Subject");
 		Assert.NotNull(subjectProperty);
-		Assert.Equal(ParameterType.String, subjectProperty.DataType);
+		Assert.Equal(DataType.String, subjectProperty.DataType);
 		Assert.True(subjectProperty.IsRequired);
 		
 		var isHtmlProperty = emailSchema.MessageProperties.FirstOrDefault(p => p.Name == "IsHtml");
 		Assert.NotNull(isHtmlProperty);
-		Assert.Equal(ParameterType.Boolean, isHtmlProperty.DataType);
+		Assert.Equal(DataType.Boolean, isHtmlProperty.DataType);
 		Assert.False(isHtmlProperty.IsRequired);
 		
 		var sensitivityProperty = emailSchema.MessageProperties.FirstOrDefault(p => p.Name == "Sensitivity");
 		Assert.NotNull(sensitivityProperty);
-		Assert.Equal(ParameterType.String, sensitivityProperty.DataType);
+		Assert.Equal(DataType.String, sensitivityProperty.DataType);
 		Assert.False(sensitivityProperty.IsRequired);
 		Assert.True(sensitivityProperty.IsSensitive);
 
@@ -587,25 +573,23 @@ public class ChannelSchemaIntegrationTests
 	{
 		// Arrange
 		var emailSchema = new ChannelSchema("SMTP", "Email", "2.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("Priority", ParameterType.Integer)
+			.AddMessageProperty("Priority", DataType.Integer, p =>
 			{
-				IsRequired = true,
-				Description = "Email priority level"
+				p.IsRequired = true;
+				p.Description = "Email priority level";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Subject", ParameterType.String)
+			.AddMessageProperty("Subject", DataType.String, p =>
 			{
-				IsRequired = true,
-				Description = "Email subject line"
+				p.IsRequired = true;
+				p.Description = "Email subject line";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("IsHtml", ParameterType.Boolean)
+			.AddMessageProperty("IsHtml", DataType.Boolean, p =>
 			{
-				IsRequired = false,
-				Description = "Whether email content is HTML"
+				p.Description = "Whether email content is HTML";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Category", ParameterType.String)
+			.AddMessageProperty("Category", DataType.String, p =>
 			{
-				IsRequired = false,
-				Description = "Email category"
+				p.Description = "Email category";
 			});
 
 		// Valid message properties
@@ -667,31 +651,28 @@ public class ChannelSchemaIntegrationTests
 				ChannelCapability.ReceiveMessages |
 				ChannelCapability.MessageStatusQuery |
 				ChannelCapability.BulkMessaging)
-			.AddMessageProperty(new MessagePropertyConfiguration("PhoneNumber", ParameterType.String)
+			.AddMessageProperty("PhoneNumber", DataType.String, p =>
 			{
-				IsRequired = true,
-				Description = "Recipient phone number in E.164 format"
+				p.IsRequired = true;
+				p.Description = "Recipient phone number in E.164 format";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("MessageType", ParameterType.String)
+			.AddMessageProperty("MessageType", DataType.String, p =>
 			{
-				IsRequired = false,
-				Description = "Type of SMS message (transactional, promotional, etc.)"
+				p.Description = "Type of SMS message (transactional, promotional, etc.)";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("DeliveryAttempts", ParameterType.Integer)
+			.AddMessageProperty("DeliveryAttempts", DataType.Integer, p =>
 			{
-				IsRequired = false,
-				Description = "Number of delivery attempts"
+				p.Description = "Number of delivery attempts";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("IsUrgent", ParameterType.Boolean)
+			.AddMessageProperty("IsUrgent", DataType.Boolean, p =>
 			{
-				IsRequired = false,
-				Description = "Whether message requires urgent delivery"
+				p.Description = "Whether message requires urgent delivery";
 			})
 			.AddContentType(MessageContentType.PlainText)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			.HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
 			{
-				CanSend = true,
-				CanReceive = true
+				e.CanSend = true;
+				e.CanReceive = true;
 			});
 
 		// Test valid message properties
@@ -740,7 +721,7 @@ public class ChannelSchemaIntegrationTests
 	private static void AssertParameterExists(
 		ChannelSchema schema, 
 		string name, 
-		ParameterType dataType, 
+		DataType dataType, 
 		bool isRequired = false, 
 		bool isSensitive = false, 
 		object? defaultValue = null)

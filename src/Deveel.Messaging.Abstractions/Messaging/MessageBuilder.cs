@@ -187,6 +187,29 @@ namespace Deveel.Messaging
 		}
 
 		/// <summary>
+		/// Sets the HTML content of the message.
+		/// </summary>
+		/// <param name="html">
+		/// The HTML content to set as the content of the message.
+		/// </param>
+		/// <param name="configure">
+		/// A configuration action that can be used to
+		/// further configure the HTML content.
+		/// </param>
+		/// <returns>
+		/// Returns the instance of the builder to allow chaining
+		/// construction operations.
+		/// </returns>
+		public MessageBuilder WithHtmlContent(string html, Action<HtmlContent>? configure = null)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(html, nameof(html));
+
+			var content = new HtmlContent(html);
+			configure?.Invoke(content);
+			return WithContent(content);
+		}
+
+		/// <summary>
 		/// Sets a text content to the message.
 		/// </summary>
 		/// <param name="text">

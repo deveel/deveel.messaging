@@ -213,20 +213,20 @@ namespace Deveel.Messaging
 			}
 		}
 
-		private bool IsTypeCompatible(ParameterType dataType, object? value)
+		private bool IsTypeCompatible(DataType dataType, object? value)
 		{
 			return dataType switch
 			{
 				// TODO: support the case of strings "enabled" / "disabled"
-				ParameterType.Boolean => value is bool,
-				ParameterType.String => value is string,
-				ParameterType.Integer => value is int || value is long || value is byte,
-				ParameterType.Number => value is double || value is decimal || value is float,
+				DataType.Boolean => value is bool,
+				DataType.String => value is string,
+				DataType.Integer => value is int || value is long || value is byte,
+				DataType.Number => value is double || value is decimal || value is float,
 				_ => false,
 			};
 		}
 
-		private T ConvertTo<T>(ParameterType sourceType, object? value)
+		private T ConvertTo<T>(DataType sourceType, object? value)
 		{
 			if (value is T tValue)
 				return tValue;
@@ -246,15 +246,15 @@ namespace Deveel.Messaging
 			}
 		}
 
-		private bool CanConvertTo(ParameterType sourceType, Type destType)
+		private bool CanConvertTo(DataType sourceType, Type destType)
 		{
 			return sourceType switch
 			{
-				ParameterType.Boolean => destType == typeof(bool) || destType == typeof(string),
-				ParameterType.String => true, // optimistically assume any type can be converted to string
-				ParameterType.Integer => destType == typeof(int) || destType == typeof(long) || destType == typeof(byte) ||
+				DataType.Boolean => destType == typeof(bool) || destType == typeof(string),
+				DataType.String => true, // optimistically assume any type can be converted to string
+				DataType.Integer => destType == typeof(int) || destType == typeof(long) || destType == typeof(byte) ||
 										 destType == typeof(short) || destType == typeof(sbyte) || destType == typeof(string),
-				ParameterType.Number => destType == typeof(double) || destType == typeof(decimal) || destType == typeof(float) ||
+				DataType.Number => destType == typeof(double) || destType == typeof(decimal) || destType == typeof(float) ||
 										 destType == typeof(int) || destType == typeof(long) || destType == typeof(byte) ||
 										 destType == typeof(short) || destType == typeof(sbyte) || destType == typeof(string),
 				_ => false,

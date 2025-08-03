@@ -798,10 +798,10 @@ public class TwilioMessageReceivingTests
     {
         return new ChannelSchema("Twilio", "SMS", "1.0.0")
             .AddContentType(MessageContentType.PlainText)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+            .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
-                CanSend = true,
-                CanReceive = true
+                e.CanSend = true;
+                e.CanReceive = true;
             });
     }
 
@@ -809,10 +809,10 @@ public class TwilioMessageReceivingTests
     {
         return new ChannelSchema("Twilio", "WhatsApp", "1.0.0")
             .AddContentType(MessageContentType.PlainText)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+            .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
-                CanSend = true,
-                CanReceive = true
+                e.CanSend = true;
+                e.CanReceive = true;
             });
     }
 
@@ -821,10 +821,10 @@ public class TwilioMessageReceivingTests
         return new ChannelSchema("Twilio", "SMS", "1.0.0")
             .AddContentType(MessageContentType.PlainText)
             .AddContentType(MessageContentType.Binary)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+            .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
-                CanSend = true,
-                CanReceive = true
+                e.CanSend = true;
+                e.CanReceive = true;
             });
     }
 }

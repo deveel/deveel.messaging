@@ -28,10 +28,10 @@ namespace Deveel.Messaging
 		/// </param>
 		/// <param name="dataType">
 		/// The data type of the connector parameter, represented by the 
-		/// <see cref="ParameterType"/> enumeration.
+		/// <see cref="Messaging.DataType"/> enumeration.
 		/// </param>
 		[JsonConstructor]
-		public ChannelParameter(string name, ParameterType dataType)
+		public ChannelParameter(string name, DataType dataType)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
@@ -52,7 +52,7 @@ namespace Deveel.Messaging
 		/// <summary>
 		/// Gets the type of the parameter.
 		/// </summary>
-		public ParameterType DataType { get; }
+		public DataType DataType { get; }
 
 		/// <summary>
 		/// Gets or sets a value indicating whether the 
