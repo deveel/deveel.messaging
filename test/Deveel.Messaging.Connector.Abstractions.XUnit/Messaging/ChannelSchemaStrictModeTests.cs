@@ -131,7 +131,7 @@ public class ChannelSchemaStrictModeTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("KnownProperty", DataType.String));
+			.AddMessageProperty("KnownProperty", DataType.String);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -154,7 +154,7 @@ public class ChannelSchemaStrictModeTests
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddMessageProperty(new MessagePropertyConfiguration("KnownProperty", DataType.String));
+			.AddMessageProperty("KnownProperty", DataType.String);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -246,7 +246,7 @@ public class ChannelSchemaStrictModeTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProp", DataType.String) { IsRequired = true });
+			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true);
 
 		var messageProperties = new Dictionary<string, object?>();
 
@@ -264,7 +264,7 @@ public class ChannelSchemaStrictModeTests
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProp", DataType.String) { IsRequired = true });
+			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true);
 
 		var messageProperties = new Dictionary<string, object?>();
 
@@ -281,7 +281,7 @@ public class ChannelSchemaStrictModeTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("IntProp", DataType.Integer));
+			.AddMessageProperty("IntProp", DataType.Integer);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -302,7 +302,7 @@ public class ChannelSchemaStrictModeTests
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddMessageProperty(new MessagePropertyConfiguration("IntProp", DataType.Integer));
+			.AddMessageProperty("IntProp", DataType.Integer);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -325,13 +325,13 @@ public class ChannelSchemaStrictModeTests
 			.WithDisplayName("Strict Schema")
 			.WithStrictMode()
 			.AddParameter("Param1", DataType.String)
-			.AddMessageProperty(new MessagePropertyConfiguration("Prop1", DataType.String));
+			.AddMessageProperty("Prop1", DataType.String);
 
 		var flexibleSchema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithDisplayName("Flexible Schema")
 			.WithFlexibleMode()
 			.AddParameter("Param1", DataType.String)
-			.AddMessageProperty(new MessagePropertyConfiguration("Prop1", DataType.String));
+			.AddMessageProperty("Prop1", DataType.String);
 
 		// Assert
 		Assert.True(strictSchema.IsStrict);
@@ -372,15 +372,15 @@ public class ChannelSchemaStrictModeTests
 		var strictSchema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.AddRequiredParameter("RequiredParam", DataType.String)
 			.AddParameter("OptionalParam", DataType.Integer)
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProp", DataType.String) { IsRequired = true })
-			.AddMessageProperty(new MessagePropertyConfiguration("OptionalProp", DataType.Boolean) { IsRequired = false });
+			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true)
+			.AddMessageProperty("OptionalProp", DataType.Boolean);
 
 		var flexibleSchema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
 			.AddRequiredParameter("RequiredParam", DataType.String)
 			.AddParameter("OptionalParam", DataType.Integer)
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProp", DataType.String) { IsRequired = true })
-			.AddMessageProperty(new MessagePropertyConfiguration("OptionalProp", DataType.Boolean) { IsRequired = false });
+			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true)
+			.AddMessageProperty("OptionalProp", DataType.Boolean);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("RequiredParam", "valid value")

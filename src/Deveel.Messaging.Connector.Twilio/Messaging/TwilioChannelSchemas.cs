@@ -66,50 +66,50 @@ namespace Deveel.Messaging
             })
             .AddContentType(MessageContentType.PlainText)
             .AddContentType(MessageContentType.Media)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+            .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
-                CanSend = true,
-                CanReceive = true,
-                IsRequired = true // Phone number is required for both sending and receiving
+                e.CanSend = true;
+                e.CanReceive = true;
+                e.IsRequired = true; // Phone number is required for both sending and receiving
             })
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
+            .HandlesMessageEndpoint(EndpointType.Url, e =>
             {
-                CanSend = false,
-                CanReceive = true
+                e.CanSend = false;
+                e.CanReceive = true;
             })
             .AddAuthenticationType(AuthenticationType.Basic)
             // Body and MediaUrl are derived from message content, not separate message properties
             // Body comes from TextContent.Text when ContentType = PlainText
             // MediaUrl comes from MediaContent.FileUrl when ContentType = Media
-            .AddMessageProperty(new MessagePropertyConfiguration("ValidityPeriod", DataType.Integer)
+            .AddMessageProperty("ValidityPeriod", DataType.Integer, p =>
             {
-                IsRequired = false,
-                Description = "Message-specific validity period override"
+                p.IsRequired = false;
+                p.Description = "Message-specific validity period override";
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("MaxPrice", DataType.Number)
+            .AddMessageProperty("MaxPrice", DataType.Number, p =>
             {
-                IsRequired = false,
-                Description = "Message-specific maximum price override"
+                p.IsRequired = false;
+                p.Description = "Message-specific maximum price override";
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("ProvideCallback", DataType.Boolean)
+            .AddMessageProperty("ProvideCallback", DataType.Boolean, p =>
             {
-                IsRequired = false,
-                Description = "Whether to provide delivery status callbacks for this message"
+                p.IsRequired = false;
+                p.Description = "Whether to provide delivery status callbacks for this message";
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("AttemptLimits", DataType.Integer)
+            .AddMessageProperty("AttemptLimits", DataType.Integer, p =>
             {
-                IsRequired = false,
-                Description = "Total number of attempts made by Twilio to deliver the message"
+                p.IsRequired = false;
+                p.Description = "Total number of attempts made by Twilio to deliver the message";
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("SmartEncoded", DataType.Boolean)
+            .AddMessageProperty("SmartEncoded", DataType.Boolean, p =>
             {
-                IsRequired = false,
-                Description = "Whether Twilio will automatically optimize the message encoding"
+                p.IsRequired = false;
+                p.Description = "Whether Twilio will automatically optimize the message encoding";
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("PersistentAction", DataType.String)
+            .AddMessageProperty("PersistentAction", DataType.String, p =>
             {
-                IsRequired = false,
-                Description = "Rich Communication Services (RCS) specific action"
+                p.IsRequired = false;
+                p.Description = "Rich Communication Services (RCS) specific action";
             });
 
         /// <summary>
@@ -130,51 +130,51 @@ namespace Deveel.Messaging
                 ChannelCapability.Templates |
                 ChannelCapability.MediaAttachments |
                 ChannelCapability.HealthCheck)
-            .AddParameter(new ChannelParameter("AccountSid", DataType.String)
+            .AddParameter("AccountSid", DataType.String, p =>
             {
-                IsRequired = true,
-                Description = "Twilio Account SID - found in your Twilio Console Dashboard"
+                p.IsRequired = true;
+                p.Description = "Twilio Account SID - found in your Twilio Console Dashboard";
             })
-            .AddParameter(new ChannelParameter("AuthToken", DataType.String)
+            .AddParameter("AuthToken", DataType.String, p =>
             {
-                IsRequired = true,
-                IsSensitive = true,
-                Description = "Twilio Auth Token - found in your Twilio Console Dashboard"
+                p.IsRequired = true;
+                p.IsSensitive = true;
+                p.Description = "Twilio Auth Token - found in your Twilio Console Dashboard";
             })
-            .AddParameter(new ChannelParameter("WebhookUrl", DataType.String)
+            .AddParameter("WebhookUrl", DataType.String, p =>
             {
-                IsRequired = false,
-                Description = "URL to receive webhook notifications for message status updates and incoming WhatsApp messages"
+                p.IsRequired = false;
+                p.Description = "URL to receive webhook notifications for message status updates and incoming WhatsApp messages";
             })
-            .AddParameter(new ChannelParameter("StatusCallback", DataType.String)
+            .AddParameter("StatusCallback", DataType.String, p =>
             {
-                IsRequired = false,
-                Description = "URL to receive delivery status callbacks for sent WhatsApp messages"
+                p.IsRequired = false;
+                p.Description = "URL to receive delivery status callbacks for sent WhatsApp messages";
             })
             .AddContentType(MessageContentType.PlainText)
             .AddContentType(MessageContentType.Media)
             .AddContentType(MessageContentType.Template)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+            .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
-                CanSend = true,
-                CanReceive = true,
-                IsRequired = true // WhatsApp phone number is required for both sending and receiving
+                e.CanSend = true;
+                e.CanReceive = true;
+                e.IsRequired = true; // WhatsApp phone number is required for both sending and receiving
             })
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
+            .HandlesMessageEndpoint(EndpointType.Url, e =>
             {
-                CanSend = false,
-                CanReceive = true
+                e.CanSend = false;
+                e.CanReceive = true;
             })
             .AddAuthenticationType(AuthenticationType.Basic)
-            .AddMessageProperty(new MessagePropertyConfiguration("ProvideCallback", DataType.Boolean)
+            .AddMessageProperty("ProvideCallback", DataType.Boolean, p =>
             {
-                IsRequired = false,
-                Description = "Whether to provide delivery status callbacks for this WhatsApp message"
+                p.IsRequired = false;
+                p.Description = "Whether to provide delivery status callbacks for this WhatsApp message";
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("PersistentAction", DataType.String)
+            .AddMessageProperty("PersistentAction", DataType.String, p =>
             {
-                IsRequired = false,
-                Description = "Rich Communication Services (RCS) specific action for WhatsApp"
+                p.IsRequired = false;
+                p.Description = "Rich Communication Services (RCS) specific action for WhatsApp";
             });
 
         /// <summary>

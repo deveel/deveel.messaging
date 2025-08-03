@@ -173,10 +173,10 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 
 		// Act
-		var result = schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+		var result = schema.HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
 		{
-			CanSend = true,
-			CanReceive = true
+			e.CanSend = true;
+			e.CanReceive = true;
 		});
 
 		// Assert
@@ -197,10 +197,10 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 
 		// Act
-		var result = schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
+		var result = schema.HandlesMessageEndpoint(EndpointType.Url, e =>
 		{
-			CanSend = false,
-			CanReceive = true
+			e.CanSend = false;
+			e.CanReceive = true;
 		});
 
 		// Assert
@@ -223,10 +223,10 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 		
 		// First add a valid endpoint
-		schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(endpointType));
+		schema.HandlesMessageEndpoint(endpointType);
 
 		// Act & Assert - Adding the same type again should throw
-		Assert.Throws<InvalidOperationException>(() => schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(endpointType)));
+		Assert.Throws<InvalidOperationException>(() => schema.HandlesMessageEndpoint(endpointType));
 	}
 
 	[Fact]
@@ -256,21 +256,21 @@ public class ChannelSchemaTests
 
 		// Act
 		var result = schema
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+			.HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
 			{
-				CanSend = true,
-				CanReceive = false
+				e.CanSend = true;
+				e.CanReceive = false;
 			})
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			.HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
 			{
-				CanSend = false,
-				CanReceive = true
+				e.CanSend = false;
+				e.CanReceive = true;
 			})
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
+			.HandlesMessageEndpoint(EndpointType.Url, e =>
 			{
-				CanSend = true,
-				CanReceive = true,
-				IsRequired = true
+				e.CanSend = true;
+				e.CanReceive = true;
+				e.IsRequired = true;
 			});
 
 		// Assert
@@ -304,12 +304,12 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithDisplayName("Test Schema")
 			.WithCapability(ChannelCapability.ReceiveMessages)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress))
+			.HandlesMessageEndpoint(EndpointType.EmailAddress)
 			.AddContentType(MessageContentType.PlainText)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			.HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
 			{
-				CanSend = false,
-				CanReceive = true
+				e.CanSend = false;
+				e.CanReceive = true;
 			})
 			.WithCapability(ChannelCapability.Templates);
 
@@ -332,18 +332,18 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 
 		// Act - Add first endpoint configuration
-		schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+		schema.HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
 		{
-			CanSend = true,
-			CanReceive = false
+			e.CanSend = true;
+			e.CanReceive = false;
 		});
 
 		// Assert - Adding another endpoint with the same type should throw
 		var exception = Assert.Throws<InvalidOperationException>(() => 
-			schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+			schema.HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
 			{
-				CanSend = false,
-				CanReceive = true
+				e.CanSend = false;
+				e.CanReceive = true;
 			}));
 		
 		Assert.Contains("An endpoint configuration with type 'EmailAddress' already exists", exception.Message);
@@ -377,8 +377,8 @@ public class ChannelSchemaTests
 		schema.AllowsAnyMessageEndpoint();
 
 		// Assert - Adding a specific endpoint after wildcard should throw
-		var exception = Assert.Throws<InvalidOperationException>(() => 
-			schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Any)));
+		var exception = Assert.Throws<InvalidOperationException>(() =>
+			schema.HandlesMessageEndpoint(EndpointType.Any));
 		
 		Assert.Contains("An endpoint configuration with type 'Any' already exists", exception.Message);
 		Assert.Single(schema.Endpoints);
@@ -468,20 +468,19 @@ public class ChannelSchemaTests
 
 		// Act
 		var result = schema
-			.AddMessageProperty(new MessagePropertyConfiguration("Priority", DataType.Integer)
+			.AddMessageProperty("Priority", DataType.Integer, p =>
 			{
-				IsRequired = true,
-				Description = "Message priority"
+				p.IsRequired = true;
+				p.Description = "Message priority";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Category", DataType.String)
+			.AddMessageProperty("Category", DataType.String, p =>
 			{
-				IsRequired = false,
-				Description = "Message category"
+				p.Description = "Message category";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Timestamp", DataType.String)
+			.AddMessageProperty("Timestamp", DataType.String, p =>
 			{
-				IsRequired = true,
-				Description = "Message timestamp"
+				p.IsRequired = true;
+				p.Description = "Message timestamp";
 			});
 
 		// Assert
@@ -511,16 +510,10 @@ public class ChannelSchemaTests
 		// Arrange & Act
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithDisplayName("Test Schema")
-			.AddMessageProperty(new MessagePropertyConfiguration("Priority", DataType.Integer)
-			{
-				IsRequired = true
-			})
+			.AddMessageProperty("Priority", DataType.Integer, p => p.IsRequired = true)
 			.AddContentType(MessageContentType.PlainText)
-			.AddMessageProperty(new MessagePropertyConfiguration("Category", DataType.String)
-			{
-				IsRequired = false
-			})
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress));
+			.AddMessageProperty("Category", DataType.String)
+			.HandlesMessageEndpoint(EndpointType.EmailAddress);
 
 		// Assert
 		Assert.Equal("Test Schema", schema.DisplayName);
@@ -548,10 +541,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("OptionalProperty", DataType.String)
-			{
-				IsRequired = false
-			});
+			.AddMessageProperty("OptionalProperty", DataType.String);
 
 		var messageProperties = new Dictionary<string, object?>();
 
@@ -567,10 +557,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProperty", DataType.String)
-			{
-				IsRequired = true
-			});
+			.AddMessageProperty("RequiredProperty", DataType.String, p => p.IsRequired = true);
 
 		var messageProperties = new Dictionary<string, object?>();
 
@@ -588,14 +575,8 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProperty1", DataType.String)
-			{
-				IsRequired = true
-			})
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProperty2", DataType.Integer)
-			{
-				IsRequired = true
-			});
+			.AddMessageProperty("RequiredProperty1", DataType.String, p => p.IsRequired = true)
+			.AddMessageProperty("RequiredProperty2", DataType.Integer, p => p.IsRequired = true);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -615,10 +596,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("StringProperty", DataType.String)
-			{
-				IsRequired = true
-			});
+			.AddMessageProperty("StringProperty", DataType.String, p => p.IsRequired = true);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -639,7 +617,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("KnownProperty", DataType.String));
+			.AddMessageProperty("KnownProperty", DataType.String);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -661,14 +639,8 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProperty", DataType.String)
-			{
-				IsRequired = true
-			})
-			.AddMessageProperty(new MessagePropertyConfiguration("TypedProperty", DataType.Boolean)
-			{
-				IsRequired = true
-			});
+			.AddMessageProperty("RequiredProperty", DataType.String, p => p.IsRequired = true)
+			.AddMessageProperty("TypedProperty", DataType.Boolean, p => p.IsRequired = true);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -701,10 +673,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("TestProperty", propertyType)
-			{
-				IsRequired = true
-			});
+			.AddMessageProperty("TestProperty", propertyType, p => p.IsRequired = true);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -729,10 +698,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("TestProperty", propertyType)
-			{
-				IsRequired = true
-			});
+			.AddMessageProperty("TestProperty", propertyType, p => p.IsRequired = true);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -753,26 +719,24 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var emailSchema = new ChannelSchema("SMTP", "Email", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("Priority", DataType.Integer)
+			.AddMessageProperty("Priority", DataType.Integer, p =>
 			{
-				IsRequired = true,
-				Description = "Email priority level"
+				p.IsRequired = true;
+				p.Description = "Email priority level";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Category", DataType.String)
+			.AddMessageProperty("Category", DataType.String, p =>
 			{
-				IsRequired = false,
-				Description = "Email category"
+				p.Description = "Email category";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("IsHtml", DataType.Boolean)
+			.AddMessageProperty("IsHtml", DataType.Boolean, p =>
 			{
-				IsRequired = true,
-				Description = "Whether email content is HTML"
+				p.IsRequired = true;
+				p.Description = "Whether email content is HTML";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Sensitivity", DataType.String)
+			.AddMessageProperty("Sensitivity", DataType.String, p =>
 			{
-				IsRequired = false,
-				IsSensitive = true,
-				Description = "Email sensitivity level"
+				p.IsSensitive = true;
+				p.Description = "Email sensitivity level";
 			});
 
 		var validMessageProperties = new Dictionary<string, object?>
@@ -807,10 +771,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("TestProperty", DataType.String)
-			{
-				IsRequired = true
-			});
+			.AddMessageProperty("TestProperty", DataType.String, p => p.IsRequired = true);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -836,10 +797,10 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 
 		// Act
-		schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Id)
+		schema.HandlesMessageEndpoint(EndpointType.Id, e =>
 		{
-			CanSend = true,
-			CanReceive = false
+			e.CanSend = true;
+			e.CanReceive = false;
 		});
 
 		// Assert
@@ -858,10 +819,10 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 
 		// Act
-		schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Label)
+		schema.HandlesMessageEndpoint(EndpointType.Label, e =>
 		{
-			CanSend = false,
-			CanReceive = true
+			e.CanSend = true;
+			e.CanReceive = false;
 		});
 
 		// Assert
@@ -869,8 +830,8 @@ public class ChannelSchemaTests
 		
 		var endpoint = schema.Endpoints.First();
 		Assert.Equal(EndpointType.Label, endpoint.Type);
-		Assert.False(endpoint.CanSend);
-		Assert.True(endpoint.CanReceive);
+		Assert.False(endpoint.CanReceive);
+		Assert.True(endpoint.CanSend);
 	}
 
 	[Fact]
@@ -880,10 +841,10 @@ public class ChannelSchemaTests
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 
 		// Act
-		schema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Topic)
+		schema.HandlesMessageEndpoint(EndpointType.Topic, e =>
 		{
-			CanSend = true,
-			CanReceive = true
+			e.CanSend = true;
+			e.CanReceive = true;
 		});
 
 		// Assert

@@ -35,10 +35,10 @@ public class ChannelSchemaDerivationIntegrationTests
 			})
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Media)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber))
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url))
-			.AddMessageProperty(new MessagePropertyConfiguration("MessageType", DataType.String) { IsRequired = false })
-			.AddMessageProperty(new MessagePropertyConfiguration("IsUrgent", DataType.Boolean) { IsRequired = false });
+			.HandlesMessageEndpoint(EndpointType.PhoneNumber)
+			.HandlesMessageEndpoint(EndpointType.Url)
+			.AddMessageProperty("MessageType", DataType.String)
+			.AddMessageProperty("IsUrgent", DataType.Boolean);
 
 		// Act - Create a restricted copy with specific restrictions for a customer
 		// Note: ChannelProvider, ChannelType, and Version remain the same as base (logical identity)
@@ -87,7 +87,7 @@ public class ChannelSchemaDerivationIntegrationTests
 		Assert.True(smsEndpoint.IsRequired);
 
 		// Verify message property changes
-		Assert.Equal(1, customerSmsSchema.MessageProperties.Count); // IsUrgent removed
+		Assert.Single(customerSmsSchema.MessageProperties); // IsUrgent removed
 		Assert.DoesNotContain(customerSmsSchema.MessageProperties, p => p.Name == "IsUrgent");
 		
 		// Verify base schema is unchanged
@@ -123,13 +123,13 @@ public class ChannelSchemaDerivationIntegrationTests
 			.AddContentType(MessageContentType.Html)
 			.AddContentType(MessageContentType.Multipart)
 			.AddContentType(MessageContentType.Media)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress))
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber))
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url))
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.ApplicationId))
-			.AddMessageProperty(new MessagePropertyConfiguration("Subject", DataType.String) { IsRequired = true })
-			.AddMessageProperty(new MessagePropertyConfiguration("Priority", DataType.Integer) { IsRequired = false })
-			.AddMessageProperty(new MessagePropertyConfiguration("IsHtml", DataType.Boolean) { IsRequired = false });
+			.HandlesMessageEndpoint(EndpointType.EmailAddress)
+			.HandlesMessageEndpoint(EndpointType.PhoneNumber)
+			.HandlesMessageEndpoint(EndpointType.Url)
+			.HandlesMessageEndpoint(EndpointType.ApplicationId)
+			.AddMessageProperty("Subject", DataType.String, param => param.IsRequired = true)
+			.AddMessageProperty("Priority", DataType.Integer)
+			.AddMessageProperty("IsHtml", DataType.Boolean);
 
 		// Act - Create HR Department schema (restricted copy)
 		var hrEmailSchema = new ChannelSchema(baseEmailSchema, "HR Secure Email")
@@ -151,15 +151,15 @@ public class ChannelSchemaDerivationIntegrationTests
 				param.DefaultValue = 10; // Smaller attachments for bulk emails
 				param.Description = "Maximum attachment size in MB for bulk emails";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("CampaignId", DataType.String)
+			.AddMessageProperty("CampaignId", DataType.String, param =>
 			{
-				IsRequired = true,
-				Description = "Marketing campaign identifier"
+				param.IsRequired = true;
+				param.Description = "Marketing campaign identifier";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("SegmentId", DataType.String)
+			.AddMessageProperty("SegmentId", DataType.String, param => 
 			{
-				IsRequired = false,
-				Description = "Target segment identifier"
+				param.IsRequired = false;
+				param.Description = "Target segment identifier";
 			});
 
 		// Assert HR Schema - Core properties must match base (logical identity)
@@ -231,14 +231,13 @@ public class ChannelSchemaDerivationIntegrationTests
 			.AddContentType(MessageContentType.Html)
 			.AddContentType(MessageContentType.Multipart)
 			.AddContentType(MessageContentType.Media)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress))
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber))
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url))
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.ApplicationId))
-			.AddMessageProperty(new MessagePropertyConfiguration("Priority", DataType.Integer))
-			.AddMessageProperty(new MessagePropertyConfiguration("Category", DataType.String))
-			.AddMessageProperty(new MessagePropertyConfiguration("MessageType", DataType.String));
-;
+			.HandlesMessageEndpoint(EndpointType.EmailAddress)
+			.HandlesMessageEndpoint(EndpointType.PhoneNumber)
+			.HandlesMessageEndpoint(EndpointType.Url)
+			.HandlesMessageEndpoint(EndpointType.ApplicationId)
+			.AddMessageProperty("Priority", DataType.Integer)
+			.AddMessageProperty("Category", DataType.String)
+			.AddMessageProperty("MessageType", DataType.String);
 
 		// Act - Create SMS-only copy
 		var smsOnlySchema = new ChannelSchema(baseMessagingSchema, "SMS Only Messaging")
@@ -261,15 +260,15 @@ public class ChannelSchemaDerivationIntegrationTests
 			.RemoveEndpoint(EndpointType.ApplicationId)
 			.RemoveCapability(ChannelCapability.MediaAttachments)
 			.RestrictContentTypes(MessageContentType.PlainText, MessageContentType.Html)
-			.AddMessageProperty(new MessagePropertyConfiguration("Subject", DataType.String)
+			.AddMessageProperty("Subject", DataType.String, param =>
 			{
-				IsRequired = true,
-				Description = "Email subject line"
+				param.IsRequired = true;
+				param.Description = "Email subject line";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("IsHtml", DataType.Boolean)
+			.AddMessageProperty("IsHtml", DataType.Boolean, param =>
 			{
-				IsRequired = false,
-				Description = "Indicates if the email is HTML formatted"
+				param.IsRequired = false;
+				param.Description = "Indicates if the email is HTML formatted";
 			});
 
 		// Assert multiple derived schemas don't affect each other
@@ -340,9 +339,9 @@ public class ChannelSchemaDerivationIntegrationTests
 			.AddRequiredParameter("RequiredParam", DataType.String)
 			.AddParameter("OptionalParam", DataType.String)
 			.AddParameter("RemovedParam", DataType.String)
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProp", DataType.String) { IsRequired = true })
-			.AddMessageProperty(new MessagePropertyConfiguration("OptionalProp", DataType.String) { IsRequired = false })
-			.AddMessageProperty(new MessagePropertyConfiguration("RemovedProp", DataType.String) { IsRequired = false });
+			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true)
+			.AddMessageProperty("OptionalProp", DataType.String)
+			.AddMessageProperty("RemovedProp", DataType.String);
 
 		var derivedSchema = new ChannelSchema(baseSchema, "Restricted Schema")
 			.RemoveParameter("RemovedParam")
@@ -490,9 +489,9 @@ public class ChannelSchemaDerivationIntegrationTests
 			.AddRequiredParameter("RequiredParam", DataType.String)
 			.AddParameter("OptionalParam", DataType.String)
 			.AddParameter("RemovedParam", DataType.String)
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProp", DataType.String) { IsRequired = true })
-			.AddMessageProperty(new MessagePropertyConfiguration("OptionalProp", DataType.String) { IsRequired = false })
-			.AddMessageProperty(new MessagePropertyConfiguration("RemovedProp", DataType.String) { IsRequired = false });
+			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true)
+			.AddMessageProperty("OptionalProp", DataType.String)
+			.AddMessageProperty("RemovedProp", DataType.String);
 
 		var restrictedSchema = new ChannelSchema(baseSchema, "Restricted Schema")
 			.RemoveParameter("RemovedParam")

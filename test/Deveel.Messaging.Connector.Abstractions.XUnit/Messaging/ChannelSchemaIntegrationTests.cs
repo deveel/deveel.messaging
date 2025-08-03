@@ -47,15 +47,15 @@ public class ChannelSchemaIntegrationTests
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
 			.AddContentType(MessageContentType.Multipart)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+			.HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
 			{
-				CanSend = true,
-				CanReceive = false
+				e.CanSend = true;
+				e.CanReceive = false;
 			})
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			.HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
 			{
-				CanSend = true,
-				CanReceive = false
+				e.CanSend = true;
+				e.CanReceive = false;
 			})
 			.AddAuthenticationType(AuthenticationType.Basic);
 
@@ -119,15 +119,15 @@ public class ChannelSchemaIntegrationTests
 				param.Description = "Twilio Auth Token";
 			})
 			.AddContentType(MessageContentType.PlainText)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			.HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
 			{
-				CanSend = true,
-				CanReceive = true
+				e.CanSend = true;
+				e.CanReceive = true;
 			})
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
+			.HandlesMessageEndpoint(EndpointType.Url, e =>
 			{
-				CanSend = false,
-				CanReceive = true
+				e.CanSend = false;
+				e.CanReceive = true;
 			})
 			.AddAuthenticationType(AuthenticationType.Token);
 
@@ -362,11 +362,11 @@ public class ChannelSchemaIntegrationTests
 			})
 			.AddContentType(MessageContentType.Json)
 			.AddContentType(MessageContentType.PlainText)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
+			.HandlesMessageEndpoint(EndpointType.Url, e =>
 			{
-				CanSend = false,
-				CanReceive = true,
-				IsRequired = true
+				e.CanSend = false;
+				e.CanReceive = true;
+				e.IsRequired = true;
 			})
 			.AddAuthenticationType(AuthenticationType.Token)
 			.AddAuthenticationType(AuthenticationType.Basic);
@@ -405,20 +405,20 @@ public class ChannelSchemaIntegrationTests
 			.AddRequiredParameter("ConnectionString", DataType.String, true)
 			.AddContentType(MessageContentType.Json)
 			.AddContentType(MessageContentType.Binary)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Topic)
+			.HandlesMessageEndpoint(EndpointType.Topic, e =>
 			{
-				CanSend = true,
-				CanReceive = true
+				e.CanSend = true;
+				e.CanReceive = true;
 			})
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Id)
+			.HandlesMessageEndpoint(EndpointType.Id, e =>
 			{
-				CanSend = true,
-				CanReceive = false
+				e.CanSend = true;
+				e.CanReceive = false;
 			})
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Label)
+			.HandlesMessageEndpoint(EndpointType.Label, e =>
 			{
-				CanSend = true,
-				CanReceive = true
+				e.CanSend = true;
+				e.CanReceive = true;
 			})
 			.AddAuthenticationType(AuthenticationType.Basic);
 
@@ -502,31 +502,31 @@ public class ChannelSchemaIntegrationTests
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
 			.AddContentType(MessageContentType.Multipart)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+			.HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
 			{
-				CanSend = true,
-				CanReceive = false
+				e.CanSend = true;
+				e.CanReceive = false;
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Priority", DataType.Integer)
+			.AddMessageProperty("Priority", DataType.Integer, p =>
 			{
-				IsRequired = true,
-				Description = "Email priority level (1-5)"
+				p.IsRequired = true;
+				p.Description = "Email priority level (1-5)";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Subject", DataType.String)
+			.AddMessageProperty("Subject", DataType.String, p =>
 			{
-				IsRequired = true,
-				Description = "Email subject line"
+				p.IsRequired = true;
+				p.Description = "Email subject line";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("IsHtml", DataType.Boolean)
+			.AddMessageProperty("IsHtml", DataType.Boolean, p =>
 			{
-				IsRequired = false,
-				Description = "Whether email content is HTML formatted"
+				p.IsRequired = false;
+				p.Description = "Whether email content is HTML formatted";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Sensitivity", DataType.String)
+			.AddMessageProperty("Sensitivity", DataType.String, p =>
 			{
-				IsRequired = false,
-				IsSensitive = true,
-				Description = "Email sensitivity level for compliance"
+				p.IsRequired = false;
+				p.IsSensitive = true;
+				p.Description = "Email sensitivity level for compliance";
 			})
 			.AddAuthenticationType(AuthenticationType.Basic);
 
@@ -573,25 +573,23 @@ public class ChannelSchemaIntegrationTests
 	{
 		// Arrange
 		var emailSchema = new ChannelSchema("SMTP", "Email", "2.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("Priority", DataType.Integer)
+			.AddMessageProperty("Priority", DataType.Integer, p =>
 			{
-				IsRequired = true,
-				Description = "Email priority level"
+				p.IsRequired = true;
+				p.Description = "Email priority level";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Subject", DataType.String)
+			.AddMessageProperty("Subject", DataType.String, p =>
 			{
-				IsRequired = true,
-				Description = "Email subject line"
+				p.IsRequired = true;
+				p.Description = "Email subject line";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("IsHtml", DataType.Boolean)
+			.AddMessageProperty("IsHtml", DataType.Boolean, p =>
 			{
-				IsRequired = false,
-				Description = "Whether email content is HTML"
+				p.Description = "Whether email content is HTML";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Category", DataType.String)
+			.AddMessageProperty("Category", DataType.String, p =>
 			{
-				IsRequired = false,
-				Description = "Email category"
+				p.Description = "Email category";
 			});
 
 		// Valid message properties
@@ -653,31 +651,28 @@ public class ChannelSchemaIntegrationTests
 				ChannelCapability.ReceiveMessages |
 				ChannelCapability.MessageStatusQuery |
 				ChannelCapability.BulkMessaging)
-			.AddMessageProperty(new MessagePropertyConfiguration("PhoneNumber", DataType.String)
+			.AddMessageProperty("PhoneNumber", DataType.String, p =>
 			{
-				IsRequired = true,
-				Description = "Recipient phone number in E.164 format"
+				p.IsRequired = true;
+				p.Description = "Recipient phone number in E.164 format";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("MessageType", DataType.String)
+			.AddMessageProperty("MessageType", DataType.String, p =>
 			{
-				IsRequired = false,
-				Description = "Type of SMS message (transactional, promotional, etc.)"
+				p.Description = "Type of SMS message (transactional, promotional, etc.)";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("DeliveryAttempts", DataType.Integer)
+			.AddMessageProperty("DeliveryAttempts", DataType.Integer, p =>
 			{
-				IsRequired = false,
-				Description = "Number of delivery attempts"
+				p.Description = "Number of delivery attempts";
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("IsUrgent", DataType.Boolean)
+			.AddMessageProperty("IsUrgent", DataType.Boolean, p =>
 			{
-				IsRequired = false,
-				Description = "Whether message requires urgent delivery"
+				p.Description = "Whether message requires urgent delivery";
 			})
 			.AddContentType(MessageContentType.PlainText)
-			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+			.HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
 			{
-				CanSend = true,
-				CanReceive = true
+				e.CanSend = true;
+				e.CanReceive = true;
 			});
 
 		// Test valid message properties

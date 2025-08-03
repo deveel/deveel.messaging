@@ -176,6 +176,22 @@ namespace Deveel.Messaging
 			return this;
 		}
 
+		/// <summary>
+		/// Adds a new parameter to the schema configuration with 
+		/// the specified name and type.
+		/// </summary>
+		/// <param name="parameterName">
+		/// The name of the parameter to add.
+		/// </param>
+		/// <param name="parameterType">
+		/// The data type of the parameter to add.
+		/// </param>
+		/// <param name="configure">
+		/// A callback to configure additional properties of the parameter.
+		/// </param>
+		/// <returns>
+		/// Returns the current schema instance for method chaining.
+		/// </returns>
 		public ChannelSchema AddParameter(string parameterName, DataType parameterType, Action<ChannelParameter>? configure = null)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(parameterName, nameof(parameterName));
@@ -185,6 +201,22 @@ namespace Deveel.Messaging
 			return AddParameter(parameter);
 		}
 
+		/// <summary>
+		/// Adds a new required parameter to the schema configuration with
+		/// the specified name and type.
+		/// </summary>
+		/// <param name="parameterName">
+		/// The name of the parameter to add.
+		/// </param>
+		/// <param name="parameterType">
+		/// The data type of the parameter to add.
+		/// </param>
+		/// <param name="sensitive">
+		/// A value indicating whether the parameter is sensitive.
+		/// </param>
+		/// <returns>
+		/// Returns the current schema instance for method chaining.
+		/// </returns>
 		public ChannelSchema AddRequiredParameter(string parameterName, DataType parameterType, bool sensitive = false)
 			=> AddParameter(parameterName, parameterType, param => { param.IsRequired = true; param.IsSensitive = sensitive; });
 
@@ -216,6 +248,26 @@ namespace Deveel.Messaging
 			MessageProperties.Add(property);
 
 			return this;
+		}
+
+		/// <summary>
+		/// Adds a new message property to the channel schema with 
+		/// the specified name and type.
+		/// </summary>
+		/// <param name="propertyName">The name of the message property to add.</param>
+		/// <param name="propertyType">The data type of the message property.</param>
+		/// <param name="configure">An optional configuration action to further customize 
+		/// the message property.</param>
+		/// <returns>
+		/// Returns the updated <see cref="ChannelSchema"/> instance, including the newly 
+		/// added message property.
+		/// </returns>
+		public ChannelSchema AddMessageProperty(string propertyName, DataType propertyType, Action<MessagePropertyConfiguration>? configure = null)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
+			var property = new MessagePropertyConfiguration(propertyName, propertyType);
+			configure?.Invoke(property);
+			return AddMessageProperty(property);
 		}
 
 		/// <summary>
@@ -267,6 +319,26 @@ namespace Deveel.Messaging
 			
 			Endpoints.Add(endpoint);
 			return this;
+		}
+
+		/// <summary>
+		/// Adds the specified message endpoint type to the current channel schema.
+		/// </summary>
+		/// <param name="endpointType">
+		/// The type of the message endpoint to be added.
+		/// </param>
+		/// <param name="configure">
+		/// An optional action used to configure the endpoint configuration.
+		/// </param>
+		/// <returns>
+		/// The updated <see cref="ChannelSchema"/> instance with the new endpoint 
+		/// configuration included.
+		/// </returns>
+		public ChannelSchema HandlesMessageEndpoint(EndpointType endpointType, Action<ChannelEndpointConfiguration>? configure = null)
+		{
+			var endpoint = new ChannelEndpointConfiguration(endpointType);
+			configure?.Invoke(endpoint);
+			return HandlesMessageEndpoint(endpoint);
 		}
 
 		/// <summary>

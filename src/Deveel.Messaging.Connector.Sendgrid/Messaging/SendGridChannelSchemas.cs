@@ -67,25 +67,24 @@ namespace Deveel.Messaging
             .AddContentType(MessageContentType.Html)
             .AddContentType(MessageContentType.Template)
             .AddContentType(MessageContentType.Multipart)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+            .HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
             {
-                CanSend = true,
-                CanReceive = true, // Email addresses can be both senders and receivers
-                IsRequired = true // Email address is required for sending
+                e.CanSend = true;
+                e.CanReceive = true; // Email addresses can be both senders and receivers
+                e.IsRequired = true; // Email address is required for sending
             })
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.Url)
+            .HandlesMessageEndpoint(EndpointType.Url, e =>
             {
-                CanSend = false,
-                CanReceive = true // For webhooks
+                e.CanSend = false;
+                e.CanReceive = true; // For webhooks
             })
             .AddAuthenticationType(AuthenticationType.ApiKey)
-            .AddMessageProperty(new MessagePropertyConfiguration("Subject", DataType.String)
+            .AddMessageProperty("Subject", DataType.String, p =>
             {
-                IsRequired = true,
-                Description = "Email subject line"
-            }.Configure()
-                .WithMaxLength(998) // RFC 2822 limit
-                .WithCustomValidator(value => 
+                p.IsRequired = true;
+                p.Description = "Email subject line";
+                p.MaxLength = 998; // RFC 2822 limit
+                p.CustomValidator = value =>
                 {
                     if (value != null && string.IsNullOrWhiteSpace(value.ToString()))
                     {
@@ -97,53 +96,48 @@ namespace Deveel.Messaging
                         };
                     }
                     return Enumerable.Empty<ValidationResult>();
-                })
-                .Build())
-            .AddMessageProperty(new MessagePropertyConfiguration("Priority", DataType.String)
+                };
+			})
+            .AddMessageProperty("Priority", DataType.String, p =>
             {
-                IsRequired = false,
-                Description = "Email priority (low, normal, high)"
-            }.Configure()
-                .WithAllowedValues("low", "normal", "high")
-                .Build())
-            .AddMessageProperty(new MessagePropertyConfiguration("Categories", DataType.String)
+                p.IsRequired = false;
+                p.Description = "Email priority (low, normal, high)";
+                p.AllowedValues = new[] { "low", "normal", "high" };
+			})
+            .AddMessageProperty("Categories", DataType.String, p =>
             {
-                IsRequired = false,
-                Description = "Comma-separated list of categories for tracking and organization"
-            }.Configure()
-                .WithCustomValidator(ValidateCategories)
-                .Build())
-            .AddMessageProperty(new MessagePropertyConfiguration("CustomArgs", DataType.String)
-            {
-                IsRequired = false,
-                Description = "JSON object containing custom arguments to attach to the email"
-            }.Configure()
-                .WithCustomValidator(ValidateJsonContent)
-                .Build())
-            .AddMessageProperty(new MessagePropertyConfiguration("SendAt", DataType.String)
-            {
-                IsRequired = false,
-                Description = "Schedule the email to be sent at a specific time (ISO 8601 format or DateTime)"
-            }.Configure()
-                .WithCustomValidator(ValidateSendAtTime)
-                .Build())
-            .AddMessageProperty(new MessagePropertyConfiguration("BatchId", DataType.String)
-            {
-                IsRequired = false,
-                Description = "Batch ID for grouping emails together for batch operations"
+                p.IsRequired = false;
+                p.Description = "Comma-separated list of categories for tracking and organization";
+                p.CustomValidator = ValidateCategories;
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("IpPoolName", DataType.String)
+            .AddMessageProperty("CustomArgs", DataType.String, p =>
             {
-                IsRequired = false,
-                Description = "IP pool name to use for sending this email"
+                p.IsRequired = false;
+                p.Description = "JSON object containing custom arguments to attach to the email";
+                p.CustomValidator = ValidateJsonContent;
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("AsmGroupId", DataType.Integer)
+            .AddMessageProperty("SendAt", DataType.String, p =>
             {
-                IsRequired = false,
-                Description = "Unsubscribe group ID for subscription management"
-            }.Configure()
-                .WithMinValue(1)
-                .Build());
+                p.IsRequired = false;
+                p.Description = "Schedule the email to be sent at a specific time (ISO 8601 format or DateTime)";
+                p.CustomValidator = ValidateSendAtTime;
+            })
+            .AddMessageProperty("BatchId", DataType.String, p =>
+            {
+                p.IsRequired = false;
+                p.Description = "Batch ID for grouping emails together for batch operations";
+            })
+            .AddMessageProperty("IpPoolName", DataType.String, p =>
+            {
+                p.IsRequired = false;
+                p.Description = "IP pool name to use for sending this email";
+            })
+            .AddMessageProperty("AsmGroupId", DataType.Integer, p =>
+            {
+                p.IsRequired = false;
+                p.Description = "Unsubscribe group ID for subscription management";
+                p.MinValue = 1; // SendGrid requires group IDs to be positive integers
+			});
 
         /// <summary>
         /// Gets a simplified email-only schema for basic email messaging use cases.
@@ -184,15 +178,13 @@ namespace Deveel.Messaging
         /// </summary>
         public static ChannelSchema MarketingEmail => new ChannelSchema(SendGridEmail, "SendGrid Marketing Email")
             .UpdateParameter("TrackingSettings", param => param.DefaultValue = true)
-            .AddMessageProperty(new MessagePropertyConfiguration("ListId", DataType.String)
+            .AddMessageProperty("ListId", DataType.String, p =>
             {
-                IsRequired = false,
-                Description = "Marketing list ID for campaign tracking"
+                p.Description = "Marketing list ID for campaign tracking";
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("CampaignId", DataType.String)
+            .AddMessageProperty("CampaignId", DataType.String, p =>
             {
-                IsRequired = false,
-                Description = "Campaign ID for grouping and tracking marketing emails"
+                p.Description = "Campaign ID for grouping and tracking marketing emails";
             });
 
         /// <summary>
@@ -204,20 +196,18 @@ namespace Deveel.Messaging
             .RemoveContentType(MessageContentType.PlainText)
             .RemoveContentType(MessageContentType.Html)
             .RemoveContentType(MessageContentType.Multipart)
-            .AddMessageProperty(new MessagePropertyConfiguration("TemplateId", DataType.String)
+            .AddMessageProperty("TemplateId", DataType.String, p =>
             {
-                IsRequired = true,
-                Description = "SendGrid template ID to use for the email"
-            }.Configure()
-                .NotEmpty()
-                .Build())
-            .AddMessageProperty(new MessagePropertyConfiguration("TemplateData", DataType.String)
+                p.IsRequired = true;
+                p.Description = "SendGrid template ID to use for the email";
+                p.MinLength = 1;
+            })
+            .AddMessageProperty("TemplateData", DataType.String, p =>
             {
-                IsRequired = false,
-                Description = "JSON object containing template variable substitutions"
-            }.Configure()
-                .WithCustomValidator(ValidateJsonContent)
-                .Build());
+                p.IsRequired = false;
+                p.Description = "JSON object containing template variable substitutions";
+                p.CustomValidator = ValidateJsonContent;
+            });
 
         /// <summary>
         /// Gets a bulk email schema optimized for high-volume email campaigns.
@@ -225,18 +215,17 @@ namespace Deveel.Messaging
         /// </summary>
         public static ChannelSchema BulkEmail => new ChannelSchema(SendGridEmail, "SendGrid Bulk Email")
             .UpdateParameter("TrackingSettings", param => param.DefaultValue = true)
-            .AddMessageProperty(new MessagePropertyConfiguration("MailBatchId", DataType.String)
+            .AddMessageProperty("MailBatchId", DataType.String, p =>
             {
-                IsRequired = false,
-                Description = "Mail batch ID for bulk operations and tracking"
+                p.IsRequired = false;
+                p.Description = "Mail batch ID for bulk operations and tracking";
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("UnsubscribeGroupId", DataType.Integer)
+            .AddMessageProperty("UnsubscribeGroupId", DataType.Integer, p =>
             {
-                IsRequired = false,
-                Description = "Unsubscribe group ID for bulk email compliance"
-            }.Configure()
-                .WithMinValue(1)
-                .Build());
+                p.IsRequired = false;
+                p.Description = "Unsubscribe group ID for bulk email compliance";
+                p.MinValue = 1;
+            });
 
         /// <summary>
         /// Validates that categories property contains at most 10 categories with max 255 chars each.
