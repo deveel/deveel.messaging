@@ -72,8 +72,8 @@ public class TwilioChannelSchemasTests
         var requiredParams = schema.Parameters.Where(p => p.IsRequired).ToList();
         Assert.Equal(2, requiredParams.Count); // AccountSid and AuthToken only
         
-        Assert.Contains(requiredParams, p => p.Name == "AccountSid" && p.DataType == ParameterType.String);
-        Assert.Contains(requiredParams, p => p.Name == "AuthToken" && p.DataType == ParameterType.String && p.IsSensitive);
+        Assert.Contains(requiredParams, p => p.Name == "AccountSid" && p.DataType == DataType.String);
+        Assert.Contains(requiredParams, p => p.Name == "AuthToken" && p.DataType == DataType.String && p.IsSensitive);
     }
 
     [Fact]
@@ -86,8 +86,8 @@ public class TwilioChannelSchemasTests
         var requiredParams = schema.Parameters.Where(p => p.IsRequired).ToList();
         Assert.Equal(2, requiredParams.Count); // AccountSid and AuthToken only
         
-        Assert.Contains(requiredParams, p => p.Name == "AccountSid" && p.DataType == ParameterType.String);
-        Assert.Contains(requiredParams, p => p.Name == "AuthToken" && p.DataType == ParameterType.String && p.IsSensitive);
+        Assert.Contains(requiredParams, p => p.Name == "AccountSid" && p.DataType == DataType.String);
+        Assert.Contains(requiredParams, p => p.Name == "AuthToken" && p.DataType == DataType.String && p.IsSensitive);
     }
 
     [Fact]

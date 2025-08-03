@@ -21,7 +21,7 @@ namespace Deveel.Messaging
         /// <returns>A configured MessagePropertyConfiguration with phone number validation.</returns>
         public static MessagePropertyConfiguration PhoneNumber(string name, bool isRequired, string description)
         {
-            return new MessagePropertyConfiguration(name, ParameterType.String)
+            return new MessagePropertyConfiguration(name, DataType.String)
             {
                 IsRequired = isRequired,
                 Description = description
@@ -37,7 +37,7 @@ namespace Deveel.Messaging
         /// <returns>A configured MessagePropertyConfiguration for WhatsApp phone numbers.</returns>
         public static MessagePropertyConfiguration WhatsAppPhoneNumber(string name, bool isRequired, string description)
         {
-            return new MessagePropertyConfiguration(name, ParameterType.String)
+            return new MessagePropertyConfiguration(name, DataType.String)
             {
                 IsRequired = isRequired,
                 Description = description

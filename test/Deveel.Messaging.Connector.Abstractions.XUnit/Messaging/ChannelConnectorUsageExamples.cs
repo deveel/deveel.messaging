@@ -15,8 +15,8 @@ public class ChannelConnectorUsageExamples
 		var schema = new ChannelSchema("SMTP", "Email", "1.0.0")
 			.WithDisplayName("Email Connector")
 			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.HealthCheck)
-			.AddParameter(new ChannelParameter("Host", ParameterType.String) { IsRequired = true })
-			.AddParameter(new ChannelParameter("Port", ParameterType.Integer) { DefaultValue = 587 })
+			.AddRequiredParameter("Host", DataType.String)
+			.AddParameter("Port", DataType.Integer, param => param.DefaultValue = 587)
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
 			.AddAuthenticationType(AuthenticationType.Basic);
@@ -45,8 +45,8 @@ public class ChannelConnectorUsageExamples
 				ChannelCapability.SendMessages | 
 				ChannelCapability.MessageStatusQuery |
 				ChannelCapability.HealthCheck)
-			.AddParameter(new ChannelParameter("AccountSid", ParameterType.String) { IsRequired = true })
-			.AddParameter(new ChannelParameter("AuthToken", ParameterType.String) { IsRequired = true, IsSensitive = true })
+			.AddRequiredParameter("AccountSid", DataType.String)
+			.AddRequiredParameter("AuthToken", DataType.String, true)
 			.AddContentType(MessageContentType.PlainText)
 			.AddAuthenticationType(AuthenticationType.Token);
 

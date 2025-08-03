@@ -18,7 +18,7 @@ namespace Deveel.Messaging
 		/// </summary>
 		/// <param name="name">The name of the message property.</param>
 		/// <param name="dataType">The type of data for the message property.</param>
-		public MessagePropertyConfiguration(string name, ParameterType dataType)
+		public MessagePropertyConfiguration(string name, DataType dataType)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(name, nameof(name));
 			Name = name;
@@ -34,7 +34,7 @@ namespace Deveel.Messaging
 		/// <summary>
 		/// Gets the type of the property.
 		/// </summary>
-		public ParameterType DataType { get; }
+		public DataType DataType { get; }
 
 		/// <summary>
 		/// Gets or sets the display name of the property.
@@ -135,7 +135,7 @@ namespace Deveel.Messaging
 				
 				// For flexible properties that accept multiple types (like SendAt accepting DateTime or string),
 				// skip strict type validation if the custom validator handled the value without type-related errors
-				if (DataType == ParameterType.String && value is DateTime)
+				if (DataType == DataType.String && value is DateTime)
 				{
 					// Skip type validation for DateTime on String properties when custom validator is present
 					// The custom validator is responsible for handling the type conversion
@@ -153,13 +153,13 @@ namespace Deveel.Messaging
 			}
 
 			// Validate string-specific constraints
-			if (DataType == ParameterType.String && value is string stringValue)
+			if (DataType == DataType.String && value is string stringValue)
 			{
 				ValidateStringConstraints(stringValue, validationResults);
 			}
 
 			// Validate numeric constraints
-			if ((DataType == ParameterType.Integer || DataType == ParameterType.Number) && IsNumeric(value))
+			if ((DataType == DataType.Integer || DataType == DataType.Number) && IsNumeric(value))
 			{
 				ValidateNumericConstraints(value, validationResults);
 			}
@@ -246,14 +246,14 @@ namespace Deveel.Messaging
 			}
 		}
 
-		private static bool IsTypeCompatible(ParameterType parameterType, object value)
+		private static bool IsTypeCompatible(DataType parameterType, object value)
 		{
 			return parameterType switch
 			{
-				ParameterType.Boolean => value is bool,
-				ParameterType.String => value is string,
-				ParameterType.Integer => value is int || value is long || value is byte || value is short || value is sbyte,
-				ParameterType.Number => value is double || value is decimal || value is float || 
+				DataType.Boolean => value is bool,
+				DataType.String => value is string,
+				DataType.Integer => value is int || value is long || value is byte || value is short || value is sbyte,
+				DataType.Number => value is double || value is decimal || value is float || 
 									   value is int || value is long || value is byte || value is short || value is sbyte,
 				_ => false,
 			};

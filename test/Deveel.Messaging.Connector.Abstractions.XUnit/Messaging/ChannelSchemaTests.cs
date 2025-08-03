@@ -58,7 +58,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		var parameter = new ChannelParameter("TestParam", ParameterType.String)
+		var parameter = new ChannelParameter("TestParam", DataType.String)
 		{
 			IsRequired = true,
 			Description = "Test parameter"
@@ -391,7 +391,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		var property = new MessagePropertyConfiguration("TestProperty", ParameterType.String)
+		var property = new MessagePropertyConfiguration("TestProperty", DataType.String)
 		{
 			IsRequired = true,
 			Description = "Test message property"
@@ -421,11 +421,11 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		var firstProperty = new MessagePropertyConfiguration("Priority", ParameterType.Integer)
+		var firstProperty = new MessagePropertyConfiguration("Priority", DataType.Integer)
 		{
 			IsRequired = true
 		};
-		var duplicateProperty = new MessagePropertyConfiguration("Priority", ParameterType.String)
+		var duplicateProperty = new MessagePropertyConfiguration("Priority", DataType.String)
 		{
 			IsRequired = false
 		};
@@ -446,8 +446,8 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
-		var firstProperty = new MessagePropertyConfiguration("PRIORITY", ParameterType.Integer);
-		var duplicateProperty = new MessagePropertyConfiguration("priority", ParameterType.String);
+		var firstProperty = new MessagePropertyConfiguration("PRIORITY", DataType.Integer);
+		var duplicateProperty = new MessagePropertyConfiguration("priority", DataType.String);
 
 		// Act - Add first property
 		schema.AddMessageProperty(firstProperty);
@@ -468,17 +468,17 @@ public class ChannelSchemaTests
 
 		// Act
 		var result = schema
-			.AddMessageProperty(new MessagePropertyConfiguration("Priority", ParameterType.Integer)
+			.AddMessageProperty(new MessagePropertyConfiguration("Priority", DataType.Integer)
 			{
 				IsRequired = true,
 				Description = "Message priority"
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Category", ParameterType.String)
+			.AddMessageProperty(new MessagePropertyConfiguration("Category", DataType.String)
 			{
 				IsRequired = false,
 				Description = "Message category"
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Timestamp", ParameterType.String)
+			.AddMessageProperty(new MessagePropertyConfiguration("Timestamp", DataType.String)
 			{
 				IsRequired = true,
 				Description = "Message timestamp"
@@ -491,17 +491,17 @@ public class ChannelSchemaTests
 		// Verify each property
 		var priorityProperty = schema.MessageProperties.FirstOrDefault(p => p.Name == "Priority");
 		Assert.NotNull(priorityProperty);
-		Assert.Equal(ParameterType.Integer, priorityProperty.DataType);
+		Assert.Equal(DataType.Integer, priorityProperty.DataType);
 		Assert.True(priorityProperty.IsRequired);
 		
 		var categoryProperty = schema.MessageProperties.FirstOrDefault(p => p.Name == "Category");
 		Assert.NotNull(categoryProperty);
-		Assert.Equal(ParameterType.String, categoryProperty.DataType);
+		Assert.Equal(DataType.String, categoryProperty.DataType);
 		Assert.False(categoryProperty.IsRequired);
 		
 		var timestampProperty = schema.MessageProperties.FirstOrDefault(p => p.Name == "Timestamp");
 		Assert.NotNull(timestampProperty);
-		Assert.Equal(ParameterType.String, timestampProperty.DataType);
+		Assert.Equal(DataType.String, timestampProperty.DataType);
 		Assert.True(timestampProperty.IsRequired);
 	}
 
@@ -511,12 +511,12 @@ public class ChannelSchemaTests
 		// Arrange & Act
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithDisplayName("Test Schema")
-			.AddMessageProperty(new MessagePropertyConfiguration("Priority", ParameterType.Integer)
+			.AddMessageProperty(new MessagePropertyConfiguration("Priority", DataType.Integer)
 			{
 				IsRequired = true
 			})
 			.AddContentType(MessageContentType.PlainText)
-			.AddMessageProperty(new MessagePropertyConfiguration("Category", ParameterType.String)
+			.AddMessageProperty(new MessagePropertyConfiguration("Category", DataType.String)
 			{
 				IsRequired = false
 			})
@@ -548,7 +548,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("OptionalProperty", ParameterType.String)
+			.AddMessageProperty(new MessagePropertyConfiguration("OptionalProperty", DataType.String)
 			{
 				IsRequired = false
 			});
@@ -567,7 +567,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProperty", ParameterType.String)
+			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProperty", DataType.String)
 			{
 				IsRequired = true
 			});
@@ -588,11 +588,11 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProperty1", ParameterType.String)
+			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProperty1", DataType.String)
 			{
 				IsRequired = true
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProperty2", ParameterType.Integer)
+			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProperty2", DataType.Integer)
 			{
 				IsRequired = true
 			});
@@ -615,7 +615,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("StringProperty", ParameterType.String)
+			.AddMessageProperty(new MessagePropertyConfiguration("StringProperty", DataType.String)
 			{
 				IsRequired = true
 			});
@@ -639,7 +639,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("KnownProperty", ParameterType.String));
+			.AddMessageProperty(new MessagePropertyConfiguration("KnownProperty", DataType.String));
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -661,11 +661,11 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProperty", ParameterType.String)
+			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProperty", DataType.String)
 			{
 				IsRequired = true
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("TypedProperty", ParameterType.Boolean)
+			.AddMessageProperty(new MessagePropertyConfiguration("TypedProperty", DataType.Boolean)
 			{
 				IsRequired = true
 			});
@@ -688,16 +688,16 @@ public class ChannelSchemaTests
 	}
 
 	[Theory]
-	[InlineData(ParameterType.Boolean, true)]
-	[InlineData(ParameterType.Boolean, false)]
-	[InlineData(ParameterType.String, "test")]
-	[InlineData(ParameterType.Integer, 123)]
-	[InlineData(ParameterType.Integer, (long)456)]
-	[InlineData(ParameterType.Integer, (byte)78)]
-	[InlineData(ParameterType.Number, 123.45)]
-	[InlineData(ParameterType.Number, 678.90f)]
-	[InlineData(ParameterType.Number, 100)]
-	public void ValidateMessageProperties_WithCompatibleTypes_ReturnsEmpty(ParameterType propertyType, object value)
+	[InlineData(DataType.Boolean, true)]
+	[InlineData(DataType.Boolean, false)]
+	[InlineData(DataType.String, "test")]
+	[InlineData(DataType.Integer, 123)]
+	[InlineData(DataType.Integer, (long)456)]
+	[InlineData(DataType.Integer, (byte)78)]
+	[InlineData(DataType.Number, 123.45)]
+	[InlineData(DataType.Number, 678.90f)]
+	[InlineData(DataType.Number, 100)]
+	public void ValidateMessageProperties_WithCompatibleTypes_ReturnsEmpty(DataType propertyType, object value)
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
@@ -719,13 +719,13 @@ public class ChannelSchemaTests
 	}
 
 	[Theory]
-	[InlineData(ParameterType.Boolean, "not_boolean")]
-	[InlineData(ParameterType.Boolean, 123)]
-	[InlineData(ParameterType.String, true)]
-	[InlineData(ParameterType.Integer, "not_number")]
-	[InlineData(ParameterType.Integer, 123.45)]
-	[InlineData(ParameterType.Number, "not_number")]
-	public void ValidateMessageProperties_WithIncompatibleTypes_ReturnsValidationError(ParameterType propertyType, object value)
+	[InlineData(DataType.Boolean, "not_boolean")]
+	[InlineData(DataType.Boolean, 123)]
+	[InlineData(DataType.String, true)]
+	[InlineData(DataType.Integer, "not_number")]
+	[InlineData(DataType.Integer, 123.45)]
+	[InlineData(DataType.Number, "not_number")]
+	public void ValidateMessageProperties_WithIncompatibleTypes_ReturnsValidationError(DataType propertyType, object value)
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
@@ -753,22 +753,22 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var emailSchema = new ChannelSchema("SMTP", "Email", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("Priority", ParameterType.Integer)
+			.AddMessageProperty(new MessagePropertyConfiguration("Priority", DataType.Integer)
 			{
 				IsRequired = true,
 				Description = "Email priority level"
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Category", ParameterType.String)
+			.AddMessageProperty(new MessagePropertyConfiguration("Category", DataType.String)
 			{
 				IsRequired = false,
 				Description = "Email category"
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("IsHtml", ParameterType.Boolean)
+			.AddMessageProperty(new MessagePropertyConfiguration("IsHtml", DataType.Boolean)
 			{
 				IsRequired = true,
 				Description = "Whether email content is HTML"
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("Sensitivity", ParameterType.String)
+			.AddMessageProperty(new MessagePropertyConfiguration("Sensitivity", DataType.String)
 			{
 				IsRequired = false,
 				IsSensitive = true,
@@ -807,7 +807,7 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("TestProperty", ParameterType.String)
+			.AddMessageProperty(new MessagePropertyConfiguration("TestProperty", DataType.String)
 			{
 				IsRequired = true
 			});

@@ -27,39 +27,39 @@ namespace Deveel.Messaging
                 ChannelCapability.MessageStatusQuery |
                 ChannelCapability.BulkMessaging |
                 ChannelCapability.HealthCheck)
-            .AddParameter(new ChannelParameter("AccountSid", ParameterType.String)
+            .AddParameter(new ChannelParameter("AccountSid", DataType.String)
             {
                 IsRequired = true,
                 Description = "Twilio Account SID - found in your Twilio Console Dashboard"
             })
-            .AddParameter(new ChannelParameter("AuthToken", ParameterType.String)
+            .AddParameter(new ChannelParameter("AuthToken", DataType.String)
             {
                 IsRequired = true,
                 IsSensitive = true,
                 Description = "Twilio Auth Token - found in your Twilio Console Dashboard"
             })
-            .AddParameter(new ChannelParameter("WebhookUrl", ParameterType.String)
+            .AddParameter(new ChannelParameter("WebhookUrl", DataType.String)
             {
                 IsRequired = false,
                 Description = "URL to receive webhook notifications for message status updates and incoming messages"
             })
-            .AddParameter(new ChannelParameter("StatusCallback", ParameterType.String)
+            .AddParameter(new ChannelParameter("StatusCallback", DataType.String)
             {
                 IsRequired = false,
                 Description = "URL to receive delivery status callbacks for sent messages"
             })
-            .AddParameter(new ChannelParameter("ValidityPeriod", ParameterType.Integer)
+            .AddParameter(new ChannelParameter("ValidityPeriod", DataType.Integer)
             {
                 IsRequired = false,
                 DefaultValue = 14400, // 4 hours in seconds
                 Description = "The number of seconds that the message can remain in Twilio's outgoing message queue"
             })
-            .AddParameter(new ChannelParameter("MaxPrice", ParameterType.Number)
+            .AddParameter(new ChannelParameter("MaxPrice", DataType.Number)
             {
                 IsRequired = false,
                 Description = "The maximum price in US dollars that you are willing to pay for the message"
             })
-            .AddParameter(new ChannelParameter("MessagingServiceSid", ParameterType.String)
+            .AddParameter(new ChannelParameter("MessagingServiceSid", DataType.String)
             {
                 IsRequired = false,
                 Description = "The SID of the Messaging Service to use for the message. Can replace Sender for sending."
@@ -81,32 +81,32 @@ namespace Deveel.Messaging
             // Body and MediaUrl are derived from message content, not separate message properties
             // Body comes from TextContent.Text when ContentType = PlainText
             // MediaUrl comes from MediaContent.FileUrl when ContentType = Media
-            .AddMessageProperty(new MessagePropertyConfiguration("ValidityPeriod", ParameterType.Integer)
+            .AddMessageProperty(new MessagePropertyConfiguration("ValidityPeriod", DataType.Integer)
             {
                 IsRequired = false,
                 Description = "Message-specific validity period override"
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("MaxPrice", ParameterType.Number)
+            .AddMessageProperty(new MessagePropertyConfiguration("MaxPrice", DataType.Number)
             {
                 IsRequired = false,
                 Description = "Message-specific maximum price override"
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("ProvideCallback", ParameterType.Boolean)
+            .AddMessageProperty(new MessagePropertyConfiguration("ProvideCallback", DataType.Boolean)
             {
                 IsRequired = false,
                 Description = "Whether to provide delivery status callbacks for this message"
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("AttemptLimits", ParameterType.Integer)
+            .AddMessageProperty(new MessagePropertyConfiguration("AttemptLimits", DataType.Integer)
             {
                 IsRequired = false,
                 Description = "Total number of attempts made by Twilio to deliver the message"
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("SmartEncoded", ParameterType.Boolean)
+            .AddMessageProperty(new MessagePropertyConfiguration("SmartEncoded", DataType.Boolean)
             {
                 IsRequired = false,
                 Description = "Whether Twilio will automatically optimize the message encoding"
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("PersistentAction", ParameterType.String)
+            .AddMessageProperty(new MessagePropertyConfiguration("PersistentAction", DataType.String)
             {
                 IsRequired = false,
                 Description = "Rich Communication Services (RCS) specific action"
@@ -130,23 +130,23 @@ namespace Deveel.Messaging
                 ChannelCapability.Templates |
                 ChannelCapability.MediaAttachments |
                 ChannelCapability.HealthCheck)
-            .AddParameter(new ChannelParameter("AccountSid", ParameterType.String)
+            .AddParameter(new ChannelParameter("AccountSid", DataType.String)
             {
                 IsRequired = true,
                 Description = "Twilio Account SID - found in your Twilio Console Dashboard"
             })
-            .AddParameter(new ChannelParameter("AuthToken", ParameterType.String)
+            .AddParameter(new ChannelParameter("AuthToken", DataType.String)
             {
                 IsRequired = true,
                 IsSensitive = true,
                 Description = "Twilio Auth Token - found in your Twilio Console Dashboard"
             })
-            .AddParameter(new ChannelParameter("WebhookUrl", ParameterType.String)
+            .AddParameter(new ChannelParameter("WebhookUrl", DataType.String)
             {
                 IsRequired = false,
                 Description = "URL to receive webhook notifications for message status updates and incoming WhatsApp messages"
             })
-            .AddParameter(new ChannelParameter("StatusCallback", ParameterType.String)
+            .AddParameter(new ChannelParameter("StatusCallback", DataType.String)
             {
                 IsRequired = false,
                 Description = "URL to receive delivery status callbacks for sent WhatsApp messages"
@@ -166,12 +166,12 @@ namespace Deveel.Messaging
                 CanReceive = true
             })
             .AddAuthenticationType(AuthenticationType.Basic)
-            .AddMessageProperty(new MessagePropertyConfiguration("ProvideCallback", ParameterType.Boolean)
+            .AddMessageProperty(new MessagePropertyConfiguration("ProvideCallback", DataType.Boolean)
             {
                 IsRequired = false,
                 Description = "Whether to provide delivery status callbacks for this WhatsApp message"
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("PersistentAction", ParameterType.String)
+            .AddMessageProperty(new MessagePropertyConfiguration("PersistentAction", DataType.String)
             {
                 IsRequired = false,
                 Description = "Rich Communication Services (RCS) specific action for WhatsApp"

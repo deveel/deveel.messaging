@@ -42,8 +42,8 @@ public class ChannelSchemaAuthenticationValidationTests
 		// Arrange
 		var schema = new ChannelSchema("Twilio", "SMS", "1.0.0")
 			.AddAuthenticationType(AuthenticationType.Basic)
-			.AddParameter(new ChannelParameter("AccountSid", ParameterType.String) { IsRequired = true })
-			.AddParameter(new ChannelParameter("AuthToken", ParameterType.String) { IsRequired = true });
+			.AddRequiredParameter("AccountSid", DataType.String)
+			.AddRequiredParameter("AuthToken", DataType.String);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("AccountSid", "AC123456789")
@@ -62,8 +62,8 @@ public class ChannelSchemaAuthenticationValidationTests
 		// Arrange
 		var schema = new ChannelSchema("SMTP", "Email", "1.0.0")
 			.AddAuthenticationType(AuthenticationType.Basic)
-			.AddParameter(new ChannelParameter("Username", ParameterType.String) { IsRequired = true })
-			.AddParameter(new ChannelParameter("Password", ParameterType.String) { IsRequired = true, IsSensitive = true });
+			.AddRequiredParameter("Username", DataType.String)
+			.AddRequiredParameter("Password", DataType.String, true);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("Username", "user@example.com")
@@ -101,7 +101,7 @@ public class ChannelSchemaAuthenticationValidationTests
 		// Arrange
 		var schema = new ChannelSchema("Provider", "API", "1.0.0")
 			.AddAuthenticationType(AuthenticationType.ApiKey)
-			.AddParameter(new ChannelParameter("ApiKey", ParameterType.String) { IsRequired = true, IsSensitive = true });
+			.AddRequiredParameter("ApiKey", DataType.String, true);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("ApiKey", "api_key_12345");
@@ -163,7 +163,7 @@ public class ChannelSchemaAuthenticationValidationTests
 		// Arrange
 		var schema = new ChannelSchema("OAuth", "API", "1.0.0")
 			.AddAuthenticationType(AuthenticationType.Token)
-			.AddParameter(new ChannelParameter("AccessToken", ParameterType.String) { IsRequired = true, IsSensitive = true });
+			.AddRequiredParameter("AccessToken", DataType.String, true);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("AccessToken", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...");
@@ -208,8 +208,8 @@ public class ChannelSchemaAuthenticationValidationTests
 		// Arrange
 		var schema = new ChannelSchema("OAuth2", "API", "1.0.0")
 			.AddAuthenticationType(AuthenticationType.ClientCredentials)
-			.AddParameter(new ChannelParameter("ClientId", ParameterType.String) { IsRequired = true })
-			.AddParameter(new ChannelParameter("ClientSecret", ParameterType.String) { IsRequired = true, IsSensitive = true });
+			.AddRequiredParameter("ClientId", DataType.String)
+			.AddRequiredParameter("ClientSecret", DataType.String, true);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("ClientId", "client_12345")
@@ -371,7 +371,7 @@ public class ChannelSchemaAuthenticationValidationTests
 			.AddAuthenticationType(AuthenticationType.None)
 			.AddAuthenticationType(AuthenticationType.Basic)
 			.AddAuthenticationType(AuthenticationType.ApiKey)
-			.AddParameter(new ChannelParameter("SomeOtherParam", ParameterType.String)); // Define the parameter to avoid unknown parameter error
+			.AddParameter("SomeOtherParam", DataType.String); // Define the parameter to avoid unknown parameter error
 
 		// Provide no authentication parameters
 		var connectionSettings = new ConnectionSettings()
@@ -390,33 +390,26 @@ public class ChannelSchemaAuthenticationValidationTests
 		// Arrange - Simulate a Twilio-like provider schema
 		var schema = new ChannelSchema("Twilio", "SMS", "1.0.0")
 			.AddAuthenticationType(AuthenticationType.Basic)
-			.AddParameter(new ChannelParameter("AccountSid", ParameterType.String) 
-			{ 
-				IsRequired = true,
-				Description = "Twilio Account SID"
-			})
-			.AddParameter(new ChannelParameter("AuthToken", ParameterType.String) 
-			{ 
-				IsRequired = true,
-				IsSensitive = true,
-				Description = "Twilio Auth Token"
-			})
-			.AddParameter(new ChannelParameter("FromNumber", ParameterType.String)
+			.AddParameter("AccountSid", DataType.String, param =>
 			{
-				IsRequired = true,
-				Description = "Sender phone number"
+				param.IsRequired = true;
+				param.Description = "Twilio Account SID";
+			})
+			.AddParameter("AuthToken", DataType.String, param =>
+			{
+				param.IsRequired = true;
+				param.IsSensitive = true;
+				param.Description = "Twilio Auth Token";
 			});
 
 		// Valid Twilio-style configuration
 		var validSettings = new ConnectionSettings()
 			.SetParameter("AccountSid", "AC123456789abcdef123456789abcdef12")
-			.SetParameter("AuthToken", "your_auth_token_here")
-			.SetParameter("FromNumber", "+1234567890");
+			.SetParameter("AuthToken", "your_auth_token_here");
 
 		// Invalid configuration - missing AuthToken
 		var invalidSettings = new ConnectionSettings()
-			.SetParameter("AccountSid", "AC123456789abcdef123456789abcdef12")
-			.SetParameter("FromNumber", "+1234567890");
+			.SetParameter("AccountSid", "AC123456789abcdef123456789abcdef12");
 
 		// Act
 		var validResults = schema.ValidateConnectionSettings(validSettings);
@@ -435,15 +428,11 @@ public class ChannelSchemaAuthenticationValidationTests
 		// Arrange - Simulate an SMTP email provider schema
 		var schema = new ChannelSchema("SMTP", "Email", "1.0.0")
 			.AddAuthenticationType(AuthenticationType.Basic)
-			.AddParameter(new ChannelParameter("Host", ParameterType.String) { IsRequired = true })
-			.AddParameter(new ChannelParameter("Port", ParameterType.Integer) { DefaultValue = 587 })
-			.AddParameter(new ChannelParameter("Username", ParameterType.String) { IsRequired = true })
-			.AddParameter(new ChannelParameter("Password", ParameterType.String) 
-			{ 
-				IsRequired = true,
-				IsSensitive = true
-			})
-			.AddParameter(new ChannelParameter("EnableSsl", ParameterType.Boolean) { DefaultValue = true });
+			.AddRequiredParameter("Host", DataType.String)
+			.AddParameter("Port", DataType.Integer, param => param.DefaultValue = 587 )
+			.AddRequiredParameter("Username", DataType.String)
+			.AddRequiredParameter("Password", DataType.String, true)
+			.AddParameter("EnableSsl", DataType.Boolean, param => param.DefaultValue = true);
 
 		// Valid SMTP configuration
 		var validSettings = new ConnectionSettings()
@@ -476,10 +465,10 @@ public class ChannelSchemaAuthenticationValidationTests
 		var schema = new ChannelSchema("Google", "API", "1.0.0")
 			.AddAuthenticationType(AuthenticationType.ClientCredentials)
 			.AddAuthenticationType(AuthenticationType.Token)
-			.AddParameter(new ChannelParameter("ClientId", ParameterType.String))
-			.AddParameter(new ChannelParameter("ClientSecret", ParameterType.String) { IsSensitive = true })
-			.AddParameter(new ChannelParameter("AccessToken", ParameterType.String) { IsSensitive = true })
-			.AddParameter(new ChannelParameter("BaseUrl", ParameterType.String) { DefaultValue = "https://api.google.com" });
+			.AddParameter("ClientId", DataType.String)
+			.AddParameter("ClientSecret", DataType.String, param => param.IsSensitive = true)
+			.AddParameter("AccessToken", DataType.String, param => param.IsSensitive = true)
+			.AddParameter("BaseUrl", DataType.String, param => param.DefaultValue = "https://api.google.com");
 
 		// Valid with Client Credentials
 		var clientCredentialsSettings = new ConnectionSettings()

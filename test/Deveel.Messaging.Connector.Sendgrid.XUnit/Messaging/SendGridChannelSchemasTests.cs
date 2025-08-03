@@ -48,12 +48,12 @@ public class SendGridChannelSchemasTests
         Assert.NotNull(apiKeyParam);
         Assert.True(apiKeyParam.IsRequired);
         Assert.True(apiKeyParam.IsSensitive);
-        Assert.Equal(ParameterType.String, apiKeyParam.DataType);
+        Assert.Equal(DataType.String, apiKeyParam.DataType);
 
         var sandboxParam = schema.Parameters.FirstOrDefault(p => p.Name == "SandboxMode");
         Assert.NotNull(sandboxParam);
         Assert.False(sandboxParam.IsRequired);
-        Assert.Equal(ParameterType.Boolean, sandboxParam.DataType);
+        Assert.Equal(DataType.Boolean, sandboxParam.DataType);
         Assert.Equal(false, sandboxParam.DefaultValue);
     }
 
@@ -99,7 +99,7 @@ public class SendGridChannelSchemasTests
         var subjectProperty = schema.MessageProperties.FirstOrDefault(p => p.Name == "Subject");
         Assert.NotNull(subjectProperty);
         Assert.True(subjectProperty.IsRequired);
-        Assert.Equal(ParameterType.String, subjectProperty.DataType);
+        Assert.Equal(DataType.String, subjectProperty.DataType);
 
         var priorityProperty = schema.MessageProperties.FirstOrDefault(p => p.Name == "Priority");
         Assert.NotNull(priorityProperty);

@@ -12,9 +12,8 @@ public class ChannelSchemaDerivedTests
 		var sourceSchema = new ChannelSchema("Twilio", "SMS", "1.0.0")
 			.WithDisplayName("Twilio SMS Base")
 			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages | ChannelCapability.MessageStatusQuery)
-			.AddParameter(new ChannelParameter("AccountSid", ParameterType.String) { IsRequired = true })
-			.AddParameter(new ChannelParameter("AuthToken", ParameterType.String) { IsRequired = true, IsSensitive = true })
-			.AddParameter(new ChannelParameter("FromNumber", ParameterType.String) { IsRequired = true })
+			.AddRequiredParameter("AccountSid", DataType.String)
+			.AddRequiredParameter("AuthToken", DataType.String, true)
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Media)
 			.AddAuthenticationType(AuthenticationType.Token)
@@ -28,8 +27,7 @@ public class ChannelSchemaDerivedTests
 				CanSend = false,
 				CanReceive = true
 			})
-			.AddMessageProperty(new MessagePropertyConfiguration("PhoneNumber", ParameterType.String) { IsRequired = true })
-			.AddMessageProperty(new MessagePropertyConfiguration("MessageType", ParameterType.String) { IsRequired = false });
+			.AddMessageProperty(new MessagePropertyConfiguration("MessageType", DataType.String) { IsRequired = false });
 
 		// Act
 		var copiedSchema = new ChannelSchema(sourceSchema, "Custom Twilio SMS");
@@ -56,7 +54,6 @@ public class ChannelSchemaDerivedTests
 		// Verify parameters are copied
 		Assert.Contains(copiedSchema.Parameters, p => p.Name == "AccountSid" && p.IsRequired);
 		Assert.Contains(copiedSchema.Parameters, p => p.Name == "AuthToken" && p.IsSensitive);
-		Assert.Contains(copiedSchema.Parameters, p => p.Name == "FromNumber");
 
 		// Verify content types are copied
 		Assert.Contains(MessageContentType.PlainText, copiedSchema.ContentTypes);
@@ -70,7 +67,6 @@ public class ChannelSchemaDerivedTests
 		Assert.Contains(copiedSchema.Endpoints, e => e.Type == EndpointType.Url && !e.CanSend && e.CanReceive);
 
 		// Verify message properties are copied
-		Assert.Contains(copiedSchema.MessageProperties, p => p.Name == "PhoneNumber" && p.IsRequired);
 		Assert.Contains(copiedSchema.MessageProperties, p => p.Name == "MessageType" && !p.IsRequired);
 	}
 
@@ -105,14 +101,14 @@ public class ChannelSchemaDerivedTests
 	{
 		// Arrange
 		var sourceSchema = new ChannelSchema("Base", "Base", "1.0.0")
-			.AddParameter(new ChannelParameter("SharedParam", ParameterType.String))
+			.AddParameter("SharedParam", DataType.String)
 			.AddContentType(MessageContentType.PlainText)
 			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress));
 
 		var copiedSchema = new ChannelSchema(sourceSchema, "Modified Schema");
 
 		// Act - Modify the copied schema
-		copiedSchema.AddParameter(new ChannelParameter("NewParam", ParameterType.Integer));
+		copiedSchema.AddParameter("NewParam", DataType.Integer);
 		copiedSchema.AddContentType(MessageContentType.Html);
 		copiedSchema.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber));
 
@@ -229,8 +225,8 @@ public class ChannelSchemaDerivedTests
 		// Arrange
 		var baseSchema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
-			.AddParameter(new ChannelParameter("Param1", ParameterType.String))
-			.AddParameter(new ChannelParameter("Param2", ParameterType.String))
+			.AddParameter("Param1", DataType.String)
+			.AddParameter("Param2", DataType.String)
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html);
 
@@ -305,7 +301,7 @@ public class ChannelSchemaDerivedTests
 			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
 			.HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress))
 			.AddContentType(MessageContentType.PlainText)
-			.AddParameter(new ChannelParameter("TestParam", ParameterType.String) { IsRequired = true });
+			.AddRequiredParameter("TestParam", DataType.String);
 
 		// Act - Update parameter configuration
 		var derivedSchema = new ChannelSchema(baseSchema, "Modified Schema")

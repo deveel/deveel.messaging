@@ -7,15 +7,14 @@ namespace Deveel.Messaging
 {
 	/// <summary>
 	/// Specifies the type of a parameter to a messaging channel
-	/// or 
-	/// for configuration of the messaging system.
+	/// or for configuration of the messaging system.
 	/// </summary>
 	/// <remarks>
 	/// This enumeration is used to define the expected data type 
 	/// of a parameter, allowing for type-specific processing or 
 	/// validation.
 	/// </remarks>
-	public enum ParameterType
+	public enum DataType
 	{
 		/// <summary>
 		/// Represents a Boolean (true or false) value.

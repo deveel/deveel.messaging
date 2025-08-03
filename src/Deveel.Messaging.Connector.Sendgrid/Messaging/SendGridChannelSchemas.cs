@@ -30,35 +30,35 @@ namespace Deveel.Messaging
                 ChannelCapability.Templates |
                 ChannelCapability.MediaAttachments |
                 ChannelCapability.HealthCheck)
-            .AddParameter(new ChannelParameter("ApiKey", ParameterType.String)
+            .AddParameter(new ChannelParameter("ApiKey", DataType.String)
             {
                 IsRequired = true,
                 IsSensitive = true,
                 Description = "SendGrid API Key - found in your SendGrid Dashboard under Settings > API Keys"
             })
-            .AddParameter(new ChannelParameter("SandboxMode", ParameterType.Boolean)
+            .AddParameter(new ChannelParameter("SandboxMode", DataType.Boolean)
             {
                 IsRequired = false,
                 DefaultValue = false,
                 Description = "Enable sandbox mode for testing without actually sending emails"
             })
-            .AddParameter(new ChannelParameter("WebhookUrl", ParameterType.String)
+            .AddParameter(new ChannelParameter("WebhookUrl", DataType.String)
             {
                 IsRequired = false,
                 Description = "URL to receive webhook notifications for email events and status updates"
             })
-            .AddParameter(new ChannelParameter("TrackingSettings", ParameterType.Boolean)
+            .AddParameter(new ChannelParameter("TrackingSettings", DataType.Boolean)
             {
                 IsRequired = false,
                 DefaultValue = true,
                 Description = "Enable tracking for opens, clicks, and other email engagement metrics"
             })
-            .AddParameter(new ChannelParameter("DefaultFromName", ParameterType.String)
+            .AddParameter(new ChannelParameter("DefaultFromName", DataType.String)
             {
                 IsRequired = false,
                 Description = "Default sender name to use when not specified in the message"
             })
-            .AddParameter(new ChannelParameter("DefaultReplyTo", ParameterType.String)
+            .AddParameter(new ChannelParameter("DefaultReplyTo", DataType.String)
             {
                 IsRequired = false,
                 Description = "Default reply-to email address"
@@ -79,7 +79,7 @@ namespace Deveel.Messaging
                 CanReceive = true // For webhooks
             })
             .AddAuthenticationType(AuthenticationType.ApiKey)
-            .AddMessageProperty(new MessagePropertyConfiguration("Subject", ParameterType.String)
+            .AddMessageProperty(new MessagePropertyConfiguration("Subject", DataType.String)
             {
                 IsRequired = true,
                 Description = "Email subject line"
@@ -99,45 +99,45 @@ namespace Deveel.Messaging
                     return Enumerable.Empty<ValidationResult>();
                 })
                 .Build())
-            .AddMessageProperty(new MessagePropertyConfiguration("Priority", ParameterType.String)
+            .AddMessageProperty(new MessagePropertyConfiguration("Priority", DataType.String)
             {
                 IsRequired = false,
                 Description = "Email priority (low, normal, high)"
             }.Configure()
                 .WithAllowedValues("low", "normal", "high")
                 .Build())
-            .AddMessageProperty(new MessagePropertyConfiguration("Categories", ParameterType.String)
+            .AddMessageProperty(new MessagePropertyConfiguration("Categories", DataType.String)
             {
                 IsRequired = false,
                 Description = "Comma-separated list of categories for tracking and organization"
             }.Configure()
                 .WithCustomValidator(ValidateCategories)
                 .Build())
-            .AddMessageProperty(new MessagePropertyConfiguration("CustomArgs", ParameterType.String)
+            .AddMessageProperty(new MessagePropertyConfiguration("CustomArgs", DataType.String)
             {
                 IsRequired = false,
                 Description = "JSON object containing custom arguments to attach to the email"
             }.Configure()
                 .WithCustomValidator(ValidateJsonContent)
                 .Build())
-            .AddMessageProperty(new MessagePropertyConfiguration("SendAt", ParameterType.String)
+            .AddMessageProperty(new MessagePropertyConfiguration("SendAt", DataType.String)
             {
                 IsRequired = false,
                 Description = "Schedule the email to be sent at a specific time (ISO 8601 format or DateTime)"
             }.Configure()
                 .WithCustomValidator(ValidateSendAtTime)
                 .Build())
-            .AddMessageProperty(new MessagePropertyConfiguration("BatchId", ParameterType.String)
+            .AddMessageProperty(new MessagePropertyConfiguration("BatchId", DataType.String)
             {
                 IsRequired = false,
                 Description = "Batch ID for grouping emails together for batch operations"
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("IpPoolName", ParameterType.String)
+            .AddMessageProperty(new MessagePropertyConfiguration("IpPoolName", DataType.String)
             {
                 IsRequired = false,
                 Description = "IP pool name to use for sending this email"
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("AsmGroupId", ParameterType.Integer)
+            .AddMessageProperty(new MessagePropertyConfiguration("AsmGroupId", DataType.Integer)
             {
                 IsRequired = false,
                 Description = "Unsubscribe group ID for subscription management"
@@ -184,12 +184,12 @@ namespace Deveel.Messaging
         /// </summary>
         public static ChannelSchema MarketingEmail => new ChannelSchema(SendGridEmail, "SendGrid Marketing Email")
             .UpdateParameter("TrackingSettings", param => param.DefaultValue = true)
-            .AddMessageProperty(new MessagePropertyConfiguration("ListId", ParameterType.String)
+            .AddMessageProperty(new MessagePropertyConfiguration("ListId", DataType.String)
             {
                 IsRequired = false,
                 Description = "Marketing list ID for campaign tracking"
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("CampaignId", ParameterType.String)
+            .AddMessageProperty(new MessagePropertyConfiguration("CampaignId", DataType.String)
             {
                 IsRequired = false,
                 Description = "Campaign ID for grouping and tracking marketing emails"
@@ -204,14 +204,14 @@ namespace Deveel.Messaging
             .RemoveContentType(MessageContentType.PlainText)
             .RemoveContentType(MessageContentType.Html)
             .RemoveContentType(MessageContentType.Multipart)
-            .AddMessageProperty(new MessagePropertyConfiguration("TemplateId", ParameterType.String)
+            .AddMessageProperty(new MessagePropertyConfiguration("TemplateId", DataType.String)
             {
                 IsRequired = true,
                 Description = "SendGrid template ID to use for the email"
             }.Configure()
                 .NotEmpty()
                 .Build())
-            .AddMessageProperty(new MessagePropertyConfiguration("TemplateData", ParameterType.String)
+            .AddMessageProperty(new MessagePropertyConfiguration("TemplateData", DataType.String)
             {
                 IsRequired = false,
                 Description = "JSON object containing template variable substitutions"
@@ -225,12 +225,12 @@ namespace Deveel.Messaging
         /// </summary>
         public static ChannelSchema BulkEmail => new ChannelSchema(SendGridEmail, "SendGrid Bulk Email")
             .UpdateParameter("TrackingSettings", param => param.DefaultValue = true)
-            .AddMessageProperty(new MessagePropertyConfiguration("MailBatchId", ParameterType.String)
+            .AddMessageProperty(new MessagePropertyConfiguration("MailBatchId", DataType.String)
             {
                 IsRequired = false,
                 Description = "Mail batch ID for bulk operations and tracking"
             })
-            .AddMessageProperty(new MessagePropertyConfiguration("UnsubscribeGroupId", ParameterType.Integer)
+            .AddMessageProperty(new MessagePropertyConfiguration("UnsubscribeGroupId", DataType.Integer)
             {
                 IsRequired = false,
                 Description = "Unsubscribe group ID for bulk email compliance"

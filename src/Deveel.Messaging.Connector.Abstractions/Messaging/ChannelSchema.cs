@@ -176,6 +176,18 @@ namespace Deveel.Messaging
 			return this;
 		}
 
+		public ChannelSchema AddParameter(string parameterName, DataType parameterType, Action<ChannelParameter>? configure = null)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(parameterName, nameof(parameterName));
+
+			var parameter = new ChannelParameter(parameterName, parameterType);
+			configure?.Invoke(parameter);
+			return AddParameter(parameter);
+		}
+
+		public ChannelSchema AddRequiredParameter(string parameterName, DataType parameterType, bool sensitive = false)
+			=> AddParameter(parameterName, parameterType, param => { param.IsRequired = true; param.IsSensitive = sensitive; });
+
 		/// <summary>
 		/// Adds to the schema configuration a new definition of a property of 
 		/// messages handled by the channel.
@@ -804,14 +816,14 @@ namespace Deveel.Messaging
 			}
 		}
 
-		private static bool IsTypeCompatible(ParameterType parameterType, object value)
+		private static bool IsTypeCompatible(DataType parameterType, object value)
 		{
 			return parameterType switch
 			{
-				ParameterType.Boolean => value is bool,
-				ParameterType.String => value is string,
-				ParameterType.Integer => value is int || value is long || value is byte || value is short || value is sbyte,
-				ParameterType.Number => value is double || value is decimal || value is float || 
+				DataType.Boolean => value is bool,
+				DataType.String => value is string,
+				DataType.Integer => value is int || value is long || value is byte || value is short || value is sbyte,
+				DataType.Number => value is double || value is decimal || value is float || 
 									   value is int || value is long || value is byte || value is short || value is sbyte,
 				_ => false,
 			};
