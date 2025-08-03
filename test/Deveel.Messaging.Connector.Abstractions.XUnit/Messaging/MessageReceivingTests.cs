@@ -18,10 +18,10 @@ public class MessageReceivingTests
         var schema = new ChannelSchema("TestProvider", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .AddContentType(MessageContentType.PlainText)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+            .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
-                CanSend = true,
-                CanReceive = true
+                e.CanSend = true;
+                e.CanReceive = true;
             });
 
         var connector = new TestReceivingConnector(schema);
@@ -54,10 +54,10 @@ public class MessageReceivingTests
         var schema = new ChannelSchema("TestProvider", "WhatsApp", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .AddContentType(MessageContentType.PlainText)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+            .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
-                CanSend = true,
-                CanReceive = true
+                e.CanSend = true;
+                e.CanReceive = true;
             });
 
         var connector = new TestReceivingConnector(schema);
@@ -99,10 +99,10 @@ public class MessageReceivingTests
         var schema = new ChannelSchema("TestProvider", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .AddContentType(MessageContentType.PlainText)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+            .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
-                CanSend = true,
-                CanReceive = true
+                e.CanSend = true;
+                e.CanReceive = true;
             });
 
         var connector = new TestReceivingConnector(schema);
@@ -135,10 +135,10 @@ public class MessageReceivingTests
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.BulkMessaging)
             .AddContentType(MessageContentType.PlainText)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+            .HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
             {
-                CanSend = true,
-                CanReceive = true
+                e.CanSend = true;
+                e.CanReceive = true;
             });
 
         var connector = new TestReceivingConnector(schema);
@@ -181,10 +181,10 @@ public class MessageReceivingTests
         var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .AddContentType(MessageContentType.Multipart)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.EmailAddress)
+            .HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
             {
-                CanSend = true,
-                CanReceive = true
+                e.CanSend = true;
+                e.CanReceive = true;
             });
 
         var connector = new TestReceivingConnector(schema);
@@ -232,10 +232,10 @@ public class MessageReceivingTests
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.MediaAttachments)
             .AddContentType(MessageContentType.Binary)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+            .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
-                CanSend = true,
-                CanReceive = true
+                e.CanSend = true;
+                e.CanReceive = true;
             });
 
         var connector = new TestReceivingConnector(schema);
@@ -277,10 +277,10 @@ public class MessageReceivingTests
         var schema = new ChannelSchema("TestProvider", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.HandlerMessageState)
             .AddContentType(MessageContentType.PlainText)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+            .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
-                CanSend = true,
-                CanReceive = true
+                e.CanSend = true;
+                e.CanReceive = true;
             });
 
         var connector = new TestReceivingConnector(schema);

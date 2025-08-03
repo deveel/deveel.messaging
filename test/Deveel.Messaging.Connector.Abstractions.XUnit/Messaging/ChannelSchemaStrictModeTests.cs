@@ -92,7 +92,7 @@ public class ChannelSchemaStrictModeTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("KnownParam", ParameterType.String));
+			.AddParameter("KnownParam", DataType.String);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("KnownParam", "value")
@@ -113,7 +113,7 @@ public class ChannelSchemaStrictModeTests
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddParameter(new ChannelParameter("KnownParam", ParameterType.String));
+			.AddParameter("KnownParam", DataType.String);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("KnownParam", "value")
@@ -131,7 +131,7 @@ public class ChannelSchemaStrictModeTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("KnownProperty", ParameterType.String));
+			.AddMessageProperty("KnownProperty", DataType.String);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -154,7 +154,7 @@ public class ChannelSchemaStrictModeTests
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddMessageProperty(new MessagePropertyConfiguration("KnownProperty", ParameterType.String));
+			.AddMessageProperty("KnownProperty", DataType.String);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -174,7 +174,7 @@ public class ChannelSchemaStrictModeTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("RequiredParam", ParameterType.String) { IsRequired = true });
+			.AddRequiredParameter("RequiredParam", DataType.String);
 
 		var connectionSettings = new ConnectionSettings();
 
@@ -192,7 +192,7 @@ public class ChannelSchemaStrictModeTests
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddParameter(new ChannelParameter("RequiredParam", ParameterType.String) { IsRequired = true });
+			.AddRequiredParameter("RequiredParam", DataType.String);
 
 		var connectionSettings = new ConnectionSettings();
 
@@ -209,7 +209,7 @@ public class ChannelSchemaStrictModeTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("IntParam", ParameterType.Integer));
+			.AddParameter("IntParam", DataType.Integer);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("IntParam", "not an integer");
@@ -228,7 +228,7 @@ public class ChannelSchemaStrictModeTests
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddParameter(new ChannelParameter("IntParam", ParameterType.Integer));
+			.AddParameter("IntParam", DataType.Integer);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("IntParam", "not an integer");
@@ -246,7 +246,7 @@ public class ChannelSchemaStrictModeTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProp", ParameterType.String) { IsRequired = true });
+			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true);
 
 		var messageProperties = new Dictionary<string, object?>();
 
@@ -264,7 +264,7 @@ public class ChannelSchemaStrictModeTests
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProp", ParameterType.String) { IsRequired = true });
+			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true);
 
 		var messageProperties = new Dictionary<string, object?>();
 
@@ -281,7 +281,7 @@ public class ChannelSchemaStrictModeTests
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty(new MessagePropertyConfiguration("IntProp", ParameterType.Integer));
+			.AddMessageProperty("IntProp", DataType.Integer);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -302,7 +302,7 @@ public class ChannelSchemaStrictModeTests
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddMessageProperty(new MessagePropertyConfiguration("IntProp", ParameterType.Integer));
+			.AddMessageProperty("IntProp", DataType.Integer);
 
 		var messageProperties = new Dictionary<string, object?>
 		{
@@ -324,14 +324,14 @@ public class ChannelSchemaStrictModeTests
 		var strictSchema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithDisplayName("Strict Schema")
 			.WithStrictMode()
-			.AddParameter(new ChannelParameter("Param1", ParameterType.String))
-			.AddMessageProperty(new MessagePropertyConfiguration("Prop1", ParameterType.String));
+			.AddParameter("Param1", DataType.String)
+			.AddMessageProperty("Prop1", DataType.String);
 
 		var flexibleSchema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithDisplayName("Flexible Schema")
 			.WithFlexibleMode()
-			.AddParameter(new ChannelParameter("Param1", ParameterType.String))
-			.AddMessageProperty(new MessagePropertyConfiguration("Prop1", ParameterType.String));
+			.AddParameter("Param1", DataType.String)
+			.AddMessageProperty("Prop1", DataType.String);
 
 		// Assert
 		Assert.True(strictSchema.IsStrict);
@@ -370,17 +370,17 @@ public class ChannelSchemaStrictModeTests
 	{
 		// Arrange
 		var strictSchema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("RequiredParam", ParameterType.String) { IsRequired = true })
-			.AddParameter(new ChannelParameter("OptionalParam", ParameterType.Integer) { IsRequired = false })
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProp", ParameterType.String) { IsRequired = true })
-			.AddMessageProperty(new MessagePropertyConfiguration("OptionalProp", ParameterType.Boolean) { IsRequired = false });
+			.AddRequiredParameter("RequiredParam", DataType.String)
+			.AddParameter("OptionalParam", DataType.Integer)
+			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true)
+			.AddMessageProperty("OptionalProp", DataType.Boolean);
 
 		var flexibleSchema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddParameter(new ChannelParameter("RequiredParam", ParameterType.String) { IsRequired = true })
-			.AddParameter(new ChannelParameter("OptionalParam", ParameterType.Integer) { IsRequired = false })
-			.AddMessageProperty(new MessagePropertyConfiguration("RequiredProp", ParameterType.String) { IsRequired = true })
-			.AddMessageProperty(new MessagePropertyConfiguration("OptionalProp", ParameterType.Boolean) { IsRequired = false });
+			.AddRequiredParameter("RequiredParam", DataType.String)
+			.AddParameter("OptionalParam", DataType.Integer)
+			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true)
+			.AddMessageProperty("OptionalProp", DataType.Boolean);
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("RequiredParam", "valid value")
@@ -423,13 +423,13 @@ public class ChannelSchemaStrictModeTests
 	{
 		// Arrange
 		var strictBaseSchema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter(new ChannelParameter("Param1", ParameterType.String))
-			.AddParameter(new ChannelParameter("Param2", ParameterType.String));
+			.AddParameter("Param1", DataType.String)
+			.AddParameter("Param2", DataType.String);
 
 		var flexibleBaseSchema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddParameter(new ChannelParameter("Param1", ParameterType.String))
-			.AddParameter(new ChannelParameter("Param2", ParameterType.String));
+			.AddParameter("Param1", DataType.String)
+			.AddParameter("Param2", DataType.String);
 
 		// Act
 		var strictDerived = new ChannelSchema(strictBaseSchema, "Strict Derived")

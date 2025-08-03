@@ -20,10 +20,10 @@ public class MessageReceivingIntegrationTests
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.HandlerMessageState)
             .AddContentType(MessageContentType.PlainText)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+            .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
-                CanSend = true,
-                CanReceive = true
+                e.CanSend = true;
+                e.CanReceive = true;
             });
 
         var connector = new IntegrationTestConnector(schema, processedMessages);
@@ -164,9 +164,9 @@ public class MessageReceivingIntegrationTests
         var schema = new ChannelSchema("ValidationTest", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .AddContentType(MessageContentType.PlainText)
-            .HandlesMessageEndpoint(new ChannelEndpointConfiguration(EndpointType.PhoneNumber)
+            .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
-                CanReceive = true
+                e.CanReceive = true;
             });
 
         var connector = new ValidationTestConnector(schema);
