@@ -1,4 +1,4 @@
-name: Webhooks CD
+name: Messaging CI/CD
 
 permissions:
   contents: read

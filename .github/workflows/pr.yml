@@ -1,4 +1,4 @@
-﻿name: Webhooks PR Build
+﻿name: Messaging PR Build
 
 permissions:
   contents: read
