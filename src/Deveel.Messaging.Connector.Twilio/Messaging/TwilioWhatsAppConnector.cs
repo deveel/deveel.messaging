@@ -143,29 +143,18 @@ namespace Deveel.Messaging
                 // Extract and validate message properties before processing
                 var messageProperties = ExtractMessageProperties(message);
 
-                // Validate message properties against schema first
+                // Validate message properties against schema (includes all validation through MessagePropertyConfiguration)
                 if (Schema is ChannelSchema channelSchema)
                 {
-                    var baseValidationResults = channelSchema.ValidateMessageProperties(messageProperties);
-                    var baseValidationErrors = baseValidationResults.ToList();
-                    if (baseValidationErrors.Count > 0)
+                    var validationResults = channelSchema.ValidateMessageProperties(messageProperties);
+                    var validationErrors = validationResults.ToList();
+                    if (validationErrors.Count > 0)
                     {
                         _logger?.LogError("WhatsApp message properties validation failed: {Errors}", 
-                            string.Join(", ", baseValidationErrors.Select(e => e.ErrorMessage)));
+                            string.Join(", ", validationErrors.Select(e => e.ErrorMessage)));
                         return ConnectorResult<SendResult>.ValidationFailed(TwilioErrorCodes.InvalidMessage, 
-                            "WhatsApp message properties validation failed", baseValidationErrors);
+                            "WhatsApp message properties validation failed", validationErrors);
                     }
-                }
-
-                // Perform Twilio WhatsApp-specific validation (phone number format validation)
-                var twilioValidationResults = TwilioMessagePropertyConfigurations.ValidateTwilioWhatsAppProperties(messageProperties);
-                var twilioValidationErrors = twilioValidationResults.ToList();
-                if (twilioValidationErrors.Count > 0)
-                {
-                    _logger?.LogError("Twilio WhatsApp properties validation failed: {Errors}", 
-                        string.Join(", ", twilioValidationErrors.Select(e => e.ErrorMessage)));
-                    return ConnectorResult<SendResult>.ValidationFailed(TwilioErrorCodes.InvalidMessage, 
-                        "Twilio WhatsApp properties validation failed", twilioValidationErrors);
                 }
 
                 // Extract sender WhatsApp number from message.Sender

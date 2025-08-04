@@ -147,32 +147,18 @@ namespace Deveel.Messaging
                 _logger?.LogDebug("Sending SMS message {MessageId}", message.Id);
 
                 // Extract and validate message properties before processing
-                var messageProperties = ExtractMessageProperties(message);
+                // var messageProperties = ExtractMessageProperties(message);
 
-                // Validate message properties against schema first
-                if (Schema is ChannelSchema channelSchema)
-                {
-                    var baseValidationResults = channelSchema.ValidateMessageProperties(messageProperties);
-                    var baseValidationErrors = baseValidationResults.ToList();
-                    if (baseValidationErrors.Count > 0)
+                // Validate message properties against schema (includes all validation through MessagePropertyConfiguration)
+                    var validationResults = Schema.ValidateMessage(message);
+                    var validationErrors = validationResults.ToList();
+                    if (validationErrors.Count > 0)
                     {
                         _logger?.LogError("Message properties validation failed: {Errors}", 
-                            string.Join(", ", baseValidationErrors.Select(e => e.ErrorMessage)));
+                            string.Join(", ", validationErrors.Select(e => e.ErrorMessage)));
                         return ConnectorResult<SendResult>.ValidationFailed(TwilioErrorCodes.InvalidMessage, 
-                            "Message properties validation failed", baseValidationErrors);
+                            "Message properties validation failed", validationErrors);
                     }
-                }
-
-                // Perform Twilio-specific validation (phone number format validation)
-                var twilioValidationResults = TwilioMessagePropertyConfigurations.ValidateTwilioSmsProperties(messageProperties);
-                var twilioValidationErrors = twilioValidationResults.ToList();
-                if (twilioValidationErrors.Count > 0)
-                {
-                    _logger?.LogError("Twilio SMS properties validation failed: {Errors}", 
-                        string.Join(", ", twilioValidationErrors.Select(e => e.ErrorMessage)));
-                    return ConnectorResult<SendResult>.ValidationFailed(TwilioErrorCodes.InvalidMessage, 
-                        "Twilio SMS properties validation failed", twilioValidationErrors);
-                }
 
                 // Extract sender phone number from message.Sender
                 var senderNumber = ExtractPhoneNumber(message.Sender);
