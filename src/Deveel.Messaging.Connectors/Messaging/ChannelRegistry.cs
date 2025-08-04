@@ -3,6 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 //
 
+using Microsoft.Extensions.DependencyInjection;
+
 using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
@@ -21,6 +23,19 @@ namespace Deveel.Messaging
 	public class ChannelRegistry : IChannelRegistry
 	{
 		private readonly ConcurrentDictionary<Type, ConnectorRegistration> _registrations = new();
+		private readonly IServiceProvider _services;
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="ChannelRegistry"/> class.
+		/// </summary>
+		/// <param name="services">The service provider used to resolve dependencies 
+		/// for channel registration and connector instantiation.</param>
+		public ChannelRegistry(IServiceProvider services)
+		{
+			ArgumentNullException.ThrowIfNull(services, nameof(services));
+
+			_services = services;
+		}
 
 		/// <inheritdoc/>
 		public void RegisterConnector<TConnector>(Func<IChannelSchema, TConnector>? connectorFactory = null)
@@ -81,7 +96,7 @@ namespace Deveel.Messaging
 			}
 
 			// Use the master schema
-			return await CreateConnectorInstanceAsync(registration, registration.Schema, cancellationToken);
+			return await CreateConnectorInstanceAsync(_services, registration, registration.Schema, cancellationToken);
 		}
 
 		/// <inheritdoc/>
@@ -103,7 +118,7 @@ namespace Deveel.Messaging
 				throw new InvalidOperationException($"Runtime schema validation failed: {errors}");
 			}
 
-			return await CreateConnectorInstanceAsync(registration, runtimeSchema, cancellationToken);
+			return await CreateConnectorInstanceAsync(_services, registration, runtimeSchema, cancellationToken);
 		}
 
 		/// <inheritdoc/>
@@ -239,7 +254,7 @@ namespace Deveel.Messaging
 			}
 		}
 
-		private static async Task<IChannelConnector> CreateConnectorInstanceAsync(ConnectorRegistration registration, IChannelSchema schema, CancellationToken cancellationToken)
+		private static async Task<IChannelConnector> CreateConnectorInstanceAsync(IServiceProvider services, ConnectorRegistration registration, IChannelSchema schema, CancellationToken cancellationToken)
 		{
 			IChannelConnector connector;
 
@@ -249,7 +264,7 @@ namespace Deveel.Messaging
 			}
 			else
 			{
-				connector = CreateConnectorInstance(registration.ConnectorType, schema);
+				connector = CreateConnectorInstance(services, registration.ConnectorType, schema);
 			}
 
 			// Initialize the connector
@@ -258,11 +273,11 @@ namespace Deveel.Messaging
 			return connector;
 		}
 
-		private static IChannelConnector CreateConnectorInstance(Type connectorType, IChannelSchema schema)
+		private static IChannelConnector CreateConnectorInstance(IServiceProvider services, Type connectorType, IChannelSchema schema)
 		{
 			try
 			{
-				var connector = Activator.CreateInstance(connectorType, schema) as IChannelConnector;
+				var connector = ActivatorUtilities.CreateInstance(services, connectorType, new object[] { schema }) as IChannelConnector;
 				
 				if (connector == null)
 				{

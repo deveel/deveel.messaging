@@ -5,6 +5,7 @@
 
 using System.ComponentModel.DataAnnotations;
 using Deveel.Messaging;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Deveel.Messaging.XUnit
@@ -14,11 +15,13 @@ namespace Deveel.Messaging.XUnit
 	/// </summary>
 	public class ChannelRegistryTests
 	{
+		private static ChannelRegistry CreateRegistry() => new ChannelRegistry(new ServiceCollection().BuildServiceProvider());
+
 		[Fact]
 		public void RegisterConnector_WithValidConnector_ShouldSucceed()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 
 			// Act & Assert (should not throw)
 			registry.RegisterConnector<TestConnector>();
@@ -28,7 +31,7 @@ namespace Deveel.Messaging.XUnit
 		public void RegisterConnector_WithSameConnectorTypeTwice_ThrowsException()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			// Act & Assert
@@ -40,7 +43,7 @@ namespace Deveel.Messaging.XUnit
 		public void RegisterConnector_WithoutSchemaAttribute_ThrowsException()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 
 			// Act & Assert
 			Assert.Throws<ArgumentException>(() => 
@@ -51,7 +54,7 @@ namespace Deveel.Messaging.XUnit
 		public void GetMasterSchema_WithRegisteredConnector_ReturnsSchema()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			// Act
@@ -67,7 +70,7 @@ namespace Deveel.Messaging.XUnit
 		public void GetMasterSchema_WithUnregisteredConnector_ThrowsException()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 
 			// Act & Assert
 			Assert.Throws<InvalidOperationException>(() => 
@@ -78,7 +81,7 @@ namespace Deveel.Messaging.XUnit
 		public void FindSchemaByProviderAndType_WithMatchingSchema_ReturnsSchema()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			// Act
@@ -94,7 +97,7 @@ namespace Deveel.Messaging.XUnit
 		public void FindSchemaByProviderAndType_WithNoMatch_ReturnsNull()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			// Act
@@ -108,7 +111,7 @@ namespace Deveel.Messaging.XUnit
 		public void FindConnectorTypeByProviderAndType_WithMatchingConnector_ReturnsType()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			// Act
@@ -123,7 +126,7 @@ namespace Deveel.Messaging.XUnit
 		public void QuerySchemas_WithPredicate_ReturnsMatchingSchemas()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			// Act
@@ -137,7 +140,7 @@ namespace Deveel.Messaging.XUnit
 		public void GetConnectorDescriptors_WithoutPredicate_ReturnsAllDescriptors()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			// Act
@@ -155,7 +158,7 @@ namespace Deveel.Messaging.XUnit
 		public void GetConnectorDescriptors_WithPredicate_ReturnsFilteredDescriptors()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			// Act
@@ -169,7 +172,7 @@ namespace Deveel.Messaging.XUnit
 		public async Task CreateConnectorAsync_WithRegisteredType_ReturnsConnector()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			// Act
@@ -185,7 +188,7 @@ namespace Deveel.Messaging.XUnit
 		public async Task CreateConnectorAsync_WithRuntimeSchema_ValidatesAndCreatesConnector()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			var masterSchema = registry.GetConnectorSchema<TestConnector>();
@@ -204,7 +207,7 @@ namespace Deveel.Messaging.XUnit
 		public async Task CreateConnectorAsync_WithIncompatibleSchema_ThrowsException()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			var incompatibleSchema = new ChannelSchema("DifferentProvider", "DifferentType", "1.0.0");
@@ -218,7 +221,7 @@ namespace Deveel.Messaging.XUnit
 		public void ValidateRuntimeSchema_WithCompatibleSchema_ReturnsNoErrors()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			var masterSchema = registry.GetConnectorSchema<TestConnector>();
@@ -235,7 +238,7 @@ namespace Deveel.Messaging.XUnit
 		public void ValidateRuntimeSchema_WithIncompatibleSchema_ReturnsErrors()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			var incompatibleSchema = new ChannelSchema("DifferentProvider", "DifferentType", "1.0.0");
@@ -251,7 +254,7 @@ namespace Deveel.Messaging.XUnit
 		public void IsConnectorRegistered_WithRegisteredType_ReturnsTrue()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			// Act
@@ -265,7 +268,7 @@ namespace Deveel.Messaging.XUnit
 		public void IsConnectorRegistered_WithUnregisteredType_ReturnsFalse()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 
 			// Act
 			var isRegistered = registry.IsConnectorRegistered<TestConnector>();
@@ -278,7 +281,7 @@ namespace Deveel.Messaging.XUnit
 		public void UnregisterConnector_WithRegisteredType_ReturnsTrue()
 		{
 			// Arrange
-			var registry = new ChannelRegistry();
+			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
 			// Act
