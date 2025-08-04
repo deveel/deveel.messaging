@@ -34,8 +34,8 @@ public class SendGridEmailConnectorTests
         var connector = new SendGridEmailConnector(connectionSettings);
 
         // Assert
-        Assert.Equal("SendGrid", connector.Schema.ChannelProvider);
-        Assert.Equal("Email", connector.Schema.ChannelType);
+        Assert.Equal(SendGridConnectorConstants.Provider, connector.Schema.ChannelProvider);
+        Assert.Equal(SendGridConnectorConstants.EmailChannel, connector.Schema.ChannelType);
         Assert.Equal(ConnectorState.Uninitialized, connector.State);
     }
 

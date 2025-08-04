@@ -44,8 +44,8 @@ public class TwilioWhatsAppConnectorTests
         var connector = new TwilioWhatsAppConnector(connectionSettings);
 
         // Assert
-        Assert.Equal("Twilio", connector.Schema.ChannelProvider);
-        Assert.Equal("WhatsApp", connector.Schema.ChannelType);
+        Assert.Equal(TwilioConnectorConstants.Provider, connector.Schema.ChannelProvider);
+        Assert.Equal(TwilioConnectorConstants.WhatsAppChannel, connector.Schema.ChannelType);
         Assert.Equal(ConnectorState.Uninitialized, connector.State);
     }
 

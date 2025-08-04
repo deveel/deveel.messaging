@@ -34,8 +34,8 @@ public class TwilioSmsConnectorTests
         var connector = new TwilioSmsConnector(connectionSettings);
 
         // Assert
-        Assert.Equal("Twilio", connector.Schema.ChannelProvider);
-        Assert.Equal("SMS", connector.Schema.ChannelType);
+        Assert.Equal(TwilioConnectorConstants.Provider, connector.Schema.ChannelProvider);
+        Assert.Equal(TwilioConnectorConstants.SmsChannel, connector.Schema.ChannelType);
         Assert.Equal(ConnectorState.Uninitialized, connector.State);
     }
 
