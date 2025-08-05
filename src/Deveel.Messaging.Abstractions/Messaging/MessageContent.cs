@@ -40,22 +40,30 @@ namespace Deveel.Messaging {
 		public static MessageContent? Create(IMessageContent? content) {
 			if (content == null)
 				return null;
+
 			if (content is MessageContent messageContent)
 				return messageContent;
 
-			if (content is ITextContent textContent)
+			if (content.ContentType == MessageContentType.PlainText &&
+				content is ITextContent textContent)
 				return new TextContent(textContent);
-			if (content is IHtmlContent htmlContent)
+			if (content.ContentType == MessageContentType.Html &&
+				content is IHtmlContent htmlContent)
 				return new HtmlContent(htmlContent);
-			if (content is ITemplateContent templateContent)
+			if (content.ContentType == MessageContentType.Template &&
+				content is ITemplateContent templateContent)
 				return new TemplateContent(templateContent);
-			if (content is IMultipartContent multipartContent)
+			if (content.ContentType == MessageContentType.Multipart &&
+				content is IMultipartContent multipartContent)
 				return new MultipartContent(multipartContent);
-			if (content is IJsonContent jsonContent)
+			if (content.ContentType == MessageContentType.Json &&
+				content is IJsonContent jsonContent)
 				return new JsonContent(jsonContent);
-			if (content is IBinaryContent binaryContent)
+			if (content.ContentType == MessageContentType.Binary &&
+				content is IBinaryContent binaryContent)
 				return new BinaryContent(binaryContent);
-			if (content is IMediaContent mediaContent)
+			if (content.ContentType == MessageContentType.Media &&
+				content is IMediaContent mediaContent)
 				return new MediaContent(mediaContent);
 
 			throw new NotSupportedException($"The content of type '{content.ContentType}' is not supported");

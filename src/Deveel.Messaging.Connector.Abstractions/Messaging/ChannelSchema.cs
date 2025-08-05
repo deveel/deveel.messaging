@@ -429,464 +429,464 @@ namespace Deveel.Messaging
 			return WithStrictMode(false);
 		}
 
-		/// <summary>
-		/// Validates the specified connection settings against this channel schema
-		/// to ensure compatibility and compliance with the defined requirements.
-		/// </summary>
-		/// <param name="connectionSettings">
-		/// The connection settings to validate. Cannot be <see langword="null"/>.
-		/// </param>
-		/// <returns>
-		/// An <see cref="IEnumerable{ValidationResult}"/> containing validation errors.
-		/// If the enumerable is empty, the validation was successful.
-		/// </returns>
-		/// <exception cref="ArgumentNullException">
-		/// Thrown when <paramref name="connectionSettings"/> is <see langword="null"/>.
-		/// </exception>
-		public IEnumerable<ValidationResult> ValidateConnectionSettings(ConnectionSettings connectionSettings)
-		{
-			ArgumentNullException.ThrowIfNull(connectionSettings, nameof(connectionSettings));
+		///// <summary>
+		///// Validates the specified connection settings against this channel schema
+		///// to ensure compatibility and compliance with the defined requirements.
+		///// </summary>
+		///// <param name="connectionSettings">
+		///// The connection settings to validate. Cannot be <see langword="null"/>.
+		///// </param>
+		///// <returns>
+		///// An <see cref="IEnumerable{ValidationResult}"/> containing validation errors.
+		///// If the enumerable is empty, the validation was successful.
+		///// </returns>
+		///// <exception cref="ArgumentNullException">
+		///// Thrown when <paramref name="connectionSettings"/> is <see langword="null"/>.
+		///// </exception>
+		//public IEnumerable<ValidationResult> ValidateConnectionSettings(ConnectionSettings connectionSettings)
+		//{
+		//	ArgumentNullException.ThrowIfNull(connectionSettings, nameof(connectionSettings));
 
-			var validationResults = new List<ValidationResult>();
+		//	var validationResults = new List<ValidationResult>();
 
-			// Validate required parameters
-			ValidateRequiredParameters(connectionSettings, validationResults);
+		//	// Validate required parameters
+		//	ValidateRequiredParameters(connectionSettings, validationResults);
 
-			// Validate parameter types and constraints
-			ValidateParameterTypesAndConstraints(connectionSettings, validationResults);
+		//	// Validate parameter types and constraints
+		//	ValidateParameterTypesAndConstraints(connectionSettings, validationResults);
 
-			// Validate authentication requirements
-			ValidateAuthenticationRequirements(connectionSettings, validationResults);
+		//	// Validate authentication requirements
+		//	ValidateAuthenticationRequirements(connectionSettings, validationResults);
 
-			// Validate unknown parameters (parameters not defined in schema) - only in strict mode
-			if (IsStrict)
-			{
-				ValidateUnknownParameters(connectionSettings, validationResults);
-			}
+		//	// Validate unknown parameters (parameters not defined in schema) - only in strict mode
+		//	if (IsStrict)
+		//	{
+		//		ValidateUnknownParameters(connectionSettings, validationResults);
+		//	}
 
-			return validationResults;
-		}
+		//	return validationResults;
+		//}
 
-		/// <summary>
-		/// Validates the properties of a message against this channel schema
-		/// to ensure compatibility and compliance with the defined requirements.
-		/// </summary>
-		/// <param name="messageProperties">
-		/// The message properties to validate. Cannot be <see langword="null"/>.
-		/// </param>
-		/// <returns>
-		/// An <see cref="IEnumerable{ValidationResult}"/> containing validation errors.
-		/// If the enumerable is empty, the validation was successful.
-		/// </returns>
-		/// <exception cref="ArgumentNullException">
-		/// Thrown when <paramref name="messageProperties"/> is <see langword="null"/>.
-		/// </exception>
-		public IEnumerable<ValidationResult> ValidateMessageProperties(IDictionary<string, object?> messageProperties)
-		{
-			ArgumentNullException.ThrowIfNull(messageProperties, nameof(messageProperties));
+		///// <summary>
+		///// Validates the properties of a message against this channel schema
+		///// to ensure compatibility and compliance with the defined requirements.
+		///// </summary>
+		///// <param name="messageProperties">
+		///// The message properties to validate. Cannot be <see langword="null"/>.
+		///// </param>
+		///// <returns>
+		///// An <see cref="IEnumerable{ValidationResult}"/> containing validation errors.
+		///// If the enumerable is empty, the validation was successful.
+		///// </returns>
+		///// <exception cref="ArgumentNullException">
+		///// Thrown when <paramref name="messageProperties"/> is <see langword="null"/>.
+		///// </exception>
+		//public IEnumerable<ValidationResult> ValidateMessageProperties(IDictionary<string, object?> messageProperties)
+		//{
+		//	ArgumentNullException.ThrowIfNull(messageProperties, nameof(messageProperties));
 
-			var validationResults = new List<ValidationResult>();
+		//	var validationResults = new List<ValidationResult>();
 
-			// Validate required message properties
-			ValidateRequiredMessageProperties(messageProperties, validationResults);
+		//	// Validate required message properties
+		//	ValidateRequiredMessageProperties(messageProperties, validationResults);
 
-			// Validate message property types and constraints
-			ValidateMessagePropertyTypesAndConstraints(messageProperties, validationResults);
+		//	// Validate message property types and constraints
+		//	ValidateMessagePropertyTypesAndConstraints(messageProperties, validationResults);
 
-			// Validate unknown message properties (properties not defined in schema) - only in strict mode
-			if (IsStrict)
-			{
-				ValidateUnknownMessageProperties(messageProperties, validationResults);
-			}
+		//	// Validate unknown message properties (properties not defined in schema) - only in strict mode
+		//	if (IsStrict)
+		//	{
+		//		ValidateUnknownMessageProperties(messageProperties, validationResults);
+		//	}
 
-			return validationResults;
-		}
+		//	return validationResults;
+		//}
 
-		private void ValidateRequiredParameters(ConnectionSettings connectionSettings, List<ValidationResult> validationResults)
-		{
-			foreach (var parameter in Parameters.Where(p => p.IsRequired))
-			{
-				var value = connectionSettings.GetParameter(parameter.Name);
+		//private void ValidateRequiredParameters(ConnectionSettings connectionSettings, List<ValidationResult> validationResults)
+		//{
+		//	foreach (var parameter in Parameters.Where(p => p.IsRequired))
+		//	{
+		//		var value = connectionSettings.GetParameter(parameter.Name);
 				
-				if (value == null)
-				{
-					validationResults.Add(new ValidationResult(
-						$"Required parameter '{parameter.Name}' is missing.",
-						new[] { parameter.Name }));
-				}
-			}
-		}
+		//		if (value == null)
+		//		{
+		//			validationResults.Add(new ValidationResult(
+		//				$"Required parameter '{parameter.Name}' is missing.",
+		//				new[] { parameter.Name }));
+		//		}
+		//	}
+		//}
 
-		private void ValidateParameterTypesAndConstraints(ConnectionSettings connectionSettings, List<ValidationResult> validationResults)
-		{
-			foreach (var parameter in Parameters)
-			{
-				var value = connectionSettings.GetParameter(parameter.Name);
+		//private void ValidateParameterTypesAndConstraints(ConnectionSettings connectionSettings, List<ValidationResult> validationResults)
+		//{
+		//	foreach (var parameter in Parameters)
+		//	{
+		//		var value = connectionSettings.GetParameter(parameter.Name);
 				
-				// Skip validation if value is null and parameter is not required
-				// (required validation is handled separately)
-				if (value == null && !parameter.IsRequired)
-					continue;
+		//		// Skip validation if value is null and parameter is not required
+		//		// (required validation is handled separately)
+		//		if (value == null && !parameter.IsRequired)
+		//			continue;
 
-				// Skip if value is null but has a default value in schema
-				if (value == null && parameter.DefaultValue != null)
-					continue;
+		//		// Skip if value is null but has a default value in schema
+		//		if (value == null && parameter.DefaultValue != null)
+		//			continue;
 
-				if (value != null)
-				{
-					// Validate type compatibility
-					if (!IsTypeCompatible(parameter.DataType, value))
-					{
-						validationResults.Add(new ValidationResult(
-							$"Parameter '{parameter.Name}' has an incompatible type. Expected: {parameter.DataType}, Actual: {value.GetType().Name}.",
-							new[] { parameter.Name }));
-					}
+		//		if (value != null)
+		//		{
+		//			// Validate type compatibility
+		//			if (!IsTypeCompatible(parameter.DataType, value))
+		//			{
+		//				validationResults.Add(new ValidationResult(
+		//					$"Parameter '{parameter.Name}' has an incompatible type. Expected: {parameter.DataType}, Actual: {value.GetType().Name}.",
+		//					new[] { parameter.Name }));
+		//			}
 
-					// Validate allowed values constraint
-					if (parameter.AllowedValues?.Any() == true)
-					{
-						if (!parameter.AllowedValues.Any(allowedValue => Equals(allowedValue, value)))
-						{
-							var allowedValuesStr = string.Join(", ", parameter.AllowedValues.Select(v => v?.ToString() ?? "null"));
-							validationResults.Add(new ValidationResult(
-								$"Parameter '{parameter.Name}' has an invalid value '{value}'. Allowed values: [{allowedValuesStr}].",
-								new[] { parameter.Name }));
-						}
-					}
-				}
-			}
-		}
+		//			// Validate allowed values constraint
+		//			if (parameter.AllowedValues?.Any() == true)
+		//			{
+		//				if (!parameter.AllowedValues.Any(allowedValue => Equals(allowedValue, value)))
+		//				{
+		//					var allowedValuesStr = string.Join(", ", parameter.AllowedValues.Select(v => v?.ToString() ?? "null"));
+		//					validationResults.Add(new ValidationResult(
+		//						$"Parameter '{parameter.Name}' has an invalid value '{value}'. Allowed values: [{allowedValuesStr}].",
+		//						new[] { parameter.Name }));
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
 
-		private void ValidateAuthenticationRequirements(ConnectionSettings connectionSettings, List<ValidationResult> validationResults)
-		{
-			// Skip authentication validation if no authentication types are defined
-			if (!AuthenticationTypes.Any())
-			{
-				return;
-			}
+		//private void ValidateAuthenticationRequirements(ConnectionSettings connectionSettings, List<ValidationResult> validationResults)
+		//{
+		//	// Skip authentication validation if no authentication types are defined
+		//	if (!AuthenticationTypes.Any())
+		//	{
+		//		return;
+		//	}
 
-			// If None is the only authentication type, no authentication parameters are required
-			if (AuthenticationTypes.Count == 1 && AuthenticationTypes.Contains(AuthenticationType.None))
-			{
-				return;
-			}
+		//	// If None is the only authentication type, no authentication parameters are required
+		//	if (AuthenticationTypes.Count == 1 && AuthenticationTypes.Contains(AuthenticationType.None))
+		//	{
+		//		return;
+		//	}
 
-			// Check if at least one authentication type's requirements are satisfied
-			bool hasValidAuthentication = false;
-			var authenticationErrors = new List<string>();
+		//	// Check if at least one authentication type's requirements are satisfied
+		//	bool hasValidAuthentication = false;
+		//	var authenticationErrors = new List<string>();
 
-			foreach (var authType in AuthenticationTypes.Where(a => a != AuthenticationType.None))
-			{
-				var authValidationResults = ValidateAuthenticationTypeRequirements(authType, connectionSettings);
+		//	foreach (var authType in AuthenticationTypes.Where(a => a != AuthenticationType.None))
+		//	{
+		//		var authValidationResults = ValidateAuthenticationTypeRequirements(authType, connectionSettings);
 				
-				if (!authValidationResults.Any())
-				{
-					hasValidAuthentication = true;
-					break; // Found valid authentication, no need to check others
-				}
-				else
-				{
-					authenticationErrors.Add($"{authType}: {string.Join(", ", authValidationResults)}");
-				}
-			}
+		//		if (!authValidationResults.Any())
+		//		{
+		//			hasValidAuthentication = true;
+		//			break; // Found valid authentication, no need to check others
+		//		}
+		//		else
+		//		{
+		//			authenticationErrors.Add($"{authType}: {string.Join(", ", authValidationResults)}");
+		//		}
+		//	}
 
-			// If no valid authentication was found and None is not supported, add validation error
-			if (!hasValidAuthentication && !AuthenticationTypes.Contains(AuthenticationType.None))
-			{
-				validationResults.Add(new ValidationResult(
-					$"Connection settings do not satisfy any of the supported authentication types. " +
-					$"Supported types: {string.Join(", ", AuthenticationTypes)}. " +
-					$"Validation errors: {string.Join("; ", authenticationErrors)}",
-					new[] { "Authentication" }));
-			}
-		}
+		//	// If no valid authentication was found and None is not supported, add validation error
+		//	if (!hasValidAuthentication && !AuthenticationTypes.Contains(AuthenticationType.None))
+		//	{
+		//		validationResults.Add(new ValidationResult(
+		//			$"Connection settings do not satisfy any of the supported authentication types. " +
+		//			$"Supported types: {string.Join(", ", AuthenticationTypes)}. " +
+		//			$"Validation errors: {string.Join("; ", authenticationErrors)}",
+		//			new[] { "Authentication" }));
+		//	}
+		//}
 
-		/// <summary>
-		/// Validates the authentication requirements for a specific authentication type.
-		/// </summary>
-		/// <param name="authenticationType">The authentication type to validate.</param>
-		/// <param name="connectionSettings">The connection settings to check.</param>
-		/// <returns>A list of validation error messages for this authentication type.</returns>
-		private List<string> ValidateAuthenticationTypeRequirements(AuthenticationType authenticationType, ConnectionSettings connectionSettings)
-		{
-			var errors = new List<string>();
-			switch (authenticationType)
-			{
-				case AuthenticationType.Basic:
-					ValidateBasicAuthentication(connectionSettings, errors);
-					break;
-				case AuthenticationType.ApiKey:
-					ValidateApiKeyAuthentication(connectionSettings, errors);
-					break;
-				case AuthenticationType.Token:
-					ValidateTokenAuthentication(connectionSettings, errors);
-					break;
-				case AuthenticationType.ClientCredentials:
-					ValidateClientCredentialsAuthentication(connectionSettings, errors);
-					break;
-				case AuthenticationType.Certificate:
-					ValidateCertificateAuthentication(connectionSettings, errors);
-					break;
-				case AuthenticationType.Custom:
-					ValidateCustomAuthentication(connectionSettings, errors);
-					break;
-			}
+		///// <summary>
+		///// Validates the authentication requirements for a specific authentication type.
+		///// </summary>
+		///// <param name="authenticationType">The authentication type to validate.</param>
+		///// <param name="connectionSettings">The connection settings to check.</param>
+		///// <returns>A list of validation error messages for this authentication type.</returns>
+		//private List<string> ValidateAuthenticationTypeRequirements(AuthenticationType authenticationType, ConnectionSettings connectionSettings)
+		//{
+		//	var errors = new List<string>();
+		//	switch (authenticationType)
+		//	{
+		//		case AuthenticationType.Basic:
+		//			ValidateBasicAuthentication(connectionSettings, errors);
+		//			break;
+		//		case AuthenticationType.ApiKey:
+		//			ValidateApiKeyAuthentication(connectionSettings, errors);
+		//			break;
+		//		case AuthenticationType.Token:
+		//			ValidateTokenAuthentication(connectionSettings, errors);
+		//			break;
+		//		case AuthenticationType.ClientCredentials:
+		//			ValidateClientCredentialsAuthentication(connectionSettings, errors);
+		//			break;
+		//		case AuthenticationType.Certificate:
+		//			ValidateCertificateAuthentication(connectionSettings, errors);
+		//			break;
+		//		case AuthenticationType.Custom:
+		//			ValidateCustomAuthentication(connectionSettings, errors);
+		//			break;
+		//	}
 
-			return errors;
-		}
+		//	return errors;
+		//}
 
-		/// <summary>
-		/// Validates Basic authentication requirements (username/password or AccountSid/AuthToken for Twilio-like services).
-		/// </summary>
-		private void ValidateBasicAuthentication(ConnectionSettings connectionSettings, List<string> errors)
-		{
-			// Check for standard Basic authentication (username/password)
-			var username = connectionSettings.GetParameter("Username");
-			var password = connectionSettings.GetParameter("Password");
+		///// <summary>
+		///// Validates Basic authentication requirements (username/password or AccountSid/AuthToken for Twilio-like services).
+		///// </summary>
+		//private void ValidateBasicAuthentication(ConnectionSettings connectionSettings, List<string> errors)
+		//{
+		//	// Check for standard Basic authentication (username/password)
+		//	var username = connectionSettings.GetParameter("Username");
+		//	var password = connectionSettings.GetParameter("Password");
 			
-			// Check for Twilio-style Basic authentication (AccountSid/AuthToken)
-			var accountSid = connectionSettings.GetParameter("AccountSid");
-			var authToken = connectionSettings.GetParameter("AuthToken");
+		//	// Check for Twilio-style Basic authentication (AccountSid/AuthToken)
+		//	var accountSid = connectionSettings.GetParameter("AccountSid");
+		//	var authToken = connectionSettings.GetParameter("AuthToken");
 
-			// Check for other common Basic auth variations
-			var user = connectionSettings.GetParameter("User");
-			var pass = connectionSettings.GetParameter("Pass");
-			var clientId = connectionSettings.GetParameter("ClientId");
-			var clientSecret = connectionSettings.GetParameter("ClientSecret");
+		//	// Check for other common Basic auth variations
+		//	var user = connectionSettings.GetParameter("User");
+		//	var pass = connectionSettings.GetParameter("Pass");
+		//	var clientId = connectionSettings.GetParameter("ClientId");
+		//	var clientSecret = connectionSettings.GetParameter("ClientSecret");
 
-			bool hasValidBasicAuth = 
-				(username != null && password != null) ||
-				(accountSid != null && authToken != null) ||
-				(user != null && pass != null) ||
-				(clientId != null && clientSecret != null);
+		//	bool hasValidBasicAuth = 
+		//		(username != null && password != null) ||
+		//		(accountSid != null && authToken != null) ||
+		//		(user != null && pass != null) ||
+		//		(clientId != null && clientSecret != null);
 
-			if (!hasValidBasicAuth)
-			{
-				errors.Add("Basic authentication requires one of the following parameter pairs: " +
-						  "(Username, Password), (AccountSid, AuthToken), (User, Pass), or (ClientId, ClientSecret)");
-			}
-		}
+		//	if (!hasValidBasicAuth)
+		//	{
+		//		errors.Add("Basic authentication requires one of the following parameter pairs: " +
+		//				  "(Username, Password), (AccountSid, AuthToken), (User, Pass), or (ClientId, ClientSecret)");
+		//	}
+		//}
 
-		/// <summary>
-		/// Validates API Key authentication requirements.
-		/// </summary>
-		private void ValidateApiKeyAuthentication(ConnectionSettings connectionSettings, List<string> errors)
-		{
-			var apiKey = connectionSettings.GetParameter("ApiKey");
-			var key = connectionSettings.GetParameter("Key");
-			var accessKey = connectionSettings.GetParameter("AccessKey");
+		///// <summary>
+		///// Validates API Key authentication requirements.
+		///// </summary>
+		//private void ValidateApiKeyAuthentication(ConnectionSettings connectionSettings, List<string> errors)
+		//{
+		//	var apiKey = connectionSettings.GetParameter("ApiKey");
+		//	var key = connectionSettings.GetParameter("Key");
+		//	var accessKey = connectionSettings.GetParameter("AccessKey");
 
-			if (apiKey == null && key == null && accessKey == null)
-			{
-				errors.Add("API Key authentication requires one of the following parameters: ApiKey, Key, or AccessKey");
-			}
-		}
+		//	if (apiKey == null && key == null && accessKey == null)
+		//	{
+		//		errors.Add("API Key authentication requires one of the following parameters: ApiKey, Key, or AccessKey");
+		//	}
+		//}
 
-		/// <summary>
-		/// Validates Token authentication requirements.
-		/// </summary>
-		private void ValidateTokenAuthentication(ConnectionSettings connectionSettings, List<string> errors)
-		{
-			var token = connectionSettings.GetParameter("Token");
-			var accessToken = connectionSettings.GetParameter("AccessToken");
-			var bearerToken = connectionSettings.GetParameter("BearerToken");
-			var authToken = connectionSettings.GetParameter("AuthToken");
+		///// <summary>
+		///// Validates Token authentication requirements.
+		///// </summary>
+		//private void ValidateTokenAuthentication(ConnectionSettings connectionSettings, List<string> errors)
+		//{
+		//	var token = connectionSettings.GetParameter("Token");
+		//	var accessToken = connectionSettings.GetParameter("AccessToken");
+		//	var bearerToken = connectionSettings.GetParameter("BearerToken");
+		//	var authToken = connectionSettings.GetParameter("AuthToken");
 
-			if (token == null && accessToken == null && bearerToken == null && authToken == null)
-			{
-				errors.Add("Token authentication requires one of the following parameters: Token, AccessToken, BearerToken, or AuthToken");
-			}
-		}
+		//	if (token == null && accessToken == null && bearerToken == null && authToken == null)
+		//	{
+		//		errors.Add("Token authentication requires one of the following parameters: Token, AccessToken, BearerToken, or AuthToken");
+		//	}
+		//}
 
-		/// <summary>
-		/// Validates Client Credentials authentication requirements.
-		/// </summary>
-		private void ValidateClientCredentialsAuthentication(ConnectionSettings connectionSettings, List<string> errors)
-		{
-			var clientId = connectionSettings.GetParameter("ClientId");
-			var clientSecret = connectionSettings.GetParameter("ClientSecret");
+		///// <summary>
+		///// Validates Client Credentials authentication requirements.
+		///// </summary>
+		//private void ValidateClientCredentialsAuthentication(ConnectionSettings connectionSettings, List<string> errors)
+		//{
+		//	var clientId = connectionSettings.GetParameter("ClientId");
+		//	var clientSecret = connectionSettings.GetParameter("ClientSecret");
 
-			if (clientId == null || clientSecret == null)
-			{
-				errors.Add("Client Credentials authentication requires both ClientId and ClientSecret parameters");
-			}
-		}
+		//	if (clientId == null || clientSecret == null)
+		//	{
+		//		errors.Add("Client Credentials authentication requires both ClientId and ClientSecret parameters");
+		//	}
+		//}
 
-		/// <summary>
-		/// Validates Certificate authentication requirements.
-		/// </summary>
-		private void ValidateCertificateAuthentication(ConnectionSettings connectionSettings, List<string> errors)
-		{
-			var certificate = connectionSettings.GetParameter("Certificate");
-			var certificatePath = connectionSettings.GetParameter("CertificatePath");
-			var certificateThumbprint = connectionSettings.GetParameter("CertificateThumbprint");
-			var pfxFile = connectionSettings.GetParameter("PfxFile");
+		///// <summary>
+		///// Validates Certificate authentication requirements.
+		///// </summary>
+		//private void ValidateCertificateAuthentication(ConnectionSettings connectionSettings, List<string> errors)
+		//{
+		//	var certificate = connectionSettings.GetParameter("Certificate");
+		//	var certificatePath = connectionSettings.GetParameter("CertificatePath");
+		//	var certificateThumbprint = connectionSettings.GetParameter("CertificateThumbprint");
+		//	var pfxFile = connectionSettings.GetParameter("PfxFile");
 
-			if (certificate == null && certificatePath == null && certificateThumbprint == null && pfxFile == null)
-			{
-				errors.Add("Certificate authentication requires one of the following parameters: " +
-						  "Certificate, CertificatePath, CertificateThumbprint, or PfxFile");
-				return; // Don't check for passwords if no certificate is provided
-			}
+		//	if (certificate == null && certificatePath == null && certificateThumbprint == null && pfxFile == null)
+		//	{
+		//		errors.Add("Certificate authentication requires one of the following parameters: " +
+		//				  "Certificate, CertificatePath, CertificateThumbprint, or PfxFile");
+		//		return; // Don't check for passwords if no certificate is provided
+		//	}
 
-			// Only check for password if PFX file is specifically provided
-			// Other certificate types may not require passwords
-			if (pfxFile != null)
-			{
-				var certificatePassword = connectionSettings.GetParameter("CertificatePassword");
-				var pfxPassword = connectionSettings.GetParameter("PfxPassword");
+		//	// Only check for password if PFX file is specifically provided
+		//	// Other certificate types may not require passwords
+		//	if (pfxFile != null)
+		//	{
+		//		var certificatePassword = connectionSettings.GetParameter("CertificatePassword");
+		//		var pfxPassword = connectionSettings.GetParameter("PfxPassword");
 				
-				// Note: We make password optional as some PFX files may not be password protected
-				// This is just a warning in the comment, not an actual validation error
-			}
-		}
+		//		// Note: We make password optional as some PFX files may not be password protected
+		//		// This is just a warning in the comment, not an actual validation error
+		//	}
+		//}
 
-		/// <summary>
-		/// Validates Custom authentication requirements.
-		/// </summary>
-		private void ValidateCustomAuthentication(ConnectionSettings connectionSettings, List<string> errors)
-		{
-			// For custom authentication, we look for any authentication-related parameters
-			// This is more flexible to accommodate various custom authentication schemes
-			var authParams = new []
-			{
-				"CustomAuth", "AuthenticationData", "Credentials", "AuthConfig",
-				"SecretKey", "PrivateKey", "Signature", "Hash"
-			};
+		///// <summary>
+		///// Validates Custom authentication requirements.
+		///// </summary>
+		//private void ValidateCustomAuthentication(ConnectionSettings connectionSettings, List<string> errors)
+		//{
+		//	// For custom authentication, we look for any authentication-related parameters
+		//	// This is more flexible to accommodate various custom authentication schemes
+		//	var authParams = new []
+		//	{
+		//		"CustomAuth", "AuthenticationData", "Credentials", "AuthConfig",
+		//		"SecretKey", "PrivateKey", "Signature", "Hash"
+		//	};
 
-			bool hasCustomAuthParam = authParams.Any(param => connectionSettings.GetParameter(param) != null);
+		//	bool hasCustomAuthParam = authParams.Any(param => connectionSettings.GetParameter(param) != null);
 
-			if (!hasCustomAuthParam)
-			{
-				errors.Add("Custom authentication requires at least one authentication parameter. " +
-						  $"Common parameters include: {string.Join(", ", authParams)}");
-			}
-		}
+		//	if (!hasCustomAuthParam)
+		//	{
+		//		errors.Add("Custom authentication requires at least one authentication parameter. " +
+		//				  $"Common parameters include: {string.Join(", ", authParams)}");
+		//	}
+		//}
 
-		private void ValidateUnknownParameters(ConnectionSettings connectionSettings, List<ValidationResult> validationResults)
-		{
-			var schemaParameterNames = Parameters.Select(p => p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+		//private void ValidateUnknownParameters(ConnectionSettings connectionSettings, List<ValidationResult> validationResults)
+		//{
+		//	var schemaParameterNames = Parameters.Select(p => p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
 			
-			// Add authentication-related parameter names that should be considered "known"
-			var authenticationParameterNames = GetAllAuthenticationParameterNames();
-			foreach (var authParam in authenticationParameterNames)
-			{
-				schemaParameterNames.Add(authParam);
-			}
+		//	// Add authentication-related parameter names that should be considered "known"
+		//	var authenticationParameterNames = GetAllAuthenticationParameterNames();
+		//	foreach (var authParam in authenticationParameterNames)
+		//	{
+		//		schemaParameterNames.Add(authParam);
+		//	}
 			
-			foreach (var parameterKey in connectionSettings.Parameters.Keys)
-			{
-				if (!schemaParameterNames.Contains(parameterKey))
-				{
-					validationResults.Add(new ValidationResult(
-						$"Unknown parameter '{parameterKey}' is not supported by this schema.",
-						new[] { parameterKey }));
-				}
-			}
-		}
+		//	foreach (var parameterKey in connectionSettings.Parameters.Keys)
+		//	{
+		//		if (!schemaParameterNames.Contains(parameterKey))
+		//		{
+		//			validationResults.Add(new ValidationResult(
+		//				$"Unknown parameter '{parameterKey}' is not supported by this schema.",
+		//				new[] { parameterKey }));
+		//		}
+		//	}
+		//}
 
-		/// <summary>
-		/// Gets all parameter names that are considered valid for authentication purposes.
-		/// </summary>
-		/// <returns>A set of authentication parameter names that should not be considered "unknown".</returns>
-		private HashSet<string> GetAllAuthenticationParameterNames()
-		{
-			var authParams = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		///// <summary>
+		///// Gets all parameter names that are considered valid for authentication purposes.
+		///// </summary>
+		///// <returns>A set of authentication parameter names that should not be considered "unknown".</returns>
+		//private HashSet<string> GetAllAuthenticationParameterNames()
+		//{
+		//	var authParams = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-			// Only include authentication parameters if corresponding authentication types are supported
-			foreach (var authType in AuthenticationTypes)
-			{
-				switch (authType)
-				{
-					case AuthenticationType.Basic:
-						authParams.Add("Username");
-						authParams.Add("Password");
-						authParams.Add("AccountSid");
-						authParams.Add("AuthToken");
-						authParams.Add("User");
-						authParams.Add("Pass");
-						authParams.Add("ClientId");
-						authParams.Add("ClientSecret");
-						break;
-					case AuthenticationType.ApiKey:
-						authParams.Add("ApiKey");
-						authParams.Add("Key");
-						authParams.Add("AccessKey");
-						break;
-					case AuthenticationType.Token:
-						authParams.Add("Token");
-						authParams.Add("AccessToken");
-						authParams.Add("BearerToken");
-						authParams.Add("AuthToken");
-						break;
-					case AuthenticationType.ClientCredentials:
-						authParams.Add("ClientId");
-						authParams.Add("ClientSecret");
-						break;
-					case AuthenticationType.Certificate:
-						authParams.Add("Certificate");
-						authParams.Add("CertificatePath");
-						authParams.Add("CertificateThumbprint");
-						authParams.Add("PfxFile");
-						authParams.Add("CertificatePassword");
-						authParams.Add("PfxPassword");
-						break;
-					case AuthenticationType.Custom:
-						authParams.Add("CustomAuth");
-						authParams.Add("AuthenticationData");
-						authParams.Add("Credentials");
-						authParams.Add("AuthConfig");
-						authParams.Add("SecretKey");
-						authParams.Add("PrivateKey");
-						authParams.Add("Signature");
-						authParams.Add("Hash");
-						break;
-				}
-			}
+		//	// Only include authentication parameters if corresponding authentication types are supported
+		//	foreach (var authType in AuthenticationTypes)
+		//	{
+		//		switch (authType)
+		//		{
+		//			case AuthenticationType.Basic:
+		//				authParams.Add("Username");
+		//				authParams.Add("Password");
+		//				authParams.Add("AccountSid");
+		//				authParams.Add("AuthToken");
+		//				authParams.Add("User");
+		//				authParams.Add("Pass");
+		//				authParams.Add("ClientId");
+		//				authParams.Add("ClientSecret");
+		//				break;
+		//			case AuthenticationType.ApiKey:
+		//				authParams.Add("ApiKey");
+		//				authParams.Add("Key");
+		//				authParams.Add("AccessKey");
+		//				break;
+		//			case AuthenticationType.Token:
+		//				authParams.Add("Token");
+		//				authParams.Add("AccessToken");
+		//				authParams.Add("BearerToken");
+		//				authParams.Add("AuthToken");
+		//				break;
+		//			case AuthenticationType.ClientCredentials:
+		//				authParams.Add("ClientId");
+		//				authParams.Add("ClientSecret");
+		//				break;
+		//			case AuthenticationType.Certificate:
+		//				authParams.Add("Certificate");
+		//				authParams.Add("CertificatePath");
+		//				authParams.Add("CertificateThumbprint");
+		//				authParams.Add("PfxFile");
+		//				authParams.Add("CertificatePassword");
+		//				authParams.Add("PfxPassword");
+		//				break;
+		//			case AuthenticationType.Custom:
+		//				authParams.Add("CustomAuth");
+		//				authParams.Add("AuthenticationData");
+		//				authParams.Add("Credentials");
+		//				authParams.Add("AuthConfig");
+		//				authParams.Add("SecretKey");
+		//				authParams.Add("PrivateKey");
+		//				authParams.Add("Signature");
+		//				authParams.Add("Hash");
+		//				break;
+		//		}
+		//	}
 
-			return authParams;
-		}
+		//	return authParams;
+		//}
 
-		private void ValidateRequiredMessageProperties(IDictionary<string, object?> messageProperties, List<ValidationResult> validationResults)
-		{
-			foreach (var propertyConfig in MessageProperties.Where(p => p.IsRequired))
-			{
-				if (!messageProperties.ContainsKey(propertyConfig.Name) || messageProperties[propertyConfig.Name] == null)
-				{
-					validationResults.Add(new ValidationResult(
-						$"Required message property '{propertyConfig.Name}' is missing.",
-						new[] { propertyConfig.Name }));
-				}
-			}
-		}
+		//private void ValidateRequiredMessageProperties(IDictionary<string, object?> messageProperties, List<ValidationResult> validationResults)
+		//{
+		//	foreach (var propertyConfig in MessageProperties.Where(p => p.IsRequired))
+		//	{
+		//		if (!messageProperties.ContainsKey(propertyConfig.Name) || messageProperties[propertyConfig.Name] == null)
+		//		{
+		//			validationResults.Add(new ValidationResult(
+		//				$"Required message property '{propertyConfig.Name}' is missing.",
+		//				new[] { propertyConfig.Name }));
+		//		}
+		//	}
+		//}
 
-		private void ValidateMessagePropertyTypesAndConstraints(IDictionary<string, object?> messageProperties, List<ValidationResult> validationResults)
-		{
-			foreach (var propertyConfig in MessageProperties)
-			{
-				if (messageProperties.TryGetValue(propertyConfig.Name, out var value))
-				{
-					// Use the property configuration's built-in validation
-					var propertyValidationResults = propertyConfig.Validate(value);
-					validationResults.AddRange(propertyValidationResults);
-				}
-			}
-		}
+		//private void ValidateMessagePropertyTypesAndConstraints(IDictionary<string, object?> messageProperties, List<ValidationResult> validationResults)
+		//{
+		//	foreach (var propertyConfig in MessageProperties)
+		//	{
+		//		if (messageProperties.TryGetValue(propertyConfig.Name, out var value))
+		//		{
+		//			// Use the property configuration's built-in validation
+		//			var propertyValidationResults = propertyConfig.Validate(value);
+		//			validationResults.AddRange(propertyValidationResults);
+		//		}
+		//	}
+		//}
 
-		private void ValidateUnknownMessageProperties(IDictionary<string, object?> messageProperties, List<ValidationResult> validationResults)
-		{
-			var schemaPropertyNames = MessageProperties.Select(p => p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+		//private void ValidateUnknownMessageProperties(IDictionary<string, object?> messageProperties, List<ValidationResult> validationResults)
+		//{
+		//	var schemaPropertyNames = MessageProperties.Select(p => p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
 			
-			foreach (var propertyKey in messageProperties.Keys)
-			{
-				if (!schemaPropertyNames.Contains(propertyKey))
-				{
-					validationResults.Add(new ValidationResult(
-						$"Unknown message property '{propertyKey}' is not supported by this schema.",
-						new[] { propertyKey }));
-				}
-			}
-		}
+		//	foreach (var propertyKey in messageProperties.Keys)
+		//	{
+		//		if (!schemaPropertyNames.Contains(propertyKey))
+		//		{
+		//			validationResults.Add(new ValidationResult(
+		//				$"Unknown message property '{propertyKey}' is not supported by this schema.",
+		//				new[] { propertyKey }));
+		//		}
+		//	}
+		//}
 
 		private static bool IsTypeCompatible(DataType parameterType, object value)
 		{
@@ -1136,125 +1136,6 @@ namespace Deveel.Messaging
 			
 			updateAction(endpoint);
 			return this;
-		}
-
-		/// <summary>
-		/// Determines whether this schema is logically compatible with another schema.
-		/// Two schemas are compatible if they have the same ChannelProvider, ChannelType, and Version.
-		/// </summary>
-		/// <param name="otherSchema">The schema to compare with.</param>
-		/// <returns>True if the schemas are logically compatible; otherwise, false.</returns>
-		/// <exception cref="ArgumentNullException">Thrown when otherSchema is null.</exception>
-		public bool IsCompatibleWith(IChannelSchema otherSchema)
-		{
-			ArgumentNullException.ThrowIfNull(otherSchema, nameof(otherSchema));
-			
-			return string.Equals(ChannelProvider, otherSchema.ChannelProvider, StringComparison.OrdinalIgnoreCase) &&
-				   string.Equals(ChannelType, otherSchema.ChannelType, StringComparison.OrdinalIgnoreCase) &&
-				   string.Equals(Version, otherSchema.Version, StringComparison.OrdinalIgnoreCase);
-		}
-
-		/// <summary>
-		/// Validates whether this schema can be considered a valid restriction of another schema.
-		/// A schema is a valid restriction if it's compatible and all its configurations are 
-		/// subsets of the target schema's configurations.
-		/// </summary>
-		/// <param name="targetSchema">The schema to validate against.</param>
-		/// <returns>An enumerable of validation results. Empty if this schema is a valid restriction.</returns>
-		/// <exception cref="ArgumentNullException">Thrown when targetSchema is null.</exception>
-		public IEnumerable<ValidationResult> ValidateAsRestrictionOf(IChannelSchema targetSchema)
-		{
-			ArgumentNullException.ThrowIfNull(targetSchema, nameof(targetSchema));
-			
-			var validationResults = new List<ValidationResult>();
-
-			// First check if schemas are compatible
-			if (!IsCompatibleWith(targetSchema))
-			{
-				validationResults.Add(new ValidationResult(
-					$"Schema is not compatible. Expected: {targetSchema.ChannelProvider}/{targetSchema.ChannelType}/{targetSchema.Version}, " +
-					$"Actual: {ChannelProvider}/{ChannelType}/{Version}"));
-				return validationResults;
-			}
-
-			// Validate capabilities are a subset
-			if ((Capabilities & targetSchema.Capabilities) != Capabilities)
-			{
-				validationResults.Add(new ValidationResult(
-					$"Schema capabilities ({Capabilities}) are not a subset of target capabilities ({targetSchema.Capabilities})"));
-			}
-
-			// Validate parameters are a subset
-			foreach (var parameter in Parameters)
-			{
-				var targetParam = targetSchema.Parameters.FirstOrDefault(p => 
-					string.Equals(p.Name, parameter.Name, StringComparison.OrdinalIgnoreCase));
-				
-				if (targetParam == null)
-				{
-					validationResults.Add(new ValidationResult(
-						$"Parameter '{parameter.Name}' is not defined in target schema",
-						new[] { parameter.Name }));
-				}
-			}
-
-			// Validate content types are a subset
-			foreach (var contentType in ContentTypes)
-			{
-				if (!targetSchema.ContentTypes.Contains(contentType))
-				{
-					validationResults.Add(new ValidationResult(
-						$"Content type '{contentType}' is not supported by target schema"));
-				}
-			}
-
-			// Validate authentication types are a subset
-			foreach (var authType in AuthenticationTypes)
-			{
-				if (!targetSchema.AuthenticationTypes.Contains(authType))
-				{
-					validationResults.Add(new ValidationResult(
-						$"Authentication type '{authType}' is not supported by target schema"));
-				}
-			}
-
-			// Validate endpoints are a subset
-			foreach (var endpoint in Endpoints)
-			{
-				var targetEndpoint = targetSchema.Endpoints.FirstOrDefault(e => e.Type == endpoint.Type);
-				
-				if (targetEndpoint == null)
-				{
-					validationResults.Add(new ValidationResult(
-						$"Endpoint type '{endpoint.Type}' is not defined in target schema"));
-				}
-			}
-
-			// Validate message properties are a subset
-			foreach (var messageProperty in MessageProperties)
-			{
-				var targetProperty = targetSchema.MessageProperties.FirstOrDefault(p => 
-					string.Equals(p.Name, messageProperty.Name, StringComparison.OrdinalIgnoreCase));
-				
-				if (targetProperty == null)
-				{
-					validationResults.Add(new ValidationResult(
-						$"Message property '{messageProperty.Name}' is not defined in target schema",
-						new[] { messageProperty.Name }));
-				}
-			}
-
-			return validationResults;
-		}
-
-		/// <summary>
-		/// Gets the logical identity of this schema as a string in the format "Provider/Type/Version".
-		/// This can be used for comparison and identification purposes.
-		/// </summary>
-		/// <returns>A string representing the logical identity of the schema.</returns>
-		public string GetLogicalIdentity()
-		{
-			return $"{ChannelProvider}/{ChannelType}/{Version}";
 		}
 	}
 }

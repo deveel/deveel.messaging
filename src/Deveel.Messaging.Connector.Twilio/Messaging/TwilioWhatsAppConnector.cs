@@ -17,7 +17,8 @@ namespace Deveel.Messaging
     /// sending messages, querying message status, template messaging, media attachments, health monitoring, 
     /// and webhook support for receiving messages and status updates.
     /// </remarks>
-    public class TwilioWhatsAppConnector : ChannelConnectorBase
+    [ChannelSchema(typeof(TwilioWhatsAppSchemaFactory))]
+	public class TwilioWhatsAppConnector : ChannelConnectorBase
     {
         private readonly ConnectionSettings _connectionSettings;
         private readonly ILogger<TwilioWhatsAppConnector>? _logger;
@@ -58,7 +59,7 @@ namespace Deveel.Messaging
         }
 
         /// <inheritdoc/>
-        protected override async Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+        protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -76,7 +77,7 @@ namespace Deveel.Messaging
                 // Perform custom validation logic
                 if (string.IsNullOrWhiteSpace(_accountSid) || string.IsNullOrWhiteSpace(_authToken))
                 {
-                    return ConnectorResult<bool>.Fail(TwilioErrorCodes.MissingCredentials, 
+                    return ConnectorResult<bool>.FailTask(TwilioErrorCodes.MissingCredentials, 
                         "Account SID and Auth Token are required");
                 }
 
@@ -89,7 +90,7 @@ namespace Deveel.Messaging
                     {
                         _logger?.LogError("Connection settings validation failed: {Errors}", 
                             string.Join(", ", validationErrors.Select(e => e.ErrorMessage)));
-                        return ConnectorResult<bool>.ValidationFailed(TwilioErrorCodes.InvalidConnectionSettings, 
+                        return ConnectorResult<bool>.ValidationFailedTask(TwilioErrorCodes.InvalidConnectionSettings, 
                             "Connection settings validation failed", validationErrors);
                     }
                 }
@@ -98,12 +99,12 @@ namespace Deveel.Messaging
                 _twilioService.Initialize(_accountSid, _authToken);
 
                 _logger?.LogInformation("Twilio WhatsApp connector initialized successfully");
-                return ConnectorResult<bool>.Success(true);
+                return ConnectorResult<bool>.SuccessTask(true);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Failed to initialize Twilio WhatsApp connector");
-                return ConnectorResult<bool>.Fail(ConnectorErrorCodes.InitializationError, ex.Message);
+                return ConnectorResult<bool>.FailTask(ConnectorErrorCodes.InitializationError, ex.Message);
             }
         }
 
@@ -143,29 +144,18 @@ namespace Deveel.Messaging
                 // Extract and validate message properties before processing
                 var messageProperties = ExtractMessageProperties(message);
 
-                // Validate message properties against schema first
+                // Validate message properties against schema (includes all validation through MessagePropertyConfiguration)
                 if (Schema is ChannelSchema channelSchema)
                 {
-                    var baseValidationResults = channelSchema.ValidateMessageProperties(messageProperties);
-                    var baseValidationErrors = baseValidationResults.ToList();
-                    if (baseValidationErrors.Count > 0)
+                    var validationResults = channelSchema.ValidateMessageProperties(messageProperties);
+                    var validationErrors = validationResults.ToList();
+                    if (validationErrors.Count > 0)
                     {
                         _logger?.LogError("WhatsApp message properties validation failed: {Errors}", 
-                            string.Join(", ", baseValidationErrors.Select(e => e.ErrorMessage)));
+                            string.Join(", ", validationErrors.Select(e => e.ErrorMessage)));
                         return ConnectorResult<SendResult>.ValidationFailed(TwilioErrorCodes.InvalidMessage, 
-                            "WhatsApp message properties validation failed", baseValidationErrors);
+                            "WhatsApp message properties validation failed", validationErrors);
                     }
-                }
-
-                // Perform Twilio WhatsApp-specific validation (phone number format validation)
-                var twilioValidationResults = TwilioMessagePropertyConfigurations.ValidateTwilioWhatsAppProperties(messageProperties);
-                var twilioValidationErrors = twilioValidationResults.ToList();
-                if (twilioValidationErrors.Count > 0)
-                {
-                    _logger?.LogError("Twilio WhatsApp properties validation failed: {Errors}", 
-                        string.Join(", ", twilioValidationErrors.Select(e => e.ErrorMessage)));
-                    return ConnectorResult<SendResult>.ValidationFailed(TwilioErrorCodes.InvalidMessage, 
-                        "Twilio WhatsApp properties validation failed", twilioValidationErrors);
                 }
 
                 // Extract sender WhatsApp number from message.Sender
@@ -311,7 +301,7 @@ namespace Deveel.Messaging
         }
 
         /// <inheritdoc/>
-        protected override async Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -323,12 +313,12 @@ namespace Deveel.Messaging
                 statusInfo.AdditionalData["Uptime"] = DateTime.UtcNow - _startTime;
                 statusInfo.AdditionalData["Channel"] = "WhatsApp";
 
-                return ConnectorResult<StatusInfo>.Success(statusInfo);
+                return ConnectorResult<StatusInfo>.SuccessTask(statusInfo);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Failed to get WhatsApp connector status");
-                return ConnectorResult<StatusInfo>.Fail(TwilioErrorCodes.StatusError, ex.Message);
+                return ConnectorResult<StatusInfo>.FailTask(TwilioErrorCodes.StatusError, ex.Message);
             }
         }
 

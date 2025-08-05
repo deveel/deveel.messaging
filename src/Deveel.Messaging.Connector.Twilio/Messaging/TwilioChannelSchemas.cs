@@ -19,7 +19,7 @@ namespace Deveel.Messaging
         /// status queries, bulk messaging, and webhook support. It can be used as-is
         /// or derived to create more restrictive configurations for specific use cases.
         /// </remarks>
-        public static ChannelSchema TwilioSms => new ChannelSchema("Twilio", "SMS", "1.0.0")
+        public static ChannelSchema TwilioSms => new ChannelSchema(TwilioConnectorConstants.Provider, TwilioConnectorConstants.SmsChannel, "1.0.0")
             .WithDisplayName("Twilio SMS Connector")
             .WithCapabilities(
                 ChannelCapability.SendMessages | 
@@ -121,7 +121,7 @@ namespace Deveel.Messaging
         /// status queries, template messages, media attachments, and webhook support. It can be used as-is
         /// or derived to create more restrictive configurations for specific use cases.
         /// </remarks>
-        public static ChannelSchema TwilioWhatsApp => new ChannelSchema("Twilio", "WhatsApp", "1.0.0")
+        public static ChannelSchema TwilioWhatsApp => new ChannelSchema(TwilioConnectorConstants.Provider, TwilioConnectorConstants.WhatsAppChannel, "1.0.0")
             .WithDisplayName("Twilio WhatsApp Business API Connector")
             .WithCapabilities(
                 ChannelCapability.SendMessages | 

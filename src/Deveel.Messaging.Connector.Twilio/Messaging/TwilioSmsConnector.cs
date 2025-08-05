@@ -18,7 +18,8 @@ namespace Deveel.Messaging
     /// sending messages, querying message status, health monitoring, and webhook support
     /// for receiving messages and status updates.
     /// </remarks>
-    public class TwilioSmsConnector : ChannelConnectorBase
+    [ChannelSchema(typeof(TwilioSmsSchemaFactory))]
+	public class TwilioSmsConnector : ChannelConnectorBase
     {
         private readonly ConnectionSettings _connectionSettings;
         private readonly ILogger<TwilioSmsConnector>? _logger;
@@ -62,7 +63,7 @@ namespace Deveel.Messaging
         }
 
         /// <inheritdoc/>
-        protected override async Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+        protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -82,7 +83,7 @@ namespace Deveel.Messaging
                 // Perform custom validation logic
                 if (string.IsNullOrWhiteSpace(_accountSid) || string.IsNullOrWhiteSpace(_authToken))
                 {
-                    return ConnectorResult<bool>.Fail(TwilioErrorCodes.MissingCredentials, 
+                    return ConnectorResult<bool>.FailTask(TwilioErrorCodes.MissingCredentials, 
                         "Account SID and Auth Token are required");
                 }
 
@@ -95,7 +96,7 @@ namespace Deveel.Messaging
                     {
                         _logger?.LogError("Connection settings validation failed: {Errors}", 
                             string.Join(", ", validationErrors.Select(e => e.ErrorMessage)));
-                        return ConnectorResult<bool>.ValidationFailed(TwilioErrorCodes.InvalidConnectionSettings, 
+                        return ConnectorResult<bool>.ValidationFailedTask(TwilioErrorCodes.InvalidConnectionSettings, 
                             "Connection settings validation failed", validationErrors);
                     }
                 }
@@ -104,12 +105,12 @@ namespace Deveel.Messaging
                 _twilioService.Initialize(_accountSid, _authToken);
 
                 _logger?.LogInformation("Twilio SMS connector initialized successfully");
-                return ConnectorResult<bool>.Success(true);
+                return ConnectorResult<bool>.SuccessTask(true);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Failed to initialize Twilio SMS connector");
-                return ConnectorResult<bool>.Fail(ConnectorErrorCodes.InitializationError, ex.Message);
+                return ConnectorResult<bool>.FailTask(ConnectorErrorCodes.InitializationError, ex.Message);
             }
         }
 
@@ -147,32 +148,18 @@ namespace Deveel.Messaging
                 _logger?.LogDebug("Sending SMS message {MessageId}", message.Id);
 
                 // Extract and validate message properties before processing
-                var messageProperties = ExtractMessageProperties(message);
+                // var messageProperties = ExtractMessageProperties(message);
 
-                // Validate message properties against schema first
-                if (Schema is ChannelSchema channelSchema)
-                {
-                    var baseValidationResults = channelSchema.ValidateMessageProperties(messageProperties);
-                    var baseValidationErrors = baseValidationResults.ToList();
-                    if (baseValidationErrors.Count > 0)
+                // Validate message properties against schema (includes all validation through MessagePropertyConfiguration)
+                    var validationResults = Schema.ValidateMessage(message);
+                    var validationErrors = validationResults.ToList();
+                    if (validationErrors.Count > 0)
                     {
                         _logger?.LogError("Message properties validation failed: {Errors}", 
-                            string.Join(", ", baseValidationErrors.Select(e => e.ErrorMessage)));
+                            string.Join(", ", validationErrors.Select(e => e.ErrorMessage)));
                         return ConnectorResult<SendResult>.ValidationFailed(TwilioErrorCodes.InvalidMessage, 
-                            "Message properties validation failed", baseValidationErrors);
+                            "Message properties validation failed", validationErrors);
                     }
-                }
-
-                // Perform Twilio-specific validation (phone number format validation)
-                var twilioValidationResults = TwilioMessagePropertyConfigurations.ValidateTwilioSmsProperties(messageProperties);
-                var twilioValidationErrors = twilioValidationResults.ToList();
-                if (twilioValidationErrors.Count > 0)
-                {
-                    _logger?.LogError("Twilio SMS properties validation failed: {Errors}", 
-                        string.Join(", ", twilioValidationErrors.Select(e => e.ErrorMessage)));
-                    return ConnectorResult<SendResult>.ValidationFailed(TwilioErrorCodes.InvalidMessage, 
-                        "Twilio SMS properties validation failed", twilioValidationErrors);
-                }
 
                 // Extract sender phone number from message.Sender
                 var senderNumber = ExtractPhoneNumber(message.Sender);
@@ -292,7 +279,7 @@ namespace Deveel.Messaging
         }
 
         /// <inheritdoc/>
-        protected override async Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -303,12 +290,12 @@ namespace Deveel.Messaging
                 statusInfo.AdditionalData["State"] = State.ToString();
                 statusInfo.AdditionalData["Uptime"] = DateTime.UtcNow - _startTime;
 
-                return ConnectorResult<StatusInfo>.Success(statusInfo);
+                return ConnectorResult<StatusInfo>.SuccessTask(statusInfo);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Failed to get connector status");
-                return ConnectorResult<StatusInfo>.Fail(TwilioErrorCodes.StatusError, ex.Message);
+                return ConnectorResult<StatusInfo>.FailTask(TwilioErrorCodes.StatusError, ex.Message);
             }
         }
 

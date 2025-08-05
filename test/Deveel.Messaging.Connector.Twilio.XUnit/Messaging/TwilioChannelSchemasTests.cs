@@ -13,8 +13,8 @@ public class TwilioChannelSchemasTests
         var schema = TwilioChannelSchemas.TwilioSms;
 
         // Assert
-        Assert.Equal("Twilio", schema.ChannelProvider);
-        Assert.Equal("SMS", schema.ChannelType);
+        Assert.Equal(TwilioConnectorConstants.Provider, schema.ChannelProvider);
+        Assert.Equal(TwilioConnectorConstants.SmsChannel, schema.ChannelType);
         Assert.Equal("1.0.0", schema.Version);
         Assert.Equal("Twilio SMS Connector", schema.DisplayName);
     }
@@ -26,8 +26,8 @@ public class TwilioChannelSchemasTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
 
         // Assert
-        Assert.Equal("Twilio", schema.ChannelProvider);
-        Assert.Equal("WhatsApp", schema.ChannelType);
+        Assert.Equal(TwilioConnectorConstants.Provider, schema.ChannelProvider);
+        Assert.Equal(TwilioConnectorConstants.WhatsAppChannel, schema.ChannelType);
         Assert.Equal("1.0.0", schema.Version);
         Assert.Equal("Twilio WhatsApp Business API Connector", schema.DisplayName);
     }

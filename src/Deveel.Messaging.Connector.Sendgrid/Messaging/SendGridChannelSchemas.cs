@@ -21,7 +21,7 @@ namespace Deveel.Messaging
         /// status queries, templates, and webhook support. It can be used as-is
         /// or derived to create more restrictive configurations for specific use cases.
         /// </remarks>
-        public static ChannelSchema SendGridEmail => new ChannelSchema("SendGrid", "Email", "1.0.0")
+        public static ChannelSchema SendGridEmail => new ChannelSchema(SendGridConnectorConstants.Provider, SendGridConnectorConstants.EmailChannel, "1.0.0")
             .WithDisplayName("SendGrid Email Connector")
             .WithCapabilities(
                 ChannelCapability.SendMessages | 

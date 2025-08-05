@@ -15,8 +15,8 @@ public class SendGridChannelSchemasTests
         var schema = SendGridChannelSchemas.SendGridEmail;
 
         // Assert
-        Assert.Equal("SendGrid", schema.ChannelProvider);
-        Assert.Equal("Email", schema.ChannelType);
+        Assert.Equal(SendGridConnectorConstants.Provider, schema.ChannelProvider);
+        Assert.Equal(SendGridConnectorConstants.EmailChannel, schema.ChannelType);
         Assert.Equal("1.0.0", schema.Version);
         Assert.Equal("SendGrid Email Connector", schema.DisplayName);
     }
