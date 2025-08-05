@@ -57,7 +57,7 @@ namespace Deveel.Messaging
 			}
 
 			// Discover the connector schema from the attribute
-			var connectorSchema = DiscoverConnectorSchema(connectorType);
+			var connectorSchema = DiscoverConnectorSchema(_services, connectorType);
 
 			// Create the registration
 			var registration = new ConnectorRegistration(connectorType, connectorSchema, connectorFactory);
@@ -236,23 +236,37 @@ namespace Deveel.Messaging
 			return _registrations.TryRemove(connectorType, out _);
 		}
 
-		private static IChannelSchema DiscoverConnectorSchema(Type connectorType)
+		private static IChannelSchema DiscoverConnectorSchema(IServiceProvider services, Type connectorType)
 		{
 			var attribute = connectorType.GetCustomAttribute<ChannelSchemaAttribute>();
 			if (attribute == null)
-			{
 				throw new ArgumentException($"Connector type '{connectorType.Name}' must be decorated with {nameof(ChannelSchemaAttribute)}.", nameof(connectorType));
-			}
 
 			try
 			{
-				return attribute.CreateSchema();
+				return CreateSchema(services, attribute.SchemaFactoryType);
 			}
 			catch (Exception ex)
 			{
 				throw new InvalidOperationException($"Failed to create schema for connector type '{connectorType.Name}': {ex.Message}", ex);
 			}
 		}
+
+		private static IChannelSchema CreateSchema(IServiceProvider services, Type schemaFactoryType)
+		{
+			try
+			{
+				var factory = ActivatorUtilities.CreateInstance(services, schemaFactoryType) as IChannelSchemaFactory;
+				if (factory == null)
+					throw new InvalidOperationException($"Failed to create instance of schema factory '{schemaFactoryType.Name}'.");
+
+				return factory.CreateSchema();
+			} catch (Exception ex) when (!(ex is InvalidOperationException))
+			{
+				throw new InvalidOperationException($"Failed to create schema using factory '{schemaFactoryType.Name}': {ex.Message}", ex);
+			}
+		}
+
 
 		private static async Task<IChannelConnector> CreateConnectorInstanceAsync(IServiceProvider services, ConnectorRegistration registration, IChannelSchema schema, CancellationToken cancellationToken)
 		{
