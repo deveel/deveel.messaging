@@ -15,7 +15,7 @@ namespace Deveel.Messaging
 	/// master schemas discovered through metadata attributes. Each connector type can only be registered 
 	/// once, and its master schema is automatically discovered from the <see cref="ChannelSchemaAttribute"/>
 	/// </remarks>
-	public interface IChannelRegistry
+	public interface IChannelRegistry : IDisposable, IAsyncDisposable
 	{
 		/// <summary>
 		/// Registers a channel connector type, discovering its master schema from metadata attributes.

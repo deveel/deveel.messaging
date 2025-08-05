@@ -287,6 +287,52 @@ namespace Deveel.Messaging.XUnit
 			Assert.False(registry.IsConnectorRegistered<TestConnector>());
 		}
 
+		[Fact]
+		public async Task DisposeRegistry_WithTrackedConnectors_DisposesConnectors()
+		{
+			// Arrange
+			var registry = CreateRegistry();
+			registry.RegisterConnector<TestConnector>();
+
+			// Create some connectors that will be tracked
+			var connector1 = await registry.CreateConnectorAsync<TestConnector>();
+			var connector2 = await registry.CreateConnectorAsync<TestConnector>();
+
+			// Verify connectors are in ready state
+			Assert.Equal(ConnectorState.Ready, connector1.State);
+			Assert.Equal(ConnectorState.Ready, connector2.State);
+
+			// Act - Dispose the registry
+			registry.Dispose();
+
+			// Assert - Connectors should be shutdown
+			Assert.Equal(ConnectorState.Shutdown, connector1.State);
+			Assert.Equal(ConnectorState.Shutdown, connector2.State);
+		}
+
+		[Fact]
+		public async Task DisposeAsyncRegistry_WithTrackedConnectors_DisposesConnectors()
+		{
+			// Arrange
+			var registry = CreateRegistry();
+			registry.RegisterConnector<TestConnector>();
+
+			// Create some connectors that will be tracked
+			var connector1 = await registry.CreateConnectorAsync<TestConnector>();
+			var connector2 = await registry.CreateConnectorAsync<TestConnector>();
+
+			// Verify connectors are in ready state
+			Assert.Equal(ConnectorState.Ready, connector1.State);
+			Assert.Equal(ConnectorState.Ready, connector2.State);
+
+			// Act - Dispose the registry asynchronously
+			await registry.DisposeAsync();
+
+			// Assert - Connectors should be shutdown
+			Assert.Equal(ConnectorState.Shutdown, connector1.State);
+			Assert.Equal(ConnectorState.Shutdown, connector2.State);
+		}
+
 		private static IChannelSchema CreateTestSchema()
 		{
 			return new ChannelSchema("TestProvider", "TestType", "1.0.0")

@@ -60,7 +60,7 @@ namespace Deveel.Messaging
         }
 
         /// <inheritdoc/>
-        protected override async Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+        protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -79,7 +79,7 @@ namespace Deveel.Messaging
                 // Perform custom validation logic
                 if (string.IsNullOrWhiteSpace(_apiKey))
                 {
-                    return ConnectorResult<bool>.Fail(SendGridErrorCodes.MissingApiKey, 
+                    return ConnectorResult<bool>.FailTask(SendGridErrorCodes.MissingApiKey, 
                         "SendGrid API Key is required");
                 }
 
@@ -92,7 +92,7 @@ namespace Deveel.Messaging
                     {
                         _logger?.LogError("Connection settings validation failed: {Errors}", 
                             string.Join(", ", validationErrors.Select(e => e.ErrorMessage)));
-                        return ConnectorResult<bool>.ValidationFailed(SendGridErrorCodes.InvalidConnectionSettings, 
+                        return ConnectorResult<bool>.ValidationFailedTask(SendGridErrorCodes.InvalidConnectionSettings, 
                             "Connection settings validation failed", validationErrors);
                     }
                 }
@@ -101,12 +101,12 @@ namespace Deveel.Messaging
                 _sendGridService.Initialize(_apiKey);
 
                 _logger?.LogInformation("SendGrid email connector initialized successfully");
-                return ConnectorResult<bool>.Success(true);
+                return ConnectorResult<bool>.SuccessTask(true);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Failed to initialize SendGrid email connector");
-                return ConnectorResult<bool>.Fail(ConnectorErrorCodes.InitializationError, ex.Message);
+                return ConnectorResult<bool>.FailTask(ConnectorErrorCodes.InitializationError, ex.Message);
             }
         }
 
@@ -292,7 +292,7 @@ namespace Deveel.Messaging
         }
 
         /// <inheritdoc/>
-        protected override async Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -304,12 +304,12 @@ namespace Deveel.Messaging
                 statusInfo.AdditionalData["State"] = State.ToString();
                 statusInfo.AdditionalData["Uptime"] = DateTime.UtcNow - _startTime;
 
-                return ConnectorResult<StatusInfo>.Success(statusInfo);
+                return ConnectorResult<StatusInfo>.SuccessTask(statusInfo);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Failed to get connector status");
-                return ConnectorResult<StatusInfo>.Fail(SendGridErrorCodes.StatusError, ex.Message);
+                return ConnectorResult<StatusInfo>.FailTask(SendGridErrorCodes.StatusError, ex.Message);
             }
         }
 

@@ -125,6 +125,9 @@ namespace Deveel.Messaging
 		public static ConnectorResult<TValue> ValidationFailed(string errorCode, string? errorMessage = null, IEnumerable<ValidationResult>? validationResults = null)
 			=> Fail(new MessageValidationError(errorCode, errorMessage, validationResults?.ToList() ?? new List<ValidationResult>()));
 
+		public static Task<ConnectorResult<TValue>> ValidationFailedTask(string errorCode, string? errorMessage = null, IEnumerable<ValidationResult>? validationResults = null)
+			=> Task.FromResult(ValidationFailed(errorCode, errorMessage, validationResults));
+
 		/// <summary>
 		/// Creates a <see cref="ConnectorResult{TValue}"/> that failed because of validation errors 
 		/// on a message.

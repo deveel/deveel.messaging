@@ -23,6 +23,7 @@ namespace Deveel.Messaging
 	public class ChannelRegistry : IChannelRegistry
 	{
 		private readonly ConcurrentDictionary<Type, ConnectorRegistration> _registrations = new();
+		private readonly ConcurrentBag<IChannelConnector> _connectors = new();
 		private readonly IServiceProvider _services;
 
 		/// <summary>
@@ -95,8 +96,12 @@ namespace Deveel.Messaging
 				throw new InvalidOperationException($"Connector type '{connectorType.Name}' is not registered.");
 			}
 
-			// Use the master schema
-			return await CreateConnectorInstanceAsync(_services, registration, registration.Schema, cancellationToken);
+			// Use the reference schema
+			var connector = await CreateConnectorInstanceAsync(_services, registration, registration.Schema, cancellationToken);
+
+			_connectors.Add(connector);
+
+			return connector;
 		}
 
 		/// <inheritdoc/>
@@ -118,7 +123,11 @@ namespace Deveel.Messaging
 				throw new InvalidOperationException($"Runtime schema validation failed: {errors}");
 			}
 
-			return await CreateConnectorInstanceAsync(_services, registration, runtimeSchema, cancellationToken);
+			var connector = await CreateConnectorInstanceAsync(_services, registration, runtimeSchema, cancellationToken);
+
+			_connectors.Add(connector);
+
+			return connector;
 		}
 
 		/// <inheritdoc/>
@@ -244,7 +253,7 @@ namespace Deveel.Messaging
 
 			try
 			{
-				return CreateSchema(services, attribute.SchemaFactoryType);
+				return CreateSchema(services, attribute.SchemaType);
 			}
 			catch (Exception ex)
 			{
@@ -252,18 +261,33 @@ namespace Deveel.Messaging
 			}
 		}
 
-		private static IChannelSchema CreateSchema(IServiceProvider services, Type schemaFactoryType)
+		private static IChannelSchema CreateSchema(IServiceProvider services, Type schemaType)
 		{
 			try
 			{
-				var factory = ActivatorUtilities.CreateInstance(services, schemaFactoryType) as IChannelSchemaFactory;
-				if (factory == null)
-					throw new InvalidOperationException($"Failed to create instance of schema factory '{schemaFactoryType.Name}'.");
+				IChannelSchema? schema = null;
+				if (typeof(IChannelSchemaFactory).IsAssignableFrom(schemaType))
+				{
+					var factory = ActivatorUtilities.CreateInstance(services, schemaType) as IChannelSchemaFactory;
+					if (factory == null)
+						throw new InvalidOperationException($"Failed to create instance of schema factory '{schemaType.Name}'.");
 
-				return factory.CreateSchema();
+					schema = factory.CreateSchema();
+				} else if (typeof(IChannelSchema).IsAssignableFrom(schemaType))
+				{
+					schema = ActivatorUtilities.CreateInstance(services, schemaType) as IChannelSchema;
+					if (schema == null)
+						throw new InvalidOperationException($"Failed to create instance of schema '{schemaType.Name}'.");
+				}
+				else
+				{
+					throw new InvalidOperationException($"Type '{schemaType.Name}' is not a valid schema factory or schema type.");
+				}
+
+				return schema;
 			} catch (Exception ex) when (!(ex is InvalidOperationException))
 			{
-				throw new InvalidOperationException($"Failed to create schema using factory '{schemaFactoryType.Name}': {ex.Message}", ex);
+				throw new InvalidOperationException($"Failed to create schema using factory '{schemaType.Name}': {ex.Message}", ex);
 			}
 		}
 
@@ -324,6 +348,157 @@ namespace Deveel.Messaging
 			foreach (var result in restrictionValidationResults)
 			{
 				yield return result;
+			}
+		}
+
+		/// <summary>
+		/// Releases the unmanaged resources used by the <see cref="ChannelRegistry"/> and optionally releases the managed resources.
+		/// </summary>
+		/// <param name="disposing">
+		/// true to release both managed and unmanaged resources; false to release only unmanaged resources.
+		/// </param>
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing)
+			{
+				// Dispose of connectors - sync version
+				DisposeConnectorsSync();
+			}
+		}
+
+		/// <summary>
+		/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+		/// This will dispose all tracked connectors synchronously.
+		/// </summary>
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		/// <summary>
+		/// Performs application-defined tasks associated with freeing, releasing, or resetting resources asynchronously.
+		/// This will dispose all tracked connectors asynchronously, allowing for graceful shutdown.
+		/// </summary>
+		/// <returns>A task that represents the asynchronous dispose operation.</returns>
+		public async ValueTask DisposeAsync()
+		{
+			// Dispose connectors asynchronously
+			await DisposeConnectorsAsync();
+			
+			// Suppress finalization since we've already disposed
+			GC.SuppressFinalize(this);
+		}
+
+		/// <summary>
+		/// Disposes all tracked connectors synchronously.
+		/// </summary>
+		private void DisposeConnectorsSync()
+		{
+			foreach (var connector in _connectors)
+			{
+				try
+				{
+					// Try to shutdown the connector gracefully with a reasonable timeout
+					var shutdownTask = connector.ShutdownAsync(CancellationToken.None);
+					if (shutdownTask.Wait(TimeSpan.FromSeconds(5)))
+					{
+						// Shutdown completed within timeout
+					}
+					else
+					{
+						// Timeout occurred, force disposal
+					}
+				}
+				catch
+				{
+					// Ignore shutdown errors during disposal
+				}
+
+				try
+				{
+					// Dispose the connector if it implements IDisposable
+					if (connector is IDisposable disposable)
+					{
+						disposable.Dispose();
+					}
+				}
+				catch
+				{
+					// Ignore disposal errors to prevent exceptions during cleanup
+				}
+			}
+
+			// Clear the collection
+			while (_connectors.TryTake(out _))
+			{
+				// Remove all items from the bag
+			}
+		}
+
+		/// <summary>
+		/// Disposes all tracked connectors asynchronously.
+		/// </summary>
+		private async Task DisposeConnectorsAsync()
+		{
+			var shutdownTasks = new List<Task>();
+
+			// Collect all connectors into a list to avoid concurrent modification issues
+			var connectorsToDispose = _connectors.ToList();
+
+			// Start shutdown for all connectors concurrently
+			foreach (var connector in connectorsToDispose)
+			{
+				try
+				{
+					var shutdownTask = connector.ShutdownAsync(CancellationToken.None);
+					shutdownTasks.Add(shutdownTask);
+				}
+				catch
+				{
+					// Ignore shutdown initialization errors
+				}
+			}
+
+			// Wait for all shutdowns to complete with a reasonable timeout
+			try
+			{
+				using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+				await Task.WhenAll(shutdownTasks).WaitAsync(timeoutCts.Token);
+			}
+			catch (OperationCanceledException)
+			{
+				// Timeout occurred, proceed with disposal anyway
+			}
+			catch
+			{
+				// Ignore other shutdown errors
+			}
+
+			// Dispose connectors that implement IDisposable or IAsyncDisposable
+			foreach (var connector in connectorsToDispose)
+			{
+				try
+				{
+					if (connector is IAsyncDisposable asyncDisposable)
+					{
+						await asyncDisposable.DisposeAsync();
+					}
+					else if (connector is IDisposable disposable)
+					{
+						disposable.Dispose();
+					}
+				}
+				catch
+				{
+					// Ignore disposal errors to prevent exceptions during cleanup
+				}
+			}
+
+			// Clear the collection
+			while (_connectors.TryTake(out _))
+			{
+				// Remove all items from the bag
 			}
 		}
 

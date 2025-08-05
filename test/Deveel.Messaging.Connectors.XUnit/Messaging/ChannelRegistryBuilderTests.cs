@@ -76,7 +76,7 @@ namespace Deveel.Messaging.XUnit {
 			Assert.True(registry!.Registered);
 		}
 
-		private class DummyRegistry : IChannelRegistry {
+		private class DummyRegistry : IChannelRegistry, IDisposable, IAsyncDisposable {
 			public bool Registered { get; private set; }
 			public void RegisterConnector<TConnector>(Func<IChannelSchema, TConnector>? connectorFactory = null) where TConnector : class, IChannelConnector {
 				Registered = true;
@@ -101,6 +101,16 @@ namespace Deveel.Messaging.XUnit {
 			public bool IsConnectorRegistered(Type connectorType) => throw new NotImplementedException();
 			public bool UnregisterConnector<TConnector>() where TConnector : class, IChannelConnector => throw new NotImplementedException();
 			public bool UnregisterConnector(Type connectorType) => throw new NotImplementedException();
+			
+			public void Dispose()
+			{
+				// Empty implementation for test dummy
+			}
+			
+			public ValueTask DisposeAsync()
+			{
+				return ValueTask.CompletedTask;
+			}
 		}
 		
 		[ChannelSchema(typeof(TestSchemaFactory))]
