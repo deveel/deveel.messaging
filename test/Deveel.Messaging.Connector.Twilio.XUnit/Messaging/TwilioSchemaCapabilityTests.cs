@@ -27,7 +27,7 @@ public class TwilioSchemaCapabilityTests
 
         // Act & Assert
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.HandleMessageState),
-            "TwilioSms schema should have HandlerMessageState capability for receiving status updates via webhooks");
+            "TwilioSms schema should have HandleMessageState capability for receiving status updates via webhooks");
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class TwilioSchemaCapabilityTests
 
         // Act & Assert
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.HandleMessageState),
-            "TwilioWhatsApp schema should have HandlerMessageState capability for receiving status updates via webhooks");
+            "TwilioWhatsApp schema should have HandleMessageState capability for receiving status updates via webhooks");
     }
 
     [Fact]
@@ -142,7 +142,7 @@ public class TwilioSchemaCapabilityTests
 
         // Act & Assert
         Assert.False(schema.Capabilities.HasFlag(ChannelCapability.HandleMessageState),
-            "SimpleSms schema should not have HandlerMessageState capability as it's designed for send-only scenarios");
+            "SimpleSms schema should not have HandleMessageState capability as it's designed for send-only scenarios");
     }
 
     [Fact]
@@ -199,7 +199,7 @@ public class TwilioSchemaCapabilityTests
 
         // Act & Assert
         Assert.False(schema.Capabilities.HasFlag(ChannelCapability.HandleMessageState),
-            "SimpleWhatsApp schema should not have HandlerMessageState capability as it's designed for send-only scenarios");
+            "SimpleWhatsApp schema should not have HandleMessageState capability as it's designed for send-only scenarios");
     }
 
     [Fact]
@@ -221,6 +221,6 @@ public class TwilioSchemaCapabilityTests
 
         // Act & Assert
         Assert.False(schema.Capabilities.HasFlag(ChannelCapability.HandleMessageState),
-            "WhatsAppTemplates schema should not have HandlerMessageState capability as it's designed for send-only scenarios");
+            "WhatsAppTemplates schema should not have HandleMessageState capability as it's designed for send-only scenarios");
     }
 }
