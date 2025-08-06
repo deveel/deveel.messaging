@@ -197,7 +197,7 @@ public class ChannelSchemaIntegrationTests
 		var allCapabilities = ChannelCapability.SendMessages |
 		                     ChannelCapability.ReceiveMessages |
 		                     ChannelCapability.MessageStatusQuery |
-		                     ChannelCapability.HandlerMessageState |
+		                     ChannelCapability.HandleMessageState |
 		                     ChannelCapability.MediaAttachments |
 		                     ChannelCapability.Templates |
 		                     ChannelCapability.BulkMessaging |
@@ -212,7 +212,7 @@ public class ChannelSchemaIntegrationTests
 		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.SendMessages));
 		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
 		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.MessageStatusQuery));
-		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.HandlerMessageState));
+		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.HandleMessageState));
 		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
 		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.Templates));
 		Assert.True(schema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));

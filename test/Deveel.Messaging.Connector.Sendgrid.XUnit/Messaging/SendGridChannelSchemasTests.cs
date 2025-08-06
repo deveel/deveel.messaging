@@ -29,12 +29,13 @@ public class SendGridChannelSchemasTests
 
         // Assert
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.SendMessages));
+        Assert.True(schema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.MessageStatusQuery));
+        Assert.True(schema.Capabilities.HasFlag(ChannelCapability.HandleMessageState));
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.Templates));
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.HealthCheck));
-        Assert.False(schema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
     }
 
     [Fact]
@@ -118,6 +119,8 @@ public class SendGridChannelSchemasTests
 
         // Assert
         Assert.Equal("SendGrid Simple Email", schema.DisplayName);
+        Assert.False(schema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
+        Assert.False(schema.Capabilities.HasFlag(ChannelCapability.HandleMessageState));
         Assert.False(schema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
         Assert.False(schema.Capabilities.HasFlag(ChannelCapability.Templates));
         Assert.False(schema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
@@ -143,6 +146,8 @@ public class SendGridChannelSchemasTests
 
         // Assert
         Assert.Equal("SendGrid Transactional Email", schema.DisplayName);
+        Assert.False(schema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
+        Assert.False(schema.Capabilities.HasFlag(ChannelCapability.HandleMessageState));
         Assert.False(schema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
         Assert.False(schema.Capabilities.HasFlag(ChannelCapability.Templates));
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.SendMessages));
@@ -182,6 +187,8 @@ public class SendGridChannelSchemasTests
 
         // Assert
         Assert.Equal("SendGrid Template Email", schema.DisplayName);
+        Assert.False(schema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
+        Assert.False(schema.Capabilities.HasFlag(ChannelCapability.HandleMessageState));
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.Templates));
         Assert.False(schema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
 

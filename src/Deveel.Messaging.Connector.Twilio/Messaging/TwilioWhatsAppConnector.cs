@@ -4,6 +4,7 @@
 //
 
 using Microsoft.Extensions.Logging;
+
 using Twilio.Rest.Api.V2010.Account;
 using Twilio.Types;
 
@@ -141,13 +142,8 @@ namespace Deveel.Messaging
             {
                 _logger?.LogDebug("Sending WhatsApp message {MessageId}", message.Id);
 
-                // Extract and validate message properties before processing
-                var messageProperties = ExtractMessageProperties(message);
-
                 // Validate message properties against schema (includes all validation through MessagePropertyConfiguration)
-                if (Schema is ChannelSchema channelSchema)
-                {
-                    var validationResults = channelSchema.ValidateMessageProperties(messageProperties);
+                    var validationResults = Schema.ValidateMessage(message);
                     var validationErrors = validationResults.ToList();
                     if (validationErrors.Count > 0)
                     {
@@ -156,7 +152,6 @@ namespace Deveel.Messaging
                         return ConnectorResult<SendResult>.ValidationFailed(TwilioErrorCodes.InvalidMessage, 
                             "WhatsApp message properties validation failed", validationErrors);
                     }
-                }
 
                 // Extract sender WhatsApp number from message.Sender
                 var senderNumber = ExtractWhatsAppNumber(message.Sender);
@@ -373,26 +368,6 @@ namespace Deveel.Messaging
             return null;
         }
 
-        private Dictionary<string, object?> ExtractMessageProperties(IMessage message)
-        {
-            var properties = new Dictionary<string, object?>();
-
-            // Note: Sender and To are now handled as endpoints (message.Sender/message.Receiver)
-            // not as message properties, so we don't extract them here
-            // Body and MediaUrl are also extracted from content, not properties
-
-            // Add properties from message.Properties if they exist
-            if (message.Properties != null)
-            {
-                foreach (var property in message.Properties)
-                {
-                    properties[property.Key] = property.Value.Value;
-                }
-            }
-
-            return properties;
-        }
-
         private string? ExtractMessageBody(IMessage message)
         {
             if (message.Content?.ContentType == MessageContentType.PlainText && message.Content is ITextContent textContent)
@@ -463,6 +438,275 @@ namespace Deveel.Messaging
                 return MessageStatus.Received;
             
             return MessageStatus.Unknown;
+        }
+
+        /// <inheritdoc/>
+        protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        {
+            try
+            {
+                _logger?.LogDebug("Receiving WhatsApp message from Twilio webhook");
+
+                if (source.ContentType == MessageSource.UrlPostContentType)
+                {
+                    var formData = source.AsUrlPostData();
+                    var messages = ParseTwilioWebhookFormData(formData);
+                    
+                    if (messages.Count == 0)
+                    {
+                        return ConnectorResult<ReceiveResult>.FailTask(TwilioErrorCodes.InvalidWebhookData, 
+                            "No valid messages found in webhook data");
+                    }
+
+                    var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
+                    return ConnectorResult<ReceiveResult>.SuccessTask(result);
+                }
+                else if (source.ContentType == MessageSource.JsonContentType)
+                {
+                    var messages = ParseTwilioWebhookJson(source);
+                    
+                    if (messages.Count == 0)
+                    {
+                        return ConnectorResult<ReceiveResult>.FailTask(TwilioErrorCodes.InvalidWebhookData, 
+                            "No valid messages found in webhook JSON");
+                    }
+
+                    var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
+                    return ConnectorResult<ReceiveResult>.SuccessTask(result);
+                }
+
+                return ConnectorResult<ReceiveResult>.FailTask(TwilioErrorCodes.UnsupportedContentType, 
+                    "Only form data and JSON are supported for Twilio WhatsApp message receiving");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Failed to receive WhatsApp message from Twilio webhook");
+                return ConnectorResult<ReceiveResult>.FailTask(TwilioErrorCodes.ReceiveMessageFailed, ex.Message);
+            }
+        }
+
+        /// <inheritdoc/>
+        protected override Task<ConnectorResult<StatusUpdateResult>> ReceiveMessageStatusCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        {
+            try
+            {
+                _logger?.LogDebug("Receiving WhatsApp message status update from Twilio webhook");
+
+                if (source.ContentType == MessageSource.UrlPostContentType)
+                {
+                    var formData = source.AsUrlPostData();
+                    var statusResult = ParseTwilioStatusCallbackFormData(formData);
+                    
+                    return ConnectorResult<StatusUpdateResult>.SuccessTask(statusResult);
+                }
+                else if (source.ContentType == MessageSource.JsonContentType)
+                {
+                    var statusResult = ParseTwilioStatusCallbackJson(source);
+                    return ConnectorResult<StatusUpdateResult>.SuccessTask(statusResult);
+                }
+
+                return ConnectorResult<StatusUpdateResult>.FailTask(TwilioErrorCodes.UnsupportedContentType, 
+                    "Only form data and JSON are supported for Twilio WhatsApp status callbacks");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Failed to receive WhatsApp message status from Twilio webhook");
+                return ConnectorResult<StatusUpdateResult>.FailTask(TwilioErrorCodes.ReceiveStatusFailed, ex.Message);
+            }
+        }
+
+        private List<IMessage> ParseTwilioWebhookFormData(IDictionary<string, string> formData)
+        {
+            var messages = new List<IMessage>();
+
+            // Validate required fields for Twilio WhatsApp webhook
+            if (!formData.TryGetValue("MessageSid", out var messageSid) || string.IsNullOrEmpty(messageSid))
+            {
+                throw new ArgumentException("MessageSid is required for Twilio WhatsApp webhooks");
+            }
+
+            if (!formData.TryGetValue("From", out var from) || string.IsNullOrEmpty(from))
+            {
+                throw new ArgumentException("From field is required for Twilio WhatsApp webhooks");
+            }
+
+            if (!formData.TryGetValue("To", out var to) || string.IsNullOrEmpty(to))
+            {
+                throw new ArgumentException("To field is required for Twilio WhatsApp webhooks");
+            }
+
+            // Body is optional for WhatsApp messages (e.g., button responses, media messages)
+            var body = formData.TryGetValue("Body", out var bodyValue) ? bodyValue : "";
+
+            // Create the message
+            var message = new Message
+            {
+                Id = messageSid,
+                Sender = new Endpoint(GetTwilioEndpointType(from), from),
+                Receiver = new Endpoint(GetTwilioEndpointType(to), to),
+                Content = new TextContent(body),
+                Properties = new Dictionary<string, MessageProperty>()
+            };
+
+            // Add all other Twilio webhook fields as message properties
+            foreach (var kvp in formData)
+            {
+                if (kvp.Key != "MessageSid" && kvp.Key != "From" && kvp.Key != "To" && kvp.Key != "Body")
+                {
+                    message.Properties[kvp.Key] = new MessageProperty(kvp.Key, kvp.Value);
+                }
+            }
+
+            messages.Add(message);
+            return messages;
+        }
+
+        private List<IMessage> ParseTwilioWebhookJson(MessageSource source)
+        {
+            var messages = new List<IMessage>();
+            var jsonData = source.AsJson<System.Text.Json.JsonElement>();
+
+            if (jsonData.TryGetProperty("Messages", out var messagesArray))
+            {
+                // Batch messages
+                foreach (var messageElement in messagesArray.EnumerateArray())
+                {
+                    var message = ParseTwilioJsonMessage(messageElement);
+                    if (message != null)
+                        messages.Add(message);
+                }
+            }
+            else
+            {
+                // Single message
+                var message = ParseTwilioJsonMessage(jsonData);
+                if (message != null)
+                    messages.Add(message);
+            }
+
+            return messages;
+        }
+
+        private IMessage? ParseTwilioJsonMessage(System.Text.Json.JsonElement jsonData)
+        {
+            if (!jsonData.TryGetProperty("MessageSid", out var sidProperty))
+                return null;
+
+            var messageSid = sidProperty.GetString();
+            if (string.IsNullOrEmpty(messageSid))
+                return null;
+
+            var from = jsonData.TryGetProperty("From", out var fromProp) ? fromProp.GetString() ?? "" : "";
+            var to = jsonData.TryGetProperty("To", out var toProp) ? toProp.GetString() ?? "" : "";
+            var body = jsonData.TryGetProperty("Body", out var bodyProp) ? bodyProp.GetString() ?? "" : "";
+
+            if (string.IsNullOrEmpty(from) || string.IsNullOrEmpty(to))
+                return null;
+
+            return new Message
+            {
+                Id = messageSid,
+                Sender = new Endpoint(GetTwilioEndpointType(from), from),
+                Receiver = new Endpoint(GetTwilioEndpointType(to), to),
+                Content = new TextContent(body)
+            };
+        }
+
+        private StatusUpdateResult ParseTwilioStatusCallbackFormData(IDictionary<string, string> formData)
+        {
+            var messageId = formData.TryGetValue("MessageSid", out var sid) ? sid : "unknown";
+            var statusString = formData.TryGetValue("MessageStatus", out var status) ? status : "unknown";
+            
+            var messageStatus = MapTwilioStatusStringToMessageStatus(statusString);
+            var statusResult = new StatusUpdateResult(messageId, messageStatus);
+
+            // Add additional Twilio status data
+            if (formData.TryGetValue("MessagePrice", out var price))
+                statusResult.AdditionalData["MessagePrice"] = price;
+            if (formData.TryGetValue("MessagePriceUnit", out var priceUnit))
+                statusResult.AdditionalData["MessagePriceUnit"] = priceUnit;
+            if (formData.TryGetValue("ErrorCode", out var errorCode))
+                statusResult.AdditionalData["ErrorCode"] = errorCode;
+            if (formData.TryGetValue("ErrorMessage", out var errorMessage))
+                statusResult.AdditionalData["ErrorMessage"] = errorMessage;
+            if (formData.TryGetValue("To", out var to))
+                statusResult.AdditionalData["To"] = to;
+            if (formData.TryGetValue("From", out var from))
+                statusResult.AdditionalData["From"] = from;
+            if (formData.TryGetValue("AccountSid", out var accountSid))
+                statusResult.AdditionalData["AccountSid"] = accountSid;
+            
+            // Add WhatsApp-specific fields
+            if (formData.TryGetValue("ProfileName", out var profileName))
+                statusResult.AdditionalData["ProfileName"] = profileName;
+            if (formData.TryGetValue("ButtonText", out var buttonText))
+                statusResult.AdditionalData["ButtonText"] = buttonText;
+            if (formData.TryGetValue("ButtonPayload", out var buttonPayload))
+                statusResult.AdditionalData["ButtonPayload"] = buttonPayload;
+            
+            // Mark as WhatsApp channel
+            statusResult.AdditionalData["Channel"] = "WhatsApp";
+
+            return statusResult;
+        }
+
+        private StatusUpdateResult ParseTwilioStatusCallbackJson(MessageSource source)
+        {
+            var jsonData = source.AsJson<System.Text.Json.JsonElement>();
+            
+            var messageId = jsonData.TryGetProperty("MessageSid", out var sidProp) ? sidProp.GetString() ?? "unknown" : "unknown";
+            var statusString = jsonData.TryGetProperty("MessageStatus", out var statusProp) ? statusProp.GetString() ?? "unknown" : "unknown";
+            
+            var messageStatus = MapTwilioStatusStringToMessageStatus(statusString);
+            var statusResult = new StatusUpdateResult(messageId, messageStatus);
+
+            // Add additional JSON properties as additional data
+            foreach (var property in jsonData.EnumerateObject())
+            {
+                if (property.Name != "MessageSid" && property.Name != "MessageStatus")
+                {
+                    statusResult.AdditionalData[property.Name] = property.Value.GetString() ?? "";
+                }
+            }
+
+            // Mark as WhatsApp channel
+            statusResult.AdditionalData["Channel"] = "WhatsApp";
+
+            return statusResult;
+        }
+
+        private MessageStatus MapTwilioStatusStringToMessageStatus(string statusString)
+        {
+            return statusString.ToLowerInvariant() switch
+            {
+                "delivered" => MessageStatus.Delivered,
+                "sent" => MessageStatus.Sent,
+                "failed" => MessageStatus.DeliveryFailed,
+                "undelivered" => MessageStatus.DeliveryFailed,
+                "received" => MessageStatus.Received,
+                "queued" => MessageStatus.Queued,
+                "accepted" => MessageStatus.Queued,
+                "sending" => MessageStatus.Sent,
+                "read" => MessageStatus.Delivered, // WhatsApp-specific read status
+                _ => MessageStatus.Unknown
+            };
+        }
+
+        private static EndpointType GetTwilioEndpointType(string address)
+        {
+            if (string.IsNullOrEmpty(address))
+                return EndpointType.Id;
+
+            if (address.StartsWith("whatsapp:"))
+                return EndpointType.PhoneNumber;
+
+            if (address.StartsWith("+"))
+                return EndpointType.PhoneNumber;
+
+            if (address.Contains("@"))
+                return EndpointType.EmailAddress;
+
+            return EndpointType.Id;
         }
     }
 }

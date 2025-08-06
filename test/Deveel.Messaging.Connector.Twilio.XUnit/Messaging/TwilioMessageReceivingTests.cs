@@ -172,7 +172,7 @@ public class TwilioMessageReceivingTests
     {
         // Arrange
         var schema = CreateSimpleSmsSchema()
-            .WithCapability(ChannelCapability.HandlerMessageState);
+            .WithCapability(ChannelCapability.HandleMessageState);
         
         var connector = new TwilioTestReceivingConnector(schema);
         await connector.InitializeAsync(CancellationToken.None);
@@ -215,7 +215,7 @@ public class TwilioMessageReceivingTests
     {
         // Arrange
         var schema = CreateSimpleSmsSchema()
-            .WithCapability(ChannelCapability.HandlerMessageState);
+            .WithCapability(ChannelCapability.HandleMessageState);
         
         var connector = new TwilioTestReceivingConnector(schema);
         await connector.InitializeAsync(CancellationToken.None);
@@ -317,7 +317,7 @@ public class TwilioMessageReceivingTests
     {
         // Arrange
         var schema = CreateSimpleSmsSchema()
-            .WithCapability(ChannelCapability.HandlerMessageState);
+            .WithCapability(ChannelCapability.HandleMessageState);
         
         var connector = new TwilioTestReceivingConnector(schema);
         await connector.InitializeAsync(CancellationToken.None);

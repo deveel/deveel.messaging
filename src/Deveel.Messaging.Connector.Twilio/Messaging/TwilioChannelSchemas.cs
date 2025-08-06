@@ -25,6 +25,7 @@ namespace Deveel.Messaging
                 ChannelCapability.SendMessages | 
                 ChannelCapability.ReceiveMessages |
                 ChannelCapability.MessageStatusQuery |
+                ChannelCapability.HandleMessageState |
                 ChannelCapability.BulkMessaging |
                 ChannelCapability.HealthCheck)
             .AddParameter(new ChannelParameter("AccountSid", DataType.String)
@@ -127,6 +128,7 @@ namespace Deveel.Messaging
                 ChannelCapability.SendMessages | 
                 ChannelCapability.ReceiveMessages |
                 ChannelCapability.MessageStatusQuery |
+                ChannelCapability.HandleMessageState |
                 ChannelCapability.Templates |
                 ChannelCapability.MediaAttachments |
                 ChannelCapability.HealthCheck)
@@ -183,6 +185,7 @@ namespace Deveel.Messaging
         /// </summary>
         public static ChannelSchema SimpleSms => new ChannelSchema(TwilioSms, "Twilio Simple SMS")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
+            .RemoveCapability(ChannelCapability.HandleMessageState)
             .RemoveCapability(ChannelCapability.BulkMessaging)
             .RemoveParameter("WebhookUrl")
             .RemoveParameter("StatusCallback")
@@ -198,6 +201,7 @@ namespace Deveel.Messaging
         /// </summary>
         public static ChannelSchema NotificationSms => new ChannelSchema(TwilioSms, "Twilio Notification SMS")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
+            .RemoveCapability(ChannelCapability.HandleMessageState)
             .RemoveParameter("WebhookUrl")
             .RemoveContentType(MessageContentType.Media)
             .RemoveMessageProperty("PersistentAction");
@@ -208,6 +212,7 @@ namespace Deveel.Messaging
         /// </summary>
         public static ChannelSchema BulkSms => new ChannelSchema(TwilioSms, "Twilio Bulk SMS")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
+            .RemoveCapability(ChannelCapability.HandleMessageState)
             .UpdateParameter("MessagingServiceSid", param => param.IsRequired = true)
             .UpdateEndpoint(EndpointType.PhoneNumber, endpoint => 
             {
@@ -222,6 +227,7 @@ namespace Deveel.Messaging
         /// </summary>
         public static ChannelSchema SimpleWhatsApp => new ChannelSchema(TwilioWhatsApp, "Twilio Simple WhatsApp")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
+            .RemoveCapability(ChannelCapability.HandleMessageState)
             .RemoveCapability(ChannelCapability.Templates)
             .RemoveParameter("WebhookUrl")
             .RemoveParameter("StatusCallback")
@@ -236,6 +242,7 @@ namespace Deveel.Messaging
         /// </summary>
         public static ChannelSchema WhatsAppTemplates => new ChannelSchema(TwilioWhatsApp, "Twilio WhatsApp Templates")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
+            .RemoveCapability(ChannelCapability.HandleMessageState)
             .RemoveCapability(ChannelCapability.MediaAttachments)
             // ContentSid is now derived from TemplateContent.TemplateId, not a separate parameter
             .RemoveContentType(MessageContentType.Media);

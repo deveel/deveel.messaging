@@ -18,7 +18,7 @@ public class MessageReceivingIntegrationTests
 
         var schema = new ChannelSchema("IntegrationTest", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
-            .WithCapability(ChannelCapability.HandlerMessageState)
+            .WithCapability(ChannelCapability.HandleMessageState)
             .AddContentType(MessageContentType.PlainText)
             .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
@@ -68,7 +68,7 @@ public class MessageReceivingIntegrationTests
 
         var schema = new ChannelSchema("StatusTracking", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
-            .WithCapability(ChannelCapability.HandlerMessageState)
+            .WithCapability(ChannelCapability.HandleMessageState)
             .AddContentType(MessageContentType.PlainText);
 
         var connector = new StatusTrackingConnector(schema, messageStatuses);

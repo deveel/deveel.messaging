@@ -79,5 +79,25 @@ namespace Deveel.Messaging
         /// Error code indicating missing sender email address.
         /// </summary>
         public const string MissingSender = "SENDGRID_MISSING_SENDER";
+
+        /// <summary>
+        /// Error code indicating invalid webhook data.
+        /// </summary>
+        public const string InvalidWebhookData = "SENDGRID_INVALID_WEBHOOK_DATA";
+
+        /// <summary>
+        /// Error code indicating unsupported content type for webhook data.
+        /// </summary>
+        public const string UnsupportedContentType = "SENDGRID_UNSUPPORTED_CONTENT_TYPE";
+
+        /// <summary>
+        /// Error code indicating receive message operation failed.
+        /// </summary>
+        public const string ReceiveMessageFailed = "SENDGRID_RECEIVE_MESSAGE_FAILED";
+
+        /// <summary>
+        /// Error code indicating receive status operation failed.
+        /// </summary>
+        public const string ReceiveStatusFailed = "SENDGRID_RECEIVE_STATUS_FAILED";
     }
 }

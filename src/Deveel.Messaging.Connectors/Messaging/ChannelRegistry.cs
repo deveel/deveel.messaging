@@ -99,6 +99,7 @@ namespace Deveel.Messaging
 			// Use the reference schema
 			var connector = await CreateConnectorInstanceAsync(_services, registration, registration.Schema, cancellationToken);
 
+			// Only add to tracking if initialization was successful
 			_connectors.Add(connector);
 
 			return connector;
@@ -125,6 +126,7 @@ namespace Deveel.Messaging
 
 			var connector = await CreateConnectorInstanceAsync(_services, registration, runtimeSchema, cancellationToken);
 
+			// Only add to tracking if initialization was successful
 			_connectors.Add(connector);
 
 			return connector;
@@ -294,21 +296,66 @@ namespace Deveel.Messaging
 
 		private static async Task<IChannelConnector> CreateConnectorInstanceAsync(IServiceProvider services, ConnectorRegistration registration, IChannelSchema schema, CancellationToken cancellationToken)
 		{
-			IChannelConnector connector;
+			IChannelConnector? connector = null;
 
-			if (registration.ConnectorFactory != null)
+			try
 			{
-				connector = registration.ConnectorFactory(schema);
+				if (registration.ConnectorFactory != null)
+				{
+					connector = registration.ConnectorFactory(schema);
+				}
+				else
+				{
+					connector = CreateConnectorInstance(services, registration.ConnectorType, schema);
+				}
+
+				// Initialize the connector
+				var initResult = await connector.InitializeAsync(cancellationToken);
+				
+				// Check if initialization was successful
+				if (!initResult.Successful)
+				{
+					// If connector implements IDisposable, dispose it before throwing
+					if (connector is IDisposable disposable)
+					{
+						try
+						{
+							disposable.Dispose();
+						}
+						catch
+						{
+							// Ignore disposal errors
+						}
+					}
+					
+					throw new InvalidOperationException(
+						$"Failed to initialize connector of type '{registration.ConnectorType.Name}': {initResult.Error?.ErrorMessage ?? "Unknown error"}");
+				}
+
+				return connector;
 			}
-			else
+			catch (Exception ex)
 			{
-				connector = CreateConnectorInstance(services, registration.ConnectorType, schema);
+				// If we have a connector instance and initialization failed, try to dispose it
+				if (connector != null && connector is IDisposable disposable)
+				{
+					try
+					{
+						disposable.Dispose();
+					}
+					catch
+					{
+						// Ignore disposal errors
+					}
+				}
+				
+				// Re-throw the original exception or wrap it
+				if (ex is InvalidOperationException)
+					throw;
+					
+				throw new InvalidOperationException(
+					$"Failed to create and initialize connector of type '{registration.ConnectorType.Name}': {ex.Message}", ex);
 			}
-
-			// Initialize the connector
-			await connector.InitializeAsync(cancellationToken);
-
-			return connector;
 		}
 
 		private static IChannelConnector CreateConnectorInstance(IServiceProvider services, Type connectorType, IChannelSchema schema)
