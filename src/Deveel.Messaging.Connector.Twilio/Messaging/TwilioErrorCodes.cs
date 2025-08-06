@@ -175,5 +175,45 @@ namespace Deveel.Messaging
         public const string StatusError = "STATUS_ERROR";
 
         #endregion
+
+        #region Message Receiving
+
+        /// <summary>
+        /// Indicates that receiving a message from Twilio webhook failed.
+        /// </summary>
+        /// <remarks>
+        /// This error occurs when processing an incoming message webhook from Twilio fails,
+        /// typically due to malformed webhook data or processing errors.
+        /// </remarks>
+        public const string ReceiveMessageFailed = "RECEIVE_MESSAGE_FAILED";
+
+        /// <summary>
+        /// Indicates that receiving a message status update from Twilio webhook failed.
+        /// </summary>
+        /// <remarks>
+        /// This error occurs when processing a status callback webhook from Twilio fails,
+        /// typically due to malformed callback data or processing errors.
+        /// </remarks>
+        public const string ReceiveStatusFailed = "RECEIVE_STATUS_FAILED";
+
+        /// <summary>
+        /// Indicates that the webhook data provided is invalid or malformed.
+        /// </summary>
+        /// <remarks>
+        /// This error occurs when the webhook payload from Twilio does not contain
+        /// the expected fields or has invalid data that cannot be processed.
+        /// </remarks>
+        public const string InvalidWebhookData = "INVALID_WEBHOOK_DATA";
+
+        /// <summary>
+        /// Indicates that the content type for webhook data is not supported.
+        /// </summary>
+        /// <remarks>
+        /// This error occurs when the webhook content type is neither form data nor JSON,
+        /// which are the only supported formats for Twilio webhooks.
+        /// </remarks>
+        public const string UnsupportedContentType = "UNSUPPORTED_CONTENT_TYPE";
+
+        #endregion
     }
 }

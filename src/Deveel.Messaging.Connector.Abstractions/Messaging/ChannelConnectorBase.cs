@@ -426,7 +426,7 @@ namespace Deveel.Messaging
 		/// <inheritdoc/>
 		public virtual Task<ConnectorResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
 		{
-			ValidateCapability(ChannelCapability.HandlerMessageState);
+			ValidateCapability(ChannelCapability.HandleMessageState);
 			ValidateOperationalState();
 
 			try

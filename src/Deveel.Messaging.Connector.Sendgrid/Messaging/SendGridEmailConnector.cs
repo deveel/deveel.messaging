@@ -6,6 +6,7 @@
 using Microsoft.Extensions.Logging;
 using SendGrid.Helpers.Mail;
 using System.Net;
+using System;
 
 namespace Deveel.Messaging
 {
@@ -616,6 +617,379 @@ namespace Deveel.Messaging
 
             // Just email address
             return (address, null);
+        }
+
+        /// <inheritdoc/>
+        protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        {
+            try
+            {
+                _logger?.LogDebug("Receiving email message from SendGrid webhook");
+
+                if (source.ContentType == MessageSource.JsonContentType)
+                {
+                    var messages = ParseSendGridWebhookJson(source);
+                    
+                    if (messages.Count == 0)
+                    {
+                        return ConnectorResult<ReceiveResult>.FailTask(SendGridErrorCodes.InvalidWebhookData, 
+                            "No valid messages found in webhook JSON");
+                    }
+
+                    var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
+                    return ConnectorResult<ReceiveResult>.SuccessTask(result);
+                }
+                else if (source.ContentType == MessageSource.UrlPostContentType)
+                {
+                    var formData = source.AsUrlPostData();
+                    var messages = ParseSendGridWebhookFormData(formData);
+                    
+                    if (messages.Count == 0)
+                    {
+                        return ConnectorResult<ReceiveResult>.FailTask(SendGridErrorCodes.InvalidWebhookData, 
+                            "No valid messages found in webhook data");
+                    }
+
+                    var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
+                    return ConnectorResult<ReceiveResult>.SuccessTask(result);
+                }
+
+                return ConnectorResult<ReceiveResult>.FailTask(SendGridErrorCodes.UnsupportedContentType, 
+                    "Only JSON and form data are supported for SendGrid email receiving");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Failed to receive email message from SendGrid webhook");
+                return ConnectorResult<ReceiveResult>.FailTask(SendGridErrorCodes.ReceiveMessageFailed, ex.Message);
+            }
+        }
+
+        /// <inheritdoc/>
+        protected override Task<ConnectorResult<StatusUpdateResult>> ReceiveMessageStatusCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        {
+            try
+            {
+                _logger?.LogDebug("Receiving email status update from SendGrid webhook");
+
+                if (source.ContentType == MessageSource.JsonContentType)
+                {
+                    var statusResult = ParseSendGridStatusCallbackJson(source);
+                    return ConnectorResult<StatusUpdateResult>.SuccessTask(statusResult);
+                }
+                else if (source.ContentType == MessageSource.UrlPostContentType)
+                {
+                    var formData = source.AsUrlPostData();
+                    var statusResult = ParseSendGridStatusCallbackFormData(formData);
+                    return ConnectorResult<StatusUpdateResult>.SuccessTask(statusResult);
+                }
+
+                return ConnectorResult<StatusUpdateResult>.FailTask(SendGridErrorCodes.UnsupportedContentType, 
+                    "Only JSON and form data are supported for SendGrid status callbacks");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Failed to receive email status from SendGrid webhook");
+                return ConnectorResult<StatusUpdateResult>.FailTask(SendGridErrorCodes.ReceiveStatusFailed, ex.Message);
+            }
+        }
+
+        private List<IMessage> ParseSendGridWebhookJson(MessageSource source)
+        {
+            var messages = new List<IMessage>();
+            var jsonData = source.AsJson<System.Text.Json.JsonElement>();
+
+            if (jsonData.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                // Batch events
+                foreach (var eventElement in jsonData.EnumerateArray())
+                {
+                    var message = ParseSendGridJsonEvent(eventElement);
+                    if (message != null)
+                        messages.Add(message);
+                }
+            }
+            else
+            {
+                // Single event
+                var message = ParseSendGridJsonEvent(jsonData);
+                if (message != null)
+                    messages.Add(message);
+            }
+
+            return messages;
+        }
+
+        private IMessage? ParseSendGridJsonEvent(System.Text.Json.JsonElement eventData)
+        {
+            // SendGrid webhook events that represent received emails (inbound parse)
+            if (!eventData.TryGetProperty("event", out var eventProperty))
+                return null;
+
+            var eventType = eventProperty.GetString();
+            if (eventType != "inbound" && eventType != "processed")
+                return null; // We only process inbound emails and processed events
+
+            // Extract message ID
+            var messageId = eventData.TryGetProperty("sg_message_id", out var idProp) ? 
+                idProp.GetString() ?? Guid.NewGuid().ToString() : 
+                Guid.NewGuid().ToString();
+
+            // Extract email addresses
+            var from = eventData.TryGetProperty("from", out var fromProp) ? fromProp.GetString() ?? "" : "";
+            var to = eventData.TryGetProperty("to", out var toProp) ? toProp.GetString() ?? "" : "";
+
+            if (string.IsNullOrEmpty(from) || string.IsNullOrEmpty(to))
+                return null;
+
+            // Extract content
+            var subject = eventData.TryGetProperty("subject", out var subjectProp) ? subjectProp.GetString() ?? "" : "";
+            var text = eventData.TryGetProperty("text", out var textProp) ? textProp.GetString() ?? "" : "";
+            var html = eventData.TryGetProperty("html", out var htmlProp) ? htmlProp.GetString() ?? "" : "";
+
+            // Create message content (prefer HTML over plain text)
+            MessageContent content;
+            if (!string.IsNullOrEmpty(html))
+            {
+                content = new HtmlContent(html);
+            }
+            else if (!string.IsNullOrEmpty(text))
+            {
+                content = new TextContent(text);
+            }
+            else
+            {
+                content = new TextContent("");
+            }
+
+            var message = new Message
+            {
+                Id = messageId,
+                Sender = new Endpoint(EndpointType.EmailAddress, from),
+                Receiver = new Endpoint(EndpointType.EmailAddress, to),
+                Content = content,
+                Properties = new Dictionary<string, MessageProperty>
+                {
+                    ["Subject"] = new MessageProperty("Subject", subject)
+                }
+            };
+
+            // Add all other SendGrid event fields as message properties
+            foreach (var property in eventData.EnumerateObject())
+            {
+                if (property.Name != "sg_message_id" && property.Name != "from" && 
+                    property.Name != "to" && property.Name != "subject" && 
+                    property.Name != "text" && property.Name != "html")
+                {
+                    var value = property.Value.ValueKind switch
+                    {
+                        System.Text.Json.JsonValueKind.String => property.Value.GetString() ?? "",
+                        System.Text.Json.JsonValueKind.Number => property.Value.GetInt64().ToString(),
+                        System.Text.Json.JsonValueKind.True => "true",
+                        System.Text.Json.JsonValueKind.False => "false",
+                        System.Text.Json.JsonValueKind.Array => property.Value.ToString(),
+                        System.Text.Json.JsonValueKind.Object => property.Value.ToString(),
+                        _ => property.Value.ToString()
+                    };
+                    message.Properties[property.Name] = new MessageProperty(property.Name, value);
+                }
+            }
+
+            return message;
+        }
+
+        private List<IMessage> ParseSendGridWebhookFormData(IDictionary<string, string> formData)
+        {
+            var messages = new List<IMessage>();
+
+            // Validate required fields for SendGrid inbound parse webhook
+            if (!formData.TryGetValue("from", out var from) || string.IsNullOrEmpty(from))
+            {
+                throw new ArgumentException("from field is required for SendGrid webhooks");
+            }
+
+            if (!formData.TryGetValue("to", out var to) || string.IsNullOrEmpty(to))
+            {
+                throw new ArgumentException("to field is required for SendGrid webhooks");
+            }
+
+            // Extract message ID (use envelope info or generate)
+            var messageId = formData.TryGetValue("envelope", out var envelope) ? 
+                envelope : Guid.NewGuid().ToString();
+
+            // Extract content
+            var subject = formData.TryGetValue("subject", out var subjectValue) ? subjectValue : "";
+            var text = formData.TryGetValue("text", out var textValue) ? textValue : "";
+            var html = formData.TryGetValue("html", out var htmlValue) ? htmlValue : "";
+
+            // Create message content (prefer HTML over plain text)
+            MessageContent content;
+            if (!string.IsNullOrEmpty(html))
+            {
+                content = new HtmlContent(html);
+            }
+            else if (!string.IsNullOrEmpty(text))
+            {
+                content = new TextContent(text);
+            }
+            else
+            {
+                content = new TextContent("");
+            }
+
+            var message = new Message
+            {
+                Id = messageId,
+                Sender = new Endpoint(EndpointType.EmailAddress, from),
+                Receiver = new Endpoint(EndpointType.EmailAddress, to),
+                Content = content,
+                Properties = new Dictionary<string, MessageProperty>
+                {
+                    ["Subject"] = new MessageProperty("Subject", subject)
+                }
+            };
+
+            // Add all other form fields as message properties
+            foreach (var kvp in formData)
+            {
+                if (kvp.Key != "from" && kvp.Key != "to" && kvp.Key != "subject" && 
+                    kvp.Key != "text" && kvp.Key != "html" && kvp.Key != "envelope")
+                {
+                    message.Properties[kvp.Key] = new MessageProperty(kvp.Key, kvp.Value);
+                }
+            }
+
+            messages.Add(message);
+            return messages;
+        }
+
+        private StatusUpdateResult ParseSendGridStatusCallbackJson(MessageSource source)
+        {
+            var jsonData = source.AsJson<System.Text.Json.JsonElement>();
+            
+            // For array of events, take the first one
+            if (jsonData.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                if (jsonData.GetArrayLength() > 0)
+                {
+                    jsonData = jsonData.EnumerateArray().First();
+                }
+                else
+                {
+                    throw new ArgumentException("Empty events array in SendGrid webhook");
+                }
+            }
+
+            var messageId = jsonData.TryGetProperty("sg_message_id", out var sidProp) ? 
+                sidProp.GetString() ?? "unknown" : "unknown";
+            var eventType = jsonData.TryGetProperty("event", out var eventProp) ? 
+                eventProp.GetString() ?? "unknown" : "unknown";
+            
+            var messageStatus = MapSendGridEventToMessageStatus(eventType);
+            var timestamp = DateTime.UtcNow;
+
+            // Try to extract timestamp from the event
+            if (jsonData.TryGetProperty("timestamp", out var timestampProp))
+            {
+                if (timestampProp.ValueKind == System.Text.Json.JsonValueKind.Number && 
+                    timestampProp.TryGetInt64(out var unixTimestamp))
+                {
+                    timestamp = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).DateTime;
+                }
+            }
+
+            var statusResult = new StatusUpdateResult(messageId, messageStatus, timestamp);
+
+            // Add additional JSON properties as additional data
+            foreach (var property in jsonData.EnumerateObject())
+            {
+                if (property.Name != "sg_message_id")
+                {
+                    var value = property.Value.ValueKind switch
+                    {
+                        System.Text.Json.JsonValueKind.String => property.Value.GetString() ?? "",
+                        System.Text.Json.JsonValueKind.Number => property.Value.GetInt64().ToString(),
+                        System.Text.Json.JsonValueKind.True => "true",
+                        System.Text.Json.JsonValueKind.False => "false",
+                        System.Text.Json.JsonValueKind.Array => property.Value.ToString(),
+                        System.Text.Json.JsonValueKind.Object => property.Value.ToString(),
+                        _ => property.Value.ToString()
+                    };
+                    statusResult.AdditionalData[property.Name] = value;
+                }
+            }
+
+            // Mark as SendGrid email channel
+            statusResult.AdditionalData["Channel"] = "Email";
+            statusResult.AdditionalData["Provider"] = "SendGrid";
+
+            return statusResult;
+        }
+
+        private StatusUpdateResult ParseSendGridStatusCallbackFormData(IDictionary<string, string> formData)
+        {
+            var messageId = formData.TryGetValue("sg_message_id", out var sid) ? sid : "unknown";
+            var eventType = formData.TryGetValue("event", out var evt) ? evt : "unknown";
+            
+            var messageStatus = MapSendGridEventToMessageStatus(eventType);
+            var timestamp = DateTime.UtcNow;
+
+            // Try to extract timestamp from the event
+            if (formData.TryGetValue("timestamp", out var timestampString) && 
+                long.TryParse(timestampString, out var unixTimestamp))
+            {
+                timestamp = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).DateTime;
+            }
+
+            var statusResult = new StatusUpdateResult(messageId, messageStatus, timestamp);
+
+            // Add additional form data as additional data
+            foreach (var kvp in formData)
+            {
+                if (kvp.Key != "sg_message_id")
+                {
+                    statusResult.AdditionalData[kvp.Key] = kvp.Value;
+                }
+            }
+
+            // Mark as SendGrid email channel
+            statusResult.AdditionalData["Channel"] = "Email";
+            statusResult.AdditionalData["Provider"] = "SendGrid";
+
+            return statusResult;
+        }
+
+        private MessageStatus MapSendGridEventToMessageStatus(string eventType)
+        {
+            return eventType.ToLowerInvariant() switch
+            {
+                "processed" => MessageStatus.Queued,
+                "deferred" => MessageStatus.Queued,
+                "delivered" => MessageStatus.Delivered,
+                "open" => MessageStatus.Delivered,
+                "click" => MessageStatus.Delivered,
+                "bounce" => MessageStatus.DeliveryFailed,
+                "dropped" => MessageStatus.DeliveryFailed,
+                "spamreport" => MessageStatus.DeliveryFailed,
+                "unsubscribe" => MessageStatus.Delivered, // Still delivered, but user unsubscribed
+                "group_unsubscribe" => MessageStatus.Delivered,
+                "group_resubscribe" => MessageStatus.Delivered,
+                "inbound" => MessageStatus.Received, // Inbound email received
+                _ => MessageStatus.Unknown
+            };
+        }
+
+        private static EndpointType GetSendGridEndpointType(string address)
+        {
+            if (string.IsNullOrEmpty(address))
+                return EndpointType.Id;
+
+            if (address.Contains("@"))
+                return EndpointType.EmailAddress;
+
+            if (address.StartsWith("http"))
+                return EndpointType.Url;
+
+            return EndpointType.Id;
         }
     }
 }

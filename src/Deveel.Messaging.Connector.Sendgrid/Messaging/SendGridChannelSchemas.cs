@@ -25,7 +25,9 @@ namespace Deveel.Messaging
             .WithDisplayName("SendGrid Email Connector")
             .WithCapabilities(
                 ChannelCapability.SendMessages | 
+                ChannelCapability.ReceiveMessages |
                 ChannelCapability.MessageStatusQuery |
+                ChannelCapability.HandleMessageState |
                 ChannelCapability.BulkMessaging |
                 ChannelCapability.Templates |
                 ChannelCapability.MediaAttachments |
@@ -144,6 +146,8 @@ namespace Deveel.Messaging
         /// This schema removes webhooks, templates, and advanced features.
         /// </summary>
         public static ChannelSchema SimpleEmail => new ChannelSchema(SendGridEmail, "SendGrid Simple Email")
+            .RemoveCapability(ChannelCapability.ReceiveMessages)
+            .RemoveCapability(ChannelCapability.HandleMessageState)
             .RemoveCapability(ChannelCapability.BulkMessaging)
             .RemoveCapability(ChannelCapability.Templates)
             .RemoveCapability(ChannelCapability.MediaAttachments)
@@ -163,6 +167,8 @@ namespace Deveel.Messaging
         /// This schema includes tracking and delivery confirmation but removes bulk capabilities.
         /// </summary>
         public static ChannelSchema TransactionalEmail => new ChannelSchema(SendGridEmail, "SendGrid Transactional Email")
+            .RemoveCapability(ChannelCapability.ReceiveMessages)
+            .RemoveCapability(ChannelCapability.HandleMessageState)
             .RemoveCapability(ChannelCapability.BulkMessaging)
             .RemoveCapability(ChannelCapability.Templates)
             .RemoveParameter("WebhookUrl")
@@ -192,6 +198,8 @@ namespace Deveel.Messaging
         /// This schema focuses on template messaging capabilities with webhook support for tracking.
         /// </summary>
         public static ChannelSchema TemplateEmail => new ChannelSchema(SendGridEmail, "SendGrid Template Email")
+            .RemoveCapability(ChannelCapability.ReceiveMessages)
+            .RemoveCapability(ChannelCapability.HandleMessageState)
             .RemoveCapability(ChannelCapability.MediaAttachments)
             .RemoveContentType(MessageContentType.PlainText)
             .RemoveContentType(MessageContentType.Html)

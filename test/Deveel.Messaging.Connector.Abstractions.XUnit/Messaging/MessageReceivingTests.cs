@@ -275,7 +275,7 @@ public class MessageReceivingTests
     {
         // Arrange
         var schema = new ChannelSchema("TestProvider", "SMS", "1.0.0")
-            .WithCapability(ChannelCapability.HandlerMessageState)
+            .WithCapability(ChannelCapability.HandleMessageState)
             .AddContentType(MessageContentType.PlainText)
             .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {

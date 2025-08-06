@@ -39,7 +39,7 @@ namespace Deveel.Messaging
 		/// The connector can handle the state of messages
 		/// from the provider.
 		/// </summary>
-		HandlerMessageState = 8,
+		HandleMessageState = 8,
 
 		/// <summary>
 		/// Indicates that the connector can handle
