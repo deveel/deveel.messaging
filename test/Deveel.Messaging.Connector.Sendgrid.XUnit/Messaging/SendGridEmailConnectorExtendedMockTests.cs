@@ -20,13 +20,12 @@ public class SendGridEmailConnectorExtendedMockTests
 
         await connector.InitializeAsync(CancellationToken.None);
 
-        var message = new MessageBuilder()
+        var message = new Message()
             .WithId(Guid.NewGuid().ToString())
             .WithEmailSender("sender@example.com")
             .WithEmailReceiver("recipient@example.com")
             .WithHtmlContent("<h1>HTML Email</h1><p>This is an HTML email.</p>")
-            .With("Subject", "HTML Test Email")
-            .Message;
+            .With("Subject", "HTML Test Email");
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -34,8 +33,8 @@ public class SendGridEmailConnectorExtendedMockTests
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
         mockService.Verify(x => x.SendEmailAsync(
-            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m => 
-                m.HtmlContent == "<h1>HTML Email</h1><p>This is an HTML email.</p>"), 
+            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m =>
+                m.HtmlContent == "<h1>HTML Email</h1><p>This is an HTML email.</p>"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -54,13 +53,12 @@ public class SendGridEmailConnectorExtendedMockTests
         multipartContent.Parts.Add(new TextContentPart("Plain text version"));
         multipartContent.Parts.Add(new HtmlContentPart("<h1>HTML version</h1>"));
 
-        var message = new MessageBuilder()
+        var message = new Message()
             .WithId(Guid.NewGuid().ToString())
             .WithEmailSender("sender@example.com")
             .WithEmailReceiver("recipient@example.com")
             .WithContent(multipartContent)
-            .With("Subject", "Multipart Test Email")
-            .Message;
+            .With("Subject", "Multipart Test Email");
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -68,9 +66,9 @@ public class SendGridEmailConnectorExtendedMockTests
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
         mockService.Verify(x => x.SendEmailAsync(
-            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m => 
-                m.PlainTextContent == "Plain text version" && 
-                m.HtmlContent == "<h1>HTML version</h1>"), 
+            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m =>
+                m.PlainTextContent == "Plain text version" &&
+                m.HtmlContent == "<h1>HTML version</h1>"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -91,13 +89,12 @@ public class SendGridEmailConnectorExtendedMockTests
             ["lastName"] = "Doe"
         });
 
-        var message = new MessageBuilder()
+        var message = new Message()
             .WithId(Guid.NewGuid().ToString())
             .WithEmailSender("sender@example.com")
             .WithEmailReceiver("recipient@example.com")
             .WithContent(templateContent)
-            .With("Subject", "Template Test Email") // Subject is still required
-            .Message;
+            .With("Subject", "Template Test Email"); // Subject is still required
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -105,8 +102,8 @@ public class SendGridEmailConnectorExtendedMockTests
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
         mockService.Verify(x => x.SendEmailAsync(
-            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m => 
-                m.TemplateId == "d-1234567890abcdef"), 
+            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m =>
+                m.TemplateId == "d-1234567890abcdef"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -121,13 +118,12 @@ public class SendGridEmailConnectorExtendedMockTests
 
         await connector.InitializeAsync(CancellationToken.None);
 
-        var message = new MessageBuilder()
+        var message = new Message()
             .WithId(Guid.NewGuid().ToString())
             .WithEmailSender("John Doe <john.doe@example.com>")
             .WithEmailReceiver("Jane Smith <jane.smith@example.com>")
             .WithTextContent("Hello Jane!")
-            .With("Subject", "Name Format Test")
-            .Message;
+            .With("Subject", "Name Format Test");
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -147,14 +143,13 @@ public class SendGridEmailConnectorExtendedMockTests
 
         await connector.InitializeAsync(CancellationToken.None);
 
-        var message = new MessageBuilder()
+        var message = new Message()
             .WithId(Guid.NewGuid().ToString())
             .WithEmailSender("sender@example.com")
             .WithEmailReceiver("recipient@example.com")
             .WithTextContent("High priority message")
             .With("Subject", "High Priority Email")
-            .With("Priority", "high")
-            .Message;
+            .With("Priority", "high");
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -176,14 +171,13 @@ public class SendGridEmailConnectorExtendedMockTests
 
         await connector.InitializeAsync(CancellationToken.None);
 
-        var message = new MessageBuilder()
+        var message = new Message()
             .WithId(Guid.NewGuid().ToString())
             .WithEmailSender("sender@example.com")
             .WithEmailReceiver("recipient@example.com")
             .WithTextContent("Categorized message")
             .With("Subject", "Categorized Email")
-            .With("Categories", "newsletter,marketing")
-            .Message;
+            .With("Categories", "newsletter,marketing");
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -191,8 +185,8 @@ public class SendGridEmailConnectorExtendedMockTests
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
         mockService.Verify(x => x.SendEmailAsync(
-            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m => 
-                m.Categories != null && m.Categories.Contains("newsletter") && m.Categories.Contains("marketing")), 
+            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m =>
+                m.Categories != null && m.Categories.Contains("newsletter") && m.Categories.Contains("marketing")),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -207,14 +201,13 @@ public class SendGridEmailConnectorExtendedMockTests
 
         await connector.InitializeAsync(CancellationToken.None);
 
-        var message = new MessageBuilder()
+        var message = new Message()
             .WithId(Guid.NewGuid().ToString())
             .WithEmailSender("sender@example.com")
             .WithEmailReceiver("recipient@example.com")
             .WithTextContent("Message with custom args")
             .With("Subject", "Custom Args Email")
-            .With("CustomArgs", "{\"userId\":\"123\",\"campaignId\":\"abc\"}")
-            .Message;
+            .With("CustomArgs", "{\"userId\":\"123\",\"campaignId\":\"abc\"}");
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -222,8 +215,8 @@ public class SendGridEmailConnectorExtendedMockTests
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
         mockService.Verify(x => x.SendEmailAsync(
-            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m => 
-                m.CustomArgs != null && m.CustomArgs.ContainsKey("userId")), 
+            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m =>
+                m.CustomArgs != null && m.CustomArgs.ContainsKey("userId")),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -239,14 +232,13 @@ public class SendGridEmailConnectorExtendedMockTests
         await connector.InitializeAsync(CancellationToken.None);
 
         var scheduledTime = DateTime.UtcNow.AddHours(2);
-        var message = new MessageBuilder()
+        var message = new Message()
             .WithId(Guid.NewGuid().ToString())
             .WithEmailSender("sender@example.com")
             .WithEmailReceiver("recipient@example.com")
             .WithTextContent("Scheduled message")
             .With("Subject", "Scheduled Email")
-            .With("SendAt", scheduledTime)
-            .Message;
+            .With("SendAt", scheduledTime);
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -254,7 +246,7 @@ public class SendGridEmailConnectorExtendedMockTests
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
         mockService.Verify(x => x.SendEmailAsync(
-            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m => m.SendAt.HasValue), 
+            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m => m.SendAt.HasValue),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -269,13 +261,12 @@ public class SendGridEmailConnectorExtendedMockTests
 
         await connector.InitializeAsync(CancellationToken.None);
 
-        var message = new MessageBuilder()
+        var message = new Message()
             .WithId(Guid.NewGuid().ToString())
             .WithSender(new Endpoint(EndpointType.EmailAddress, "invalid-email"))
             .WithEmailReceiver("recipient@example.com")
             .WithTextContent("Test message")
-            .With("Subject", "Test Email")
-            .Message;
+            .With("Subject", "Test Email");
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -296,13 +287,12 @@ public class SendGridEmailConnectorExtendedMockTests
 
         await connector.InitializeAsync(CancellationToken.None);
 
-        var message = new MessageBuilder()
+        var message = new Message()
             .WithId(Guid.NewGuid().ToString())
             .WithEmailSender("sender@example.com")
             .WithEmailReceiver("recipient@example.com")
-            .WithTextContent("Test message")
-            // Missing Subject property
-            .Message;
+            .WithTextContent("Test message");
+        // Missing Subject property
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -326,13 +316,12 @@ public class SendGridEmailConnectorExtendedMockTests
 
         await connector.InitializeAsync(CancellationToken.None);
 
-        var message = new MessageBuilder()
+        var message = new Message()
             .WithId(Guid.NewGuid().ToString())
             .WithEmailSender("sender@example.com")
             .WithEmailReceiver("recipient@example.com")
             .WithTextContent("Test message")
-            .With("Subject", "Test Email")
-            .Message;
+            .With("Subject", "Test Email");
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -353,13 +342,12 @@ public class SendGridEmailConnectorExtendedMockTests
 
         await connector.InitializeAsync(CancellationToken.None);
 
-        var message = new MessageBuilder()
+        var message = new Message()
             .WithId(Guid.NewGuid().ToString())
             .WithEmailSender("sender@example.com")
             .WithEmailReceiver("recipient@example.com")
             .WithTextContent("Test message")
-            .With("Subject", "Test Email")
-            .Message;
+            .With("Subject", "Test Email");
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -367,7 +355,7 @@ public class SendGridEmailConnectorExtendedMockTests
         // Assert
         Assert.False(result.Successful);
         // Note: This test might get validation failed first, so let's check for either error
-        Assert.True(result.Error?.ErrorCode == SendGridErrorCodes.RateLimitExceeded || 
+        Assert.True(result.Error?.ErrorCode == SendGridErrorCodes.RateLimitExceeded ||
                    result.Error?.ErrorCode == "MESSAGE_VALIDATION_FAILED");
     }
 
@@ -382,13 +370,12 @@ public class SendGridEmailConnectorExtendedMockTests
 
         await connector.InitializeAsync(CancellationToken.None);
 
-        var message = new MessageBuilder()
+        var message = new Message()
             .WithId(Guid.NewGuid().ToString())
             .WithEmailSender("sender@example.com")
             .WithEmailReceiver("recipient@example.com")
             .WithTextContent("Sandbox test message")
-            .With("Subject", "Sandbox Test Email")
-            .Message;
+            .With("Subject", "Sandbox Test Email");
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -396,10 +383,10 @@ public class SendGridEmailConnectorExtendedMockTests
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
         mockService.Verify(x => x.SendEmailAsync(
-            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m => 
-                m.MailSettings != null && 
-                m.MailSettings.SandboxMode != null && 
-                m.MailSettings.SandboxMode.Enable == true), 
+            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m =>
+                m.MailSettings != null &&
+                m.MailSettings.SandboxMode != null &&
+                m.MailSettings.SandboxMode.Enable == true),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -414,13 +401,13 @@ public class SendGridEmailConnectorExtendedMockTests
 
         await connector.InitializeAsync(CancellationToken.None);
 
-        var message = new MessageBuilder()
+        var message = new Message()
             .WithId(Guid.NewGuid().ToString())
             .WithEmailSender("sender@example.com")
             .WithEmailReceiver("recipient@example.com")
             .WithTextContent("Tracked message")
-            .With("Subject", "Tracked Email")
-            .Message;
+            .With("Subject", "Tracked Email");
+
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
@@ -428,10 +415,10 @@ public class SendGridEmailConnectorExtendedMockTests
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
         mockService.Verify(x => x.SendEmailAsync(
-            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m => 
-                m.TrackingSettings != null && 
-                m.TrackingSettings.ClickTracking != null && 
-                m.TrackingSettings.ClickTracking.Enable == true), 
+            It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m =>
+                m.TrackingSettings != null &&
+                m.TrackingSettings.ClickTracking != null &&
+                m.TrackingSettings.ClickTracking.Enable == true),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 

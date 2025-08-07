@@ -91,7 +91,7 @@ public class ChannelSchemaAuthenticationValidationTests
 
 		// Assert
 		Assert.Single(results);
-		Assert.Contains("Basic authentication requires", results[0].ErrorMessage);
+		Assert.Contains("Flexible Basic Authentication", results[0].ErrorMessage);
 		Assert.Contains("Authentication", results[0].MemberNames);
 	}
 
@@ -154,7 +154,7 @@ public class ChannelSchemaAuthenticationValidationTests
 
 		// Assert
 		Assert.Single(results);
-		Assert.Contains("API Key authentication requires", results[0].ErrorMessage);
+		Assert.Contains("Flexible API Key Authentication", results[0].ErrorMessage);
 	}
 
 	[Fact]
@@ -240,12 +240,12 @@ public class ChannelSchemaAuthenticationValidationTests
 		// Act & Assert - Missing ClientId
 		var resultsMissingId = schema.ValidateConnectionSettings(connectionSettingsMissingId).ToList();
 		Assert.Single(resultsMissingId);
-		Assert.Contains("Client Credentials authentication requires both ClientId and ClientSecret", resultsMissingId[0].ErrorMessage);
+		Assert.Contains("Client Credentials Authentication", resultsMissingId[0].ErrorMessage);
 
 		// Act & Assert - Missing ClientSecret
 		var resultsMissingSecret = schema.ValidateConnectionSettings(connectionSettingsMissingSecret).ToList();
 		Assert.Single(resultsMissingSecret);
-		Assert.Contains("Client Credentials authentication requires both ClientId and ClientSecret", resultsMissingSecret[0].ErrorMessage);
+		Assert.Contains("Client Credentials Authentication", resultsMissingSecret[0].ErrorMessage);
 	}
 
 	[Fact]
@@ -359,8 +359,8 @@ public class ChannelSchemaAuthenticationValidationTests
 
 		// Assert
 		Assert.Single(results);
-		Assert.Contains("Connection settings do not satisfy any of the supported authentication types", results[0].ErrorMessage);
-		Assert.Contains("Basic, ApiKey, Token", results[0].ErrorMessage);
+		Assert.Contains("Connection settings do not satisfy any of the supported authentication methods", results[0].ErrorMessage);
+		Assert.Contains("Flexible Basic Authentication, Flexible API Key Authentication, Flexible Token Authentication", results[0].ErrorMessage);
 	}
 
 	[Fact]
@@ -419,7 +419,7 @@ public class ChannelSchemaAuthenticationValidationTests
 		Assert.Empty(validResults);
 		Assert.Equal(2, invalidResults.Count); // Missing required parameter + authentication failure
 		Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Required parameter 'AuthToken'"));
-		Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Basic authentication requires"));
+		Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Flexible Basic Authentication"));
 	}
 
 	[Fact]
@@ -455,7 +455,7 @@ public class ChannelSchemaAuthenticationValidationTests
 		Assert.Empty(validResults);
 		Assert.Equal(2, invalidResults.Count); // Missing required parameter + authentication failure
 		Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Required parameter 'Password'"));
-		Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Basic authentication requires"));
+		Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Flexible Basic Authentication"));
 	}
 
 	[Fact]
@@ -494,6 +494,6 @@ public class ChannelSchemaAuthenticationValidationTests
 		Assert.Empty(clientCredentialsResults);
 		Assert.Empty(tokenResults);
 		Assert.Single(invalidResults);
-		Assert.Contains("Connection settings do not satisfy any of the supported authentication types", invalidResults[0].ErrorMessage);
+		Assert.Contains("Connection settings do not satisfy any of the supported authentication methods", invalidResults[0].ErrorMessage);
 	}
 }

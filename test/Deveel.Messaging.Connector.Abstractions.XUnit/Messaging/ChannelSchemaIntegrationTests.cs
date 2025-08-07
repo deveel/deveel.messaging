@@ -92,8 +92,8 @@ public class ChannelSchemaIntegrationTests
 		Assert.Contains(emailSchema.Endpoints, e => e.Type == EndpointType.PhoneNumber && e.CanSend && !e.CanReceive);
 
 		// Verify authentication types
-		Assert.Single(emailSchema.AuthenticationTypes);
-		Assert.Contains(AuthenticationType.Basic, emailSchema.AuthenticationTypes);
+		Assert.Single(emailSchema.GetAuthenticationTypes());
+		Assert.Contains(AuthenticationType.Basic, emailSchema.GetAuthenticationTypes());
 	}
 
 	[Fact]
@@ -146,7 +146,7 @@ public class ChannelSchemaIntegrationTests
 		Assert.Equal(2, smsSchema.Parameters.Count);
 		Assert.Single(smsSchema.ContentTypes);
 		Assert.Equal(2, smsSchema.Endpoints.Count);
-		Assert.Single(smsSchema.AuthenticationTypes);
+		Assert.Single(smsSchema.GetAuthenticationTypes());
 
 		// Verify endpoints
 		var smsEndpoint = smsSchema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.PhoneNumber);
@@ -174,13 +174,13 @@ public class ChannelSchemaIntegrationTests
 			.AddAuthenticationType(AuthenticationType.Custom);
 
 		// Assert
-		Assert.Equal(6, schema.AuthenticationTypes.Count);
-		Assert.Contains(AuthenticationType.None, schema.AuthenticationTypes);
-		Assert.Contains(AuthenticationType.Basic, schema.AuthenticationTypes);
-		Assert.Contains(AuthenticationType.Token, schema.AuthenticationTypes);
-		Assert.Contains(AuthenticationType.ClientCredentials, schema.AuthenticationTypes);
-		Assert.Contains(AuthenticationType.Certificate, schema.AuthenticationTypes);
-		Assert.Contains(AuthenticationType.Custom, schema.AuthenticationTypes);
+		Assert.Equal(6, schema.GetAuthenticationTypes().Count());
+		Assert.Contains(AuthenticationType.None, schema.GetAuthenticationTypes());
+		Assert.Contains(AuthenticationType.Basic, schema.GetAuthenticationTypes());
+		Assert.Contains(AuthenticationType.Token, schema.GetAuthenticationTypes());
+		Assert.Contains(AuthenticationType.ClientCredentials, schema.GetAuthenticationTypes());
+		Assert.Contains(AuthenticationType.Certificate, schema.GetAuthenticationTypes());
+		Assert.Contains(AuthenticationType.Custom, schema.GetAuthenticationTypes());
 
 		// Verify wildcard endpoint
 		Assert.Single(schema.Endpoints);
@@ -295,7 +295,7 @@ public class ChannelSchemaIntegrationTests
 			Assert.NotNull(schema.Version);
 			Assert.NotNull(schema.Parameters);
 			Assert.NotNull(schema.ContentTypes);
-			Assert.NotNull(schema.AuthenticationTypes);
+			Assert.NotNull(schema.AuthenticationConfigurations);
 			Assert.NotNull(schema.Endpoints);
 		}
 
@@ -389,7 +389,7 @@ public class ChannelSchemaIntegrationTests
 		// Verify other properties
 		Assert.Equal(2, webApiSchema.Parameters.Count);
 		Assert.Equal(2, webApiSchema.ContentTypes.Count);
-		Assert.Equal(2, webApiSchema.AuthenticationTypes.Count);
+		Assert.Equal(2, webApiSchema.GetAuthenticationTypes().Count());
 	}
 
 	[Fact]
@@ -478,7 +478,7 @@ public class ChannelSchemaIntegrationTests
 		Assert.False(anyEndpoint.IsRequired); // Default should be false
 
 		Assert.Equal(4, flexibleSchema.ContentTypes.Count);
-		Assert.Equal(2, flexibleSchema.AuthenticationTypes.Count);
+		Assert.Equal(2, flexibleSchema.GetAuthenticationTypes().Count());
 	}
 
 	[Fact]
@@ -565,7 +565,7 @@ public class ChannelSchemaIntegrationTests
 		Assert.Equal(2, emailSchema.Parameters.Count);
 		Assert.Equal(3, emailSchema.ContentTypes.Count);
 		Assert.Single(emailSchema.Endpoints);
-		Assert.Single(emailSchema.AuthenticationTypes);
+		Assert.Single(emailSchema.GetAuthenticationTypes());
 	}
 
 	[Fact]

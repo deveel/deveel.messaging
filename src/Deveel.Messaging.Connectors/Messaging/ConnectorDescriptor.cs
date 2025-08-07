@@ -116,7 +116,7 @@ namespace Deveel.Messaging
 		/// <returns>True if the connector supports the authentication type; otherwise, false.</returns>
 		public bool SupportsAuthenticationType(AuthenticationType authenticationType)
 		{
-			return Schema.AuthenticationTypes.Contains(authenticationType);
+			return Schema.SupportsAuthenticationType(authenticationType);
 		}
 
 		/// <summary>

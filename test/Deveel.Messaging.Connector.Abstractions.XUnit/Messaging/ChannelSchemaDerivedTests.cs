@@ -48,7 +48,7 @@ public class ChannelSchemaDerivedTests
 		Assert.Equal(sourceSchema.Parameters.Count, copiedSchema.Parameters.Count);
 		Assert.Equal(sourceSchema.MessageProperties.Count, copiedSchema.MessageProperties.Count);
 		Assert.Equal(sourceSchema.ContentTypes.Count, copiedSchema.ContentTypes.Count);
-		Assert.Equal(sourceSchema.AuthenticationTypes.Count, copiedSchema.AuthenticationTypes.Count);
+		Assert.Equal(sourceSchema.AuthenticationConfigurations.Count, copiedSchema.AuthenticationConfigurations.Count);
 		Assert.Equal(sourceSchema.Endpoints.Count, copiedSchema.Endpoints.Count);
 
 		// Verify parameters are copied

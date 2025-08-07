@@ -121,10 +121,10 @@ namespace Deveel.Messaging
 		/// Determines whether this channel supports the specified authentication type.
 		/// </summary>
 		/// <param name="authenticationType">The authentication type to check.</param>
-		/// <returns>True if the channel supports the authentication type; otherwise, false.</returns>
+		/// <returns>True if the connector supports the authentication type; otherwise, false.</returns>
 		public bool SupportsAuthenticationType(AuthenticationType authenticationType)
 		{
-			return MasterSchema.AuthenticationTypes.Contains(authenticationType);
+			return MasterSchema.SupportsAuthenticationType(authenticationType);
 		}
 
 		/// <summary>
