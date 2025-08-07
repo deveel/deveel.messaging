@@ -86,6 +86,6 @@ namespace Deveel.Messaging
 		public byte[]? Data { get; set; }
 
 		/// <inheritdoc/>
-		public override MessageContentType ContentType => MessageContentType.Binary;
+		public override MessageContentType ContentType => MessageContentType.Media;
 	}
 }

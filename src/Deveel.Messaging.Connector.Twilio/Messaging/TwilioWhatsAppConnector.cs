@@ -142,16 +142,8 @@ namespace Deveel.Messaging
             {
                 _logger?.LogDebug("Sending WhatsApp message {MessageId}", message.Id);
 
-                // Validate message properties against schema (includes all validation through MessagePropertyConfiguration)
-                    var validationResults = Schema.ValidateMessage(message);
-                    var validationErrors = validationResults.ToList();
-                    if (validationErrors.Count > 0)
-                    {
-                        _logger?.LogError("WhatsApp message properties validation failed: {Errors}", 
-                            string.Join(", ", validationErrors.Select(e => e.ErrorMessage)));
-                        return ConnectorResult<SendResult>.ValidationFailed(TwilioErrorCodes.InvalidMessage, 
-                            "WhatsApp message properties validation failed", validationErrors);
-                    }
+                // Note: Message validation is already performed by the base class in SendMessageAsync()
+                // before calling this method, so we don't need to duplicate it here.
 
                 // Extract sender WhatsApp number from message.Sender
                 var senderNumber = ExtractWhatsAppNumber(message.Sender);

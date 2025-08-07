@@ -183,7 +183,7 @@ public class InterfaceUsageTests
         Assert.Equal(MessageContentType.Json, jsonContent.ContentType);
         Assert.Equal(MessageContentType.Template, templateContent.ContentType);
         Assert.Equal(MessageContentType.Binary, binaryContent.ContentType);
-        Assert.Equal(MessageContentType.Binary, mediaContent.ContentType);
+        Assert.Equal(MessageContentType.Media, mediaContent.ContentType);
         Assert.Equal(MessageContentType.Multipart, multipartContent.ContentType);
     }
 

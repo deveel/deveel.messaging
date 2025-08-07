@@ -291,52 +291,15 @@ public class TwilioSmsConnectorTests
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
     }
 
-    private static TestMessage CreateTestMessage()
+    private static Message CreateTestMessage()
     {
-        return new TestMessage
+        return new Message
         {
             Id = "test-message-id",
-            Sender = new TestEndpoint(EndpointType.PhoneNumber, "+1234567890"), // Add required Sender
-            Receiver = new TestEndpoint(EndpointType.PhoneNumber, "+1987654321"),
-            Content = new TestMessageContent(MessageContentType.PlainText, "Hello World")
+            Sender = new Endpoint(EndpointType.PhoneNumber, "+1234567890"),
+            Receiver = new Endpoint(EndpointType.PhoneNumber, "+1987654321"),
+            Content = new TextContent("Hello World")
         };
-    }
-
-    // Test helper classes
-    private class TestMessage : IMessage
-    {
-        public string Id { get; set; } = string.Empty;
-        public IEndpoint? Sender { get; set; }
-        public IEndpoint? Receiver { get; set; }
-        public IMessageContent? Content { get; set; }
-        public IDictionary<string, IMessageProperty>? Properties { get; set; }
-    }
-
-    private class TestEndpoint : IEndpoint
-    {
-        public TestEndpoint(EndpointType type, string address)
-        {
-            Type = type;
-            Address = address;
-        }
-
-        public EndpointType Type { get; }
-        public string Address { get; }
-    }
-
-    private class TestMessageContent : IMessageContent
-    {
-        public TestMessageContent(MessageContentType contentType, string content)
-        {
-            ContentType = contentType;
-            _content = content;
-        }
-
-        private readonly string _content;
-
-        public MessageContentType ContentType { get; }
-
-        public override string ToString() => _content;
     }
 
     private class TestLogger<T> : ILogger<T>

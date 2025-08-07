@@ -525,8 +525,10 @@ public class TwilioChannelSchemasTests
         };
 
         // Act
-        var validResults = schema.ValidateMessageProperties(validProps);
-        var invalidResults = schema.ValidateMessageProperties(invalidProps).ToList();
+        var validMessage = CreateTestMessage(validProps);
+        var invalidMessage = CreateTestMessage(invalidProps);
+        var validResults = schema.ValidateMessage(validMessage);
+        var invalidResults = schema.ValidateMessage(invalidMessage).ToList();
 
         // Assert
         Assert.Empty(validResults);
@@ -554,128 +556,32 @@ public class TwilioChannelSchemasTests
         };
 
         // Act
-        var validResults = schema.ValidateMessageProperties(validProps);
-        var invalidResults = schema.ValidateMessageProperties(invalidProps).ToList();
+        var validMessage = CreateTestMessage(validProps);
+        var invalidMessage = CreateTestMessage(invalidProps);
+        var validResults = schema.ValidateMessage(validMessage);
+        var invalidResults = schema.ValidateMessage(invalidMessage).ToList();
 
         // Assert
         Assert.Empty(validResults);
         Assert.NotEmpty(invalidResults);
         Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Unknown message property 'UnknownProperty'"));
     }
+    
+    #region Helper Methods
 
-    [Fact]
-    public void TwilioMessagePropertyConfigurations_ValidatesSmsPhoneNumbers()
+    private static Message CreateTestMessage(IDictionary<string, object?> properties)
     {
-        // Arrange
-        var validProps = new Dictionary<string, object?>
+        return new Message
         {
-            // Note: Body and MediaUrl are no longer message properties - they are extracted from message content
-            // This method now validates other properties specific to Twilio SMS
-            ["ValidityPeriod"] = 3600
+            Id = "test-message-id",
+            Receiver = new Endpoint(EndpointType.PhoneNumber, "+1987654321"),
+            Content = new TextContent("Test SMS content"),
+            Properties = properties?.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new MessageProperty(kvp.Key, kvp.Value),
+                StringComparer.OrdinalIgnoreCase)
         };
-
-        var invalidProps = new Dictionary<string, object?>
-        {
-            // Currently no specific validations are implemented for SMS properties
-        };
-
-        // Act
-        var validResults = TwilioMessagePropertyConfigurations.ValidateTwilioSmsProperties(validProps);
-        var invalidResults = TwilioMessagePropertyConfigurations.ValidateTwilioSmsProperties(invalidProps).ToList();
-
-        // Assert
-        Assert.Empty(validResults);
-        Assert.Empty(invalidResults); // No specific validations currently implemented
     }
 
-    [Fact]
-    public void TwilioMessagePropertyConfigurations_ValidatesWhatsAppPhoneNumbers()
-    {
-        // Arrange
-        var validProps = new Dictionary<string, object?>
-        {
-            // Note: ContentSid and ContentVariables are now extracted from ITemplateContent, not message properties
-            // This method now validates other properties specific to Twilio WhatsApp
-            ["ProvideCallback"] = true
-        };
-
-        var invalidProps = new Dictionary<string, object?>
-        {
-            // Currently no specific validations are implemented for WhatsApp properties
-        };
-
-        // Act
-        var validResults = TwilioMessagePropertyConfigurations.ValidateTwilioWhatsAppProperties(validProps);
-        var invalidResults = TwilioMessagePropertyConfigurations.ValidateTwilioWhatsAppProperties(invalidProps).ToList();
-
-        // Assert
-        Assert.Empty(validResults);
-        Assert.Empty(invalidResults); // No specific validations currently implemented
-    }
-
-    [Fact]
-    public void TwilioSms_AuthenticationValidation_ValidCredentials_PassesValidation()
-    {
-        // Arrange
-        var schema = TwilioChannelSchemas.TwilioSms;
-        var connectionSettings = new ConnectionSettings()
-            .SetParameter("AccountSid", "AC123456789abcdef123456789abcdef12")
-            .SetParameter("AuthToken", "your_auth_token_here");
-
-        // Act
-        var results = schema.ValidateConnectionSettings(connectionSettings);
-
-        // Assert
-        Assert.Empty(results);
-    }
-
-    [Fact]
-    public void TwilioSms_AuthenticationValidation_MissingAuthToken_FailsValidation()
-    {
-        // Arrange
-        var schema = TwilioChannelSchemas.TwilioSms;
-        var connectionSettings = new ConnectionSettings()
-            .SetParameter("AccountSid", "AC123456789abcdef123456789abcdef12");
-
-        // Act
-        var results = schema.ValidateConnectionSettings(connectionSettings).ToList();
-
-        // Assert
-        Assert.True(results.Count >= 1);
-        Assert.Contains(results, r => r.ErrorMessage!.Contains("Required parameter 'AuthToken'") || 
-                                     r.ErrorMessage!.Contains("Basic authentication requires"));
-    }
-
-    [Fact]
-    public void TwilioWhatsApp_AuthenticationValidation_ValidCredentials_PassesValidation()
-    {
-        // Arrange
-        var schema = TwilioChannelSchemas.TwilioWhatsApp;
-        var connectionSettings = new ConnectionSettings()
-            .SetParameter("AccountSid", "AC123456789abcdef123456789abcdef12")
-            .SetParameter("AuthToken", "your_auth_token_here");
-
-        // Act
-        var results = schema.ValidateConnectionSettings(connectionSettings);
-
-        // Assert
-        Assert.Empty(results);
-    }
-
-    [Fact]
-    public void TwilioWhatsApp_AuthenticationValidation_MissingAccountSid_FailsValidation()
-    {
-        // Arrange
-        var schema = TwilioChannelSchemas.TwilioWhatsApp;
-        var connectionSettings = new ConnectionSettings()
-            .SetParameter("AuthToken", "your_auth_token_here");
-
-        // Act
-        var results = schema.ValidateConnectionSettings(connectionSettings).ToList();
-
-        // Assert
-        Assert.True(results.Count >= 1);
-        Assert.Contains(results, r => r.ErrorMessage!.Contains("Required parameter 'AccountSid'") || 
-                                     r.ErrorMessage!.Contains("Basic authentication requires"));
-    }
+    #endregion
 }

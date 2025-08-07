@@ -524,45 +524,45 @@ public class ChannelSchemaTests
 
 	#endregion
 
-	#region Message Property Validation Tests
+	#region Message Validation Tests
 
 	[Fact]
-	public void ValidateMessageProperties_WithNullProperties_ThrowsArgumentNullException()
+	public void ValidateMessage_WithNullMessage_ThrowsArgumentNullException()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
 
 		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => schema.ValidateMessageProperties(null!));
+		Assert.Throws<ArgumentNullException>(() => schema.ValidateMessage(null!));
 	}
 
 	[Fact]
-	public void ValidateMessageProperties_WithEmptyProperties_ReturnsEmptyWhenNoRequiredProperties()
+	public void ValidateMessage_WithEmptyProperties_ReturnsEmptyWhenNoRequiredProperties()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.AddMessageProperty("OptionalProperty", DataType.String);
 
-		var messageProperties = new Dictionary<string, object?>();
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>());
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties);
+		var results = schema.ValidateMessage(message);
 
 		// Assert
 		Assert.Empty(results);
 	}
 
 	[Fact]
-	public void ValidateMessageProperties_WithMissingRequiredProperty_ReturnsValidationError()
+	public void ValidateMessage_WithMissingRequiredProperty_ReturnsValidationError()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.AddMessageProperty("RequiredProperty", DataType.String, p => p.IsRequired = true);
 
-		var messageProperties = new Dictionary<string, object?>();
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>());
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties).ToList();
+		var results = schema.ValidateMessage(message).ToList();
 
 		// Assert
 		Assert.Single(results);
@@ -571,40 +571,40 @@ public class ChannelSchemaTests
 	}
 
 	[Fact]
-	public void ValidateMessageProperties_WithAllRequiredProperties_ReturnsEmpty()
+	public void ValidateMessage_WithAllRequiredProperties_ReturnsEmpty()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.AddMessageProperty("RequiredProperty1", DataType.String, p => p.IsRequired = true)
 			.AddMessageProperty("RequiredProperty2", DataType.Integer, p => p.IsRequired = true);
 
-		var messageProperties = new Dictionary<string, object?>
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
 			{ "RequiredProperty1", "test" },
 			{ "RequiredProperty2", 123 }
-		};
+		});
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties);
+		var results = schema.ValidateMessage(message);
 
 		// Assert
 		Assert.Empty(results);
 	}
 
 	[Fact]
-	public void ValidateMessageProperties_WithIncompatibleType_ReturnsValidationError()
+	public void ValidateMessage_WithIncompatibleType_ReturnsValidationError()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.AddMessageProperty("StringProperty", DataType.String, p => p.IsRequired = true);
 
-		var messageProperties = new Dictionary<string, object?>
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
 			{ "StringProperty", 123 } // Wrong type: should be string
-		};
+		});
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties).ToList();
+		var results = schema.ValidateMessage(message).ToList();
 
 		// Assert
 		Assert.Single(results);
@@ -613,20 +613,20 @@ public class ChannelSchemaTests
 	}
 
 	[Fact]
-	public void ValidateMessageProperties_WithUnknownProperty_ReturnsValidationError()
+	public void ValidateMessage_WithUnknownProperty_ReturnsValidationError()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.AddMessageProperty("KnownProperty", DataType.String);
 
-		var messageProperties = new Dictionary<string, object?>
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
 			{ "KnownProperty", "test" },
 			{ "UnknownProperty", "value" }
-		};
+		});
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties).ToList();
+		var results = schema.ValidateMessage(message).ToList();
 
 		// Assert
 		Assert.Single(results);
@@ -635,22 +635,22 @@ public class ChannelSchemaTests
 	}
 
 	[Fact]
-	public void ValidateMessageProperties_WithMultipleErrors_ReturnsAllValidationErrors()
+	public void ValidateMessage_WithMultipleErrors_ReturnsAllValidationErrors()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.AddMessageProperty("RequiredProperty", DataType.String, p => p.IsRequired = true)
 			.AddMessageProperty("TypedProperty", DataType.Boolean, p => p.IsRequired = true);
 
-		var messageProperties = new Dictionary<string, object?>
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
 			{ "TypedProperty", "not_a_boolean" }, // Wrong type
 			{ "UnknownProperty", "value" } // Unknown property
 			// Missing RequiredProperty
-		};
+		});
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties).ToList();
+		var results = schema.ValidateMessage(message).ToList();
 
 		// Assert
 		Assert.Equal(3, results.Count);
@@ -669,19 +669,19 @@ public class ChannelSchemaTests
 	[InlineData(DataType.Number, 123.45)]
 	[InlineData(DataType.Number, 678.90f)]
 	[InlineData(DataType.Number, 100)]
-	public void ValidateMessageProperties_WithCompatibleTypes_ReturnsEmpty(DataType propertyType, object value)
+	public void ValidateMessage_WithCompatibleTypes_ReturnsEmpty(DataType propertyType, object value)
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.AddMessageProperty("TestProperty", propertyType, p => p.IsRequired = true);
 
-		var messageProperties = new Dictionary<string, object?>
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
 			{ "TestProperty", value }
-		};
+		});
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties);
+		var results = schema.ValidateMessage(message);
 
 		// Assert
 		Assert.Empty(results);
@@ -694,19 +694,19 @@ public class ChannelSchemaTests
 	[InlineData(DataType.Integer, "not_number")]
 	[InlineData(DataType.Integer, 123.45)]
 	[InlineData(DataType.Number, "not_number")]
-	public void ValidateMessageProperties_WithIncompatibleTypes_ReturnsValidationError(DataType propertyType, object value)
+	public void ValidateMessage_WithIncompatibleTypes_ReturnsValidationError(DataType propertyType, object value)
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.AddMessageProperty("TestProperty", propertyType, p => p.IsRequired = true);
 
-		var messageProperties = new Dictionary<string, object?>
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
 			{ "TestProperty", value }
-		};
+		});
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties).ToList();
+		var results = schema.ValidateMessage(message).ToList();
 
 		// Assert
 		Assert.Single(results);
@@ -715,7 +715,7 @@ public class ChannelSchemaTests
 	}
 
 	[Fact]
-	public void ValidateMessageProperties_WithComplexEmailScenario_ValidatesCorrectly()
+	public void ValidateMessage_WithComplexEmailScenario_ValidatesCorrectly()
 	{
 		// Arrange
 		var emailSchema = new ChannelSchema("SMTP", "Email", "1.0.0")
@@ -739,24 +739,24 @@ public class ChannelSchemaTests
 				p.Description = "Email sensitivity level";
 			});
 
-		var validMessageProperties = new Dictionary<string, object?>
+		var validMessage = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
 			{ "Priority", 1 },
 			{ "IsHtml", true },
 			{ "Category", "Newsletter" }
-		};
+		});
 
-		var invalidMessageProperties = new Dictionary<string, object?>
+		var invalidMessage = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
 			{ "Priority", "not_a_number" }, // Wrong type
 			{ "IsHtml", true },
 			// Missing required Priority (overridden by wrong type above)
 			{ "UnknownProperty", "value" } // Unknown property
-		};
+		});
 
 		// Act
-		var validResults = emailSchema.ValidateMessageProperties(validMessageProperties);
-		var invalidResults = emailSchema.ValidateMessageProperties(invalidMessageProperties).ToList();
+		var validResults = emailSchema.ValidateMessage(validMessage);
+		var invalidResults = emailSchema.ValidateMessage(invalidMessage).ToList();
 
 		// Assert
 		Assert.Empty(validResults);
@@ -767,25 +767,49 @@ public class ChannelSchemaTests
 	}
 
 	[Fact]
-	public void ValidateMessageProperties_CaseInsensitivePropertyNames_HandlesCorrectly()
+	public void ValidateMessage_CaseInsensitivePropertyNames_HandlesCorrectly()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.AddMessageProperty("TestProperty", DataType.String, p => p.IsRequired = true);
 
-		var messageProperties = new Dictionary<string, object?>
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
 			{ "testproperty", "value" } // Different case
-		};
+		});
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties).ToList();
+		var results = schema.ValidateMessage(message).ToList();
 
 		// Assert
-		// Based on the actual behavior, this appears to fail because
-		// the validation treats case-sensitive property names as unknown properties
-		Assert.Single(results);
-		Assert.Contains("Required message property 'TestProperty' is missing", results[0].ErrorMessage);
+		// The validation should handle case-insensitive property names correctly
+		// and not report the required property as missing since "testproperty" 
+		// matches "TestProperty" case-insensitively
+		Assert.Empty(results);
+	}
+
+	#endregion
+
+	#region Helper Methods
+
+	private static IMessage CreateTestMessage(
+		string id = "test-message-id",
+		IEndpoint? sender = null,
+		IEndpoint? receiver = null,
+		IMessageContent? content = null,
+		IDictionary<string, object?>? properties = null)
+	{
+		return new Message
+		{
+			Id = id,
+			Sender = Endpoint.Create(sender),
+			Receiver = Endpoint.Create(receiver),
+			Content = content == null ? new TextContent("Test message") : MessageContent.Create(content),
+			Properties = properties?.ToDictionary(
+				kvp => kvp.Key,
+				kvp => new MessageProperty(kvp.Key, kvp.Value),
+				StringComparer.OrdinalIgnoreCase)
+		};
 	}
 
 	#endregion

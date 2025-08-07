@@ -172,7 +172,7 @@ public class MediaContentTests
         Assert.Null(content.FileName);
         Assert.Null(content.FileUrl);
         Assert.Null(content.Data);
-        Assert.Equal(MessageContentType.Binary, content.ContentType);
+        Assert.Equal(MessageContentType.Media, content.ContentType);
     }
 
     [Fact]
@@ -191,7 +191,7 @@ public class MediaContentTests
         Assert.Equal(fileName, content.FileName);
         Assert.Equal(data, content.Data);
         Assert.Null(content.FileUrl);
-        Assert.Equal(MessageContentType.Binary, content.ContentType);
+        Assert.Equal(MessageContentType.Media, content.ContentType);
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public class MediaContentTests
         Assert.Equal(fileName, content.FileName);
         Assert.Equal(fileUrl, content.FileUrl);
         Assert.Null(content.Data);
-        Assert.Equal(MessageContentType.Binary, content.ContentType);
+        Assert.Equal(MessageContentType.Media, content.ContentType);
     }
 
     [Fact]
@@ -290,7 +290,7 @@ public class MediaContentTests
 
         // Act & Assert
         IMessageContent iMessageContent = content;
-        Assert.Equal(MessageContentType.Binary, iMessageContent.ContentType);
+        Assert.Equal(MessageContentType.Media, iMessageContent.ContentType);
     }
 
     [Theory]

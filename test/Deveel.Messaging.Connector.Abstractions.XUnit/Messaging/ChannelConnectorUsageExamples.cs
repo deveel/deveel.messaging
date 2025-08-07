@@ -25,7 +25,12 @@ public class ChannelConnectorUsageExamples
 
 		// Act
 		await connector.InitializeAsync(CancellationToken.None);
-		var message = new ExampleMessage("test@example.com", "Hello World");
+		var message = new Message
+		{
+			Id = Guid.NewGuid().ToString(),
+			Receiver = new Endpoint(EndpointType.EmailAddress, "test@example.com"),
+			Content = new TextContent("Hello World")
+		};
 		var result = await connector.SendMessageAsync(message, CancellationToken.None);
 
 		// Assert
@@ -54,7 +59,12 @@ public class ChannelConnectorUsageExamples
 
 		// Act
 		await connector.InitializeAsync(CancellationToken.None);
-		var message = new ExampleMessage("+1234567890", "Hello SMS");
+		var message = new Message
+		{
+			Id = Guid.NewGuid().ToString(),
+			Receiver = new Endpoint(EndpointType.PhoneNumber, "+1234567890"),
+			Content = new TextContent("Hello SMS")
+		};
 		var sendResult = await connector.SendMessageAsync(message, CancellationToken.None);
 		var statusResult = await connector.GetMessageStatusAsync(sendResult.Value!.MessageId, CancellationToken.None);
 
@@ -200,35 +210,5 @@ public class ChannelConnectorUsageExamples
 
 			return Task.FromResult(ConnectorResult<ConnectorHealth>.Success(health));
 		}
-	}
-
-	// Example Message Implementation
-	private class ExampleMessage : IMessage
-	{
-		public ExampleMessage(string recipient, string content)
-		{
-			Id = Guid.NewGuid().ToString();
-			Recipient = recipient;
-			Content = new ExampleContent(content);
-		}
-
-		public string Id { get; }
-		public string Recipient { get; }
-		public IEndpoint? Sender { get; }
-		public IEndpoint? Receiver { get; }
-		public IMessageContent? Content { get; }
-		public IDictionary<string, IMessageProperty>? Properties { get; }
-	}
-
-	// Example Content Implementation
-	private class ExampleContent : IMessageContent
-	{
-		public ExampleContent(string text)
-		{
-			Text = text;
-		}
-
-		public string Text { get; }
-		public MessageContentType ContentType => MessageContentType.PlainText;
 	}
 }

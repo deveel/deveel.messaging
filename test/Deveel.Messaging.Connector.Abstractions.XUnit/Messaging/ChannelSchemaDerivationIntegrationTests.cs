@@ -387,7 +387,8 @@ public class ChannelSchemaDerivationIntegrationTests
 			{ "OptionalProp", "value2" }
 		};
 
-		var messageValidationResults = derivedSchema.ValidateMessageProperties(validMessageProperties);
+		var validMessage = CreateTestMessage(validMessageProperties);
+		var messageValidationResults = derivedSchema.ValidateMessage(validMessage);
 		Assert.Empty(messageValidationResults);
 
 		// Act & Assert - Unknown message property (removed in derived schema)
@@ -397,7 +398,8 @@ public class ChannelSchemaDerivationIntegrationTests
 			{ "RemovedProp", "value2" } // This was removed
 		};
 
-		var unknownPropResults = derivedSchema.ValidateMessageProperties(unknownPropMessage).ToList();
+		var unknownMessage = CreateTestMessage(unknownPropMessage);
+		var unknownPropResults = derivedSchema.ValidateMessage(unknownMessage).ToList();
 		Assert.Single(unknownPropResults);
 		Assert.Contains("Unknown message property 'RemovedProp' is not supported", unknownPropResults[0].ErrorMessage);
 	}
@@ -539,7 +541,8 @@ public class ChannelSchemaDerivationIntegrationTests
 			{ "OptionalProp", "value2" }
 		};
 
-		var messageValidationResults = restrictedSchema.ValidateMessageProperties(validMessageProperties);
+		var validMessage = CreateTestMessage(validMessageProperties);
+		var messageValidationResults = restrictedSchema.ValidateMessage(validMessage);
 		Assert.Empty(messageValidationResults);
 
 		// Act & Assert - Unknown message property (removed in restricted schema)
@@ -549,7 +552,8 @@ public class ChannelSchemaDerivationIntegrationTests
 			{ "RemovedProp", "value2" } // This was removed
 		};
 
-		var unknownPropResults = restrictedSchema.ValidateMessageProperties(unknownPropMessage).ToList();
+		var unknownMessage = CreateTestMessage(unknownPropMessage);
+		var unknownPropResults = restrictedSchema.ValidateMessage(unknownMessage).ToList();
 		Assert.Single(unknownPropResults);
 		Assert.Contains("Unknown message property 'RemovedProp' is not supported", unknownPropResults[0].ErrorMessage);
 
@@ -636,4 +640,21 @@ public class ChannelSchemaDerivationIntegrationTests
 		var childFromGrandparentValidation = childSchema.ValidateAsRestrictionOf(grandparentSchema);
 		Assert.Empty(childFromGrandparentValidation);
 	}
+
+	#region Helper Methods
+
+	private static Message CreateTestMessage(IDictionary<string, object?> properties)
+	{
+		return new Message
+		{
+			Id = "test-message-id",
+			Content = new TextContent("Test message"),
+			Properties = properties?.ToDictionary(
+				kvp => kvp.Key,
+				kvp => new MessageProperty(kvp.Key, kvp.Value),
+				StringComparer.OrdinalIgnoreCase)
+		};
+	}
+
+	#endregion
 }

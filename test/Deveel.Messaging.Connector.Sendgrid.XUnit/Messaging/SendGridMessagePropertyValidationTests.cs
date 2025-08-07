@@ -152,7 +152,8 @@ public class SendGridMessagePropertyValidationTests
         };
 
         // Act
-        var results = schema.ValidateMessageProperties(properties);
+        var message = CreateTestMessage(properties);
+        var results = schema.ValidateMessage(message);
 
         // Assert
         Assert.Empty(results);
@@ -169,7 +170,8 @@ public class SendGridMessagePropertyValidationTests
         };
 
         // Act
-        var results = schema.ValidateMessageProperties(properties).ToList();
+        var message = CreateTestMessage(properties);
+        var results = schema.ValidateMessage(message).ToList();
 
         // Assert
         Assert.Single(results);
@@ -192,7 +194,8 @@ public class SendGridMessagePropertyValidationTests
         };
 
         // Act
-        var results = schema.ValidateMessageProperties(properties).ToList();
+        var message = CreateTestMessage(properties);
+        var results = schema.ValidateMessage(message).ToList();
 
         // Assert
         Assert.True(results.Count >= 6); // Should have at least 6 validation errors
@@ -236,4 +239,21 @@ public class SendGridMessagePropertyValidationTests
         var templateIdProperty = schema.MessageProperties.First(p => p.Name == "TemplateId");
         Assert.True(templateIdProperty.IsRequired);
     }
+    
+    #region Helper Methods
+
+    private static Message CreateTestMessage(IDictionary<string, object?> properties)
+    {
+        return new Message
+        {
+            Id = "test-message-id",
+            Content = new TextContent("Test email content"),
+            Properties = properties?.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new MessageProperty(kvp.Key, kvp.Value),
+                StringComparer.OrdinalIgnoreCase)
+        };
+    }
+
+    #endregion
 }

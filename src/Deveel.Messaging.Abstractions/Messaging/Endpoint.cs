@@ -214,6 +214,16 @@ namespace Deveel.Messaging {
 		public static Endpoint AlphaNumeric(string label)
 			=> Create(EndpointType.Label, label);
 
+		public static Endpoint? Create(IEndpoint? endpoint)
+		{
+			if (endpoint == null)
+				return null;
+			if (endpoint is Endpoint)
+				return (Endpoint) endpoint;
+
+			return new Endpoint(endpoint.Type, endpoint.Address);
+		}
+
 		/// <summary>
 		/// Parses a string representation of an endpoint type to an EndpointType enum value.
 		/// </summary>
