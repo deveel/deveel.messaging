@@ -33,13 +33,12 @@ public class EndpointTypeIntegrationTests
         Assert.Equal(EndpointType.EmailAddress, message.Sender!.Type);
         Assert.Equal(EndpointType.PhoneNumber, message.Receiver!.Type);
 
-        // Test 5: MessageBuilder integration
-        var builtMessage = new MessageBuilder()
+        // Test 5: Message fluent interface integration
+        var builtMessage = new Message()
             .WithId("builder-msg")
             .WithEmailSender("builder@test.com")
             .WithPhoneReceiver("+9876543210")
-            .WithTextContent("Built message")
-            .Message;
+            .WithTextContent("Built message");
         
         Assert.Equal(EndpointType.EmailAddress, builtMessage.Sender!.Type);
         Assert.Equal(EndpointType.PhoneNumber, builtMessage.Receiver!.Type);

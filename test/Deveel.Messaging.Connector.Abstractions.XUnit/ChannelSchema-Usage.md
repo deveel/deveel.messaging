@@ -414,23 +414,21 @@ var phoneEndpoint = Endpoint.PhoneNumber("+1234567890");
 var webhookEndpoint = Endpoint.Url("https://api.example.com/webhook");
 var appEndpoint = Endpoint.Application("mobile-app-v2");
 
-// Create message using typed endpoints
-var message = new MessageBuilder()
+// Create message using fluent interface
+var message = new Message()
     .WithId("multi-001")
     .WithSender(emailEndpoint)
     .WithReceiver(phoneEndpoint)
     .WithHtmlContent("<h1>Welcome!</h1><p>Your account has been activated.</p>")
-    .WithProperty("Priority", 3)
-    .WithProperty("TrackingId", "TRACK-12345")
-    .Message;
+    .With("Priority", 3)
+    .With("TrackingId", "TRACK-12345");
 
-// Alternative using MessageBuilder convenience methods
-var message2 = new MessageBuilder()
+// Alternative using Message convenience methods
+var message2 = new Message()
     .WithId("multi-002")
     .WithEmailSender("system@company.com")
-    .WithWebhookReceiver("https://customer.com/notifications")
-    .WithJsonContent(new { event = "user.signup", userId = "user123" })
-    .Message;
+    .WithPhoneReceiver("+1234567890")
+    .WithTextContent("Welcome to our service!");
 ```
 
-This updated documentation reflects the new strongly-typed endpoint system while maintaining clarity and comprehensive coverage of all ChannelSchema features.
+This updated documentation reflects the new Message class with built-in fluent interface methods, replacing the previous MessageBuilder pattern.

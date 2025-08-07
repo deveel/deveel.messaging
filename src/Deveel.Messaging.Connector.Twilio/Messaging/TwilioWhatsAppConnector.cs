@@ -83,9 +83,7 @@ namespace Deveel.Messaging
                 }
 
                 // Validate connection settings against schema
-                if (Schema is ChannelSchema channelSchema)
-                {
-                    var validationResults = channelSchema.ValidateConnectionSettings(_connectionSettings);
+                    var validationResults = Schema.ValidateConnectionSettings(_connectionSettings);
                     var validationErrors = validationResults.ToList();
                     if (validationErrors.Count > 0)
                     {
@@ -94,7 +92,6 @@ namespace Deveel.Messaging
                         return ConnectorResult<bool>.ValidationFailedTask(TwilioErrorCodes.InvalidConnectionSettings, 
                             "Connection settings validation failed", validationErrors);
                     }
-                }
 
                 // Initialize Twilio client
                 _twilioService.Initialize(_accountSid, _authToken);
