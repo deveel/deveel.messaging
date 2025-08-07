@@ -59,24 +59,24 @@ namespace Deveel.Messaging
 		/// Gets the collection of channel endpoint configurations
 		/// for the channel.
 		/// </summary>
-		IList<ChannelEndpointConfiguration> Endpoints { get; }
+		IReadOnlyList<ChannelEndpointConfiguration> Endpoints { get; }
 
 		/// <summary>
 		/// Gets the collection of parameters that define the 
 		/// configuration for the channel.
 		/// </summary>
-		IList<ChannelParameter> Parameters { get; }
+		IReadOnlyList<ChannelParameter> Parameters { get; }
 
 		/// <summary>
 		/// Gets the collection of configurations for message properties
 		/// that are handled by the channel.
 		/// </summary>
-		IList<MessagePropertyConfiguration> MessageProperties { get; }
+		IReadOnlyList<MessagePropertyConfiguration> MessageProperties { get; }
 
 		/// <summary>
 		/// Gets the list of content types supported by the channel.
 		/// </summary>
-		IList<MessageContentType> ContentTypes { get; }
+		IReadOnlyList<MessageContentType> ContentTypes { get; }
 
 		/// <summary>
 		/// Gets the collection of authentication configurations that define 
@@ -87,6 +87,6 @@ namespace Deveel.Messaging
 		/// fields required for a particular authentication method, providing more
 		/// precise control than generic authentication type validation.
 		/// </remarks>
-		IList<AuthenticationConfiguration> AuthenticationConfigurations { get; }
+		IReadOnlyList<AuthenticationConfiguration> AuthenticationConfigurations { get; }
 	}
 }

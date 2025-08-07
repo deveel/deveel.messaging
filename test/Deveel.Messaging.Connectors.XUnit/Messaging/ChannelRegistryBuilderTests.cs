@@ -140,11 +140,11 @@ namespace Deveel.Messaging.XUnit {
 			public string? DisplayName => "Test";
 			public bool IsStrict => false;
 			public ChannelCapability Capabilities => ChannelCapability.SendMessages;
-			public IList<ChannelEndpointConfiguration> Endpoints => new List<ChannelEndpointConfiguration>();
-			public IList<ChannelParameter> Parameters => new List<ChannelParameter>();
-			public IList<MessagePropertyConfiguration> MessageProperties => new List<MessagePropertyConfiguration>();
-			public IList<MessageContentType> ContentTypes => new List<MessageContentType>();
-			public IList<AuthenticationConfiguration> AuthenticationConfigurations => new List<AuthenticationConfiguration>();
+			public IReadOnlyList<ChannelEndpointConfiguration> Endpoints => new List<ChannelEndpointConfiguration>();
+			public IReadOnlyList<ChannelParameter> Parameters => new List<ChannelParameter>();
+			public IReadOnlyList<MessagePropertyConfiguration> MessageProperties => new List<MessagePropertyConfiguration>();
+			public IReadOnlyList<MessageContentType> ContentTypes => new List<MessageContentType>();
+			public IReadOnlyList<AuthenticationConfiguration> AuthenticationConfigurations => new List<AuthenticationConfiguration>();
 		}
 	}
 }

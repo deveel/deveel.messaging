@@ -407,7 +407,7 @@ public class SendGridEmailConnectorExtendedMockTests
             .WithEmailReceiver("recipient@example.com")
             .WithTextContent("Tracked message")
             .With("Subject", "Tracked Email");
-;
+
 
         // Act
         var result = await connector.SendMessageAsync(message, CancellationToken.None);
