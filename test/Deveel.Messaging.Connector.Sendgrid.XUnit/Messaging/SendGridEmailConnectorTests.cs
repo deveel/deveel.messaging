@@ -368,28 +368,18 @@ public class SendGridEmailConnectorTests
         Assert.Equal(ConnectorState.Uninitialized, connector.State);
     }
 
-    private static TestMessage CreateTestMessage()
+    private static Message CreateTestMessage()
     {
-        return new TestMessage
+        return new Message
         {
             Id = "test-message-id",
             Sender = new Endpoint(EndpointType.EmailAddress, "sender@test.com"),
             Receiver = new Endpoint(EndpointType.EmailAddress, "receiver@test.com"),
             Content = new TextContent("Hello World"),
-            Properties = new Dictionary<string, IMessageProperty>
+            Properties = new Dictionary<string, MessageProperty>
             {
                 ["Subject"] = new MessageProperty("Subject", "Test Subject")
             }
         };
-    }
-
-    // Test helper classes
-    private class TestMessage : IMessage
-    {
-        public string Id { get; set; } = string.Empty;
-        public IEndpoint? Sender { get; set; }
-        public IEndpoint? Receiver { get; set; }
-        public IMessageContent? Content { get; set; }
-        public IDictionary<string, IMessageProperty>? Properties { get; set; }
     }
 }

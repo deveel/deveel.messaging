@@ -215,12 +215,12 @@ public class TwilioWhatsAppConnectorTests
         var connectionSettings = CreateValidWhatsAppConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings, _mockTwilioService.Object, _mockLogger.Object);
 
-        var message = new TestMessage
+        var message = new Message
         {
             Id = "test-message-id",
-            Sender = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
-            Receiver = new TestEndpoint(EndpointType.EmailAddress, "invalid@email.com"), // Invalid endpoint type
-            Content = new TestMessageContent(MessageContentType.PlainText, "Hello WhatsApp")
+            Sender = new Endpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
+            Receiver = new Endpoint(EndpointType.EmailAddress, "invalid@email.com"), // Invalid endpoint type
+            Content = new TextContent("Hello WhatsApp")
         };
 
         await connector.InitializeAsync(CancellationToken.None);
@@ -244,12 +244,12 @@ public class TwilioWhatsAppConnectorTests
         var connectionSettings = CreateValidWhatsAppConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings, _mockTwilioService.Object, _mockLogger.Object);
 
-        var message = new TestMessage
+        var message = new Message
         {
             Id = "test-message-id",
-            Sender = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
-            Receiver = new TestEndpoint(EndpointType.PhoneNumber, ""), // Valid endpoint type but empty address
-            Content = new TestMessageContent(MessageContentType.PlainText, "Hello WhatsApp")
+            Sender = new Endpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
+            Receiver = new Endpoint(EndpointType.PhoneNumber, ""), // Valid endpoint type but empty address
+            Content = new TextContent("Hello WhatsApp")
         };
 
         await connector.InitializeAsync(CancellationToken.None);
@@ -406,97 +406,34 @@ public class TwilioWhatsAppConnectorTests
             // ContentSid is now provided via TemplateContent, not connection settings
     }
 
-    private static TestMessage CreateWhatsAppTestMessage(string? id = null)
+    private static Message CreateWhatsAppTestMessage()
     {
-        return new TestMessage
+        return new Message
         {
-            Id = id ?? "test-whatsapp-message-id",
-            Sender = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
-            Receiver = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1987654321"),
-            Content = new TestMessageContent(MessageContentType.PlainText, "Hello WhatsApp!")
+            Id = "test-whatsapp-message-id",
+            Sender = new Endpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"),
+            Receiver = new Endpoint(EndpointType.PhoneNumber, "whatsapp:+1987654321"),
+            Content = new TextContent("Hello WhatsApp World")
         };
     }
 
-    private static TestMessage CreateWhatsAppTemplateMessage(string? id = null)
+    private static Message CreateWhatsAppTemplateMessage(string? id = null)
     {
-        var message = new TestMessage
+        return new Message
         {
             Id = id ?? "test-template-message-id",
-            Sender = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"),
-            Receiver = new TestEndpoint(EndpointType.PhoneNumber, "whatsapp:+1987654321"),
-            Content = new TestTemplateContent("HX1234567890123456789012345678901234", new Dictionary<string, object?>
+            Sender = new Endpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"),
+            Receiver = new Endpoint(EndpointType.PhoneNumber, "whatsapp:+1987654321"),
+            Content = new TemplateContent("HX1234567890123456789012345678901234", new Dictionary<string, object?>
             {
                 { "name", "John" },
                 { "code", "123" }
             })
         };
-
-        return message;
     }
 
-    // Test helper classes
-    private class TestMessage : IMessage
-    {
-        public string Id { get; set; } = string.Empty;
-        public IEndpoint? Sender { get; set; }
-        public IEndpoint? Receiver { get; set; }
-        public IMessageContent? Content { get; set; }
-        public IDictionary<string, IMessageProperty>? Properties { get; set; }
-    }
 
-    private class TestEndpoint : IEndpoint
-    {
-        public TestEndpoint(EndpointType type, string address)
-        {
-            Type = type;
-            Address = address;
-        }
 
-        public EndpointType Type { get; }
-        public string Address { get; }
-    }
 
-    private class TestMessageContent : IMessageContent
-    {
-        public TestMessageContent(MessageContentType contentType, string content)
-        {
-            ContentType = contentType;
-            _content = content;
-        }
 
-        private readonly string _content;
-
-        public MessageContentType ContentType { get; }
-
-        public override string ToString() => _content;
-    }
-
-    private class TestTemplateContent : ITemplateContent
-    {
-        public TestTemplateContent(string templateId, IDictionary<string, object?> parameters)
-        {
-            TemplateId = templateId;
-            Parameters = parameters;
-        }
-
-        public string TemplateId { get; }
-        public IDictionary<string, object?> Parameters { get; }
-        public MessageContentType ContentType => MessageContentType.Template;
-    }
-
-    private class TestMessageProperty : IMessageProperty
-    {
-        public TestMessageProperty(string name, object value, bool isSensitive = false)
-        {
-            Name = name;
-            Value = value;
-            IsSensitive = isSensitive;
-        }
-
-        public string Name { get; }
-        public object Value { get; }
-        public bool IsSensitive { get; }
-
-        public override string? ToString() => Value?.ToString();
-    }
 }

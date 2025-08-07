@@ -346,7 +346,7 @@ public class MessageContentTests
         Assert.Equal("video.mp4", mediaResult.FileName);
         Assert.Equal(mediaData, mediaResult.Data);
         // Note: MediaContent currently returns Binary content type, not Media
-        Assert.Equal(MessageContentType.Binary, mediaResult.ContentType);
+        Assert.Equal(MessageContentType.Media, mediaResult.ContentType);
     }
 
     [Fact]

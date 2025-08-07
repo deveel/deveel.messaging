@@ -144,22 +144,11 @@ namespace Deveel.Messaging
             {
                 _logger?.LogDebug("Sending email message {MessageId}", message.Id);
 
+                // Note: Message validation is already performed by the base class in SendMessageAsync()
+                // before calling this method, so we don't need to duplicate it here.
+
                 // Extract and validate message properties before processing
                 var messageProperties = ExtractMessageProperties(message);
-
-                // Validate message properties against schema (includes SendGrid-specific validation)
-                if (Schema is ChannelSchema channelSchema)
-                {
-                    var validationResults = channelSchema.ValidateMessageProperties(messageProperties);
-                    var validationErrors = validationResults.ToList();
-                    if (validationErrors.Count > 0)
-                    {
-                        _logger?.LogError("Message properties validation failed: {Errors}", 
-                            string.Join(", ", validationErrors.Select(e => e.ErrorMessage)));
-                        return ConnectorResult<SendResult>.ValidationFailed(SendGridErrorCodes.InvalidMessage, 
-                            "Message properties validation failed", validationErrors);
-                    }
-                }
 
                 // Extract sender email
                 var (senderEmail, senderName) = ExtractEmailFromEndpoint(message.Sender);

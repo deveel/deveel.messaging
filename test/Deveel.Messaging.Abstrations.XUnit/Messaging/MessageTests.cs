@@ -404,7 +404,7 @@ public class MessageJsonSerializationTests
         Assert.Equal(MediaType.Image, mediaContent.MediaType);
         Assert.Equal("photo.png", mediaContent.FileName);
         Assert.Equal(mediaData, mediaContent.Data);
-        Assert.Equal(MessageContentType.Binary, mediaContent.ContentType);
+        Assert.Equal(MessageContentType.Media, mediaContent.ContentType);
     }
 
     [Fact]

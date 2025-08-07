@@ -327,55 +327,26 @@ namespace Deveel.Messaging
 
 		/// <summary>
 		/// When overridden in a derived class, validates a message for sending through the connector.
-		/// The default implementation performs basic validation.
+		/// The default implementation performs basic validation and delegates to schema validation.
 		/// </summary>
 		/// <param name="message">The message to validate.</param>
 		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
 		/// <returns>An async enumerable of validation results.</returns>
 		protected virtual async IAsyncEnumerable<ValidationResult> ValidateMessageCoreAsync(IMessage message, [EnumeratorCancellation] CancellationToken cancellationToken)
 		{
-			// Basic validation - check message ID
-			if (string.IsNullOrWhiteSpace(message.Id))
+			// Use schema validation as the primary validation mechanism
+			// This includes validation of: message ID, endpoints, content type, and message properties
+			var validationResults = Schema.ValidateMessage(message);
+			var hasValidationErrors = false;
+
+			foreach (var validationResult in validationResults)
 			{
-				yield return new ValidationResult("Message ID is required", new[] { "Id" });
+				hasValidationErrors = true;
+				yield return validationResult;
 			}
 
-			// Validate content type compatibility if schema specifies supported content types
-			if (message.Content != null && Schema.ContentTypes.Any())
-			{
-				var contentType = message.Content.ContentType;
-				if (!Schema.ContentTypes.Contains(contentType))
-				{
-					yield return new ValidationResult(
-						$"Content type '{contentType}' is not supported by this connector. Supported types: {string.Join(", ", Schema.ContentTypes)}", 
-						new[] { "Content.ContentType" });
-				}
-			}
-
-			// Validate endpoints if message has sender/receiver
-			if (message.Sender != null)
-			{
-				if (!IsEndpointTypeSupported(message.Sender.Type, asSender: true))
-				{
-					yield return new ValidationResult(
-						$"Sender endpoint type '{message.Sender.Type}' is not supported by this connector", 
-						new[] { "Sender" });
-				}
-			}
-
-			if (message.Receiver != null)
-			{
-				if (!IsEndpointTypeSupported(message.Receiver.Type, asReceiver: true))
-				{
-					yield return new ValidationResult(
-						$"Receiver endpoint type '{message.Receiver.Type}' is not supported by this connector", 
-						new[] { "Receiver" });
-				}
-			}
-
-			// If no validation errors found, return success
-			if (message.Content != null && Schema.ContentTypes.Any() && 
-			    Schema.ContentTypes.Contains(message.Content.ContentType))
+			// If no validation errors were found, yield success
+			if (!hasValidationErrors)
 			{
 				yield return ValidationResult.Success!;
 			}

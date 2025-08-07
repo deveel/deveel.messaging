@@ -67,12 +67,12 @@ public class TwilioSmsConnectorMockTests
         _mockTwilioService.Setup(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockMessageResource);
 
-        var message = new TestMessage
+        var message = new Message
         {
             Id = "test-message-id",
-            Sender = new TestEndpoint(EndpointType.PhoneNumber, "+1234567890"), 
-            Receiver = new TestEndpoint(EndpointType.PhoneNumber, "+1987654321"),
-            Content = new TestMessageContent(MessageContentType.PlainText, "Hello World")
+            Sender = new Endpoint(EndpointType.PhoneNumber, "+1234567890"), 
+            Receiver = new Endpoint(EndpointType.PhoneNumber, "+1987654321"),
+            Content = new TextContent("Hello World")
         };
         
         await connector.InitializeAsync(CancellationToken.None);
@@ -118,11 +118,11 @@ public class TwilioSmsConnectorMockTests
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings, _mockTwilioService.Object, _mockLogger.Object);
 
-        var message = new TestMessage
+        var message = new Message
         {
             Id = "test-message-id",
-            Receiver = new TestEndpoint(EndpointType.EmailAddress, "invalid@email.com"), // Invalid endpoint type
-            Content = new TestMessageContent(MessageContentType.PlainText, "Hello World")
+            Receiver = new Endpoint(EndpointType.EmailAddress, "invalid@email.com"), // Invalid endpoint type
+            Content = new TextContent("Hello World")
         };
 
         await connector.InitializeAsync(CancellationToken.None);
@@ -260,16 +260,16 @@ public class TwilioSmsConnectorMockTests
             .ReturnsAsync(mockMessageResource);
 
         // Create a message that should pass validation
-        var message = new TestMessage
+        var message = new Message
         {
             Id = "test-message-id",
-            Sender = new TestEndpoint(EndpointType.PhoneNumber, "+1234567890"), // Valid E.164 format
-            Receiver = new TestEndpoint(EndpointType.PhoneNumber, "+1987654321"), // Valid E.164 format
-            Content = new TestMessageContent(MessageContentType.PlainText, "Hello World"),
-            Properties = new Dictionary<string, IMessageProperty>
+            Sender = new Endpoint(EndpointType.PhoneNumber, "+1234567890"), // Valid E.164 format
+            Receiver = new Endpoint(EndpointType.PhoneNumber, "+1987654321"), // Valid E.164 format
+            Content = new TextContent("Hello World"),
+            Properties = new Dictionary<string, MessageProperty>
             {
-                { "ValidityPeriod", new TestMessageProperty("ValidityPeriod", 3600) }, // Use integer instead of string
-                { "MaxPrice", new TestMessageProperty("MaxPrice", 0.05m) } // Use decimal instead of string
+                { "ValidityPeriod", new MessageProperty("ValidityPeriod", 3600) }, // Use integer instead of string
+                { "MaxPrice", new MessageProperty("MaxPrice", 0.05m) } // Use decimal instead of string
             }
         };
 
@@ -292,14 +292,14 @@ public class TwilioSmsConnectorMockTests
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
     }
 
-    private static TestMessage CreateTestMessage()
+    private static Message CreateTestMessage()
     {
-        return new TestMessage
+        return new Message
         {
             Id = "test-message-id",
-            Sender = new TestEndpoint(EndpointType.PhoneNumber, "+1234567890"), // Add required Sender
-            Receiver = new TestEndpoint(EndpointType.PhoneNumber, "+1987654321"),
-            Content = new TestMessageContent(MessageContentType.PlainText, "Hello World")
+            Sender = new Endpoint(EndpointType.PhoneNumber, "+1234567890"),
+            Receiver = new Endpoint(EndpointType.PhoneNumber, "+1987654321"),
+            Content = new TextContent("Hello World")
         };
     }
 
@@ -325,55 +325,6 @@ public class TwilioSmsConnectorMockTests
         return accountResource;
     }
 
-    // Test helper classes
-    private class TestMessage : IMessage
-    {
-        public string Id { get; set; } = string.Empty;
-        public IEndpoint? Sender { get; set; }
-        public IEndpoint? Receiver { get; set; }
-        public IMessageContent? Content { get; set; }
-        public IDictionary<string, IMessageProperty>? Properties { get; set; }
-    }
 
-    private class TestEndpoint : IEndpoint
-    {
-        public TestEndpoint(EndpointType type, string address)
-        {
-            Type = type;
-            Address = address;
-        }
 
-        public EndpointType Type { get; }
-        public string Address { get; }
-    }
-
-    private class TestMessageContent : IMessageContent
-    {
-        public TestMessageContent(MessageContentType contentType, string content)
-        {
-            ContentType = contentType;
-            _content = content;
-        }
-
-        private readonly string _content;
-
-        public MessageContentType ContentType { get; }
-
-        public override string ToString() => _content;
-    }
-
-    private class TestMessageProperty : IMessageProperty
-    {
-        public TestMessageProperty(string name, object value)
-        {
-            Name = name;
-            Value = value;
-        }
-
-        public string Name { get; }
-        public object? Value { get; }
-        public bool IsSensitive { get; } = false;
-
-        public override string? ToString() => Value?.ToString();
-    }
 }

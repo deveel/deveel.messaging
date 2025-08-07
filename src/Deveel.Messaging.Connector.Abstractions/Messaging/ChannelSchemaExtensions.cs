@@ -247,44 +247,6 @@ namespace Deveel.Messaging
 			return validationResults;
 		}
 
-		/// <summary>
-		/// Validates the properties of a message against this channel schema
-		/// to ensure compatibility and compliance with the defined requirements.
-		/// </summary>
-		/// <param name="schema">The schema to validate against.</param>
-		/// <param name="messageProperties">
-		/// The message properties to validate. Cannot be <see langword="null"/>.
-		/// </param>
-		/// <returns>
-		/// An <see cref="IEnumerable{ValidationResult}"/> containing validation errors.
-		/// If the enumerable is empty, the validation was successful.
-		/// </returns>
-		/// <exception cref="ArgumentNullException">
-		/// Thrown when <paramref name="schema"/> or <paramref name="messageProperties"/> is <see langword="null"/>.
-		/// </exception>
-		[Obsolete("Use ValidateMessage(IMessage) instead. This method will be removed in a future version.")]
-		public static IEnumerable<ValidationResult> ValidateMessageProperties(this IChannelSchema schema, IDictionary<string, object?> messageProperties)
-		{
-			ArgumentNullException.ThrowIfNull(schema, nameof(schema));
-			ArgumentNullException.ThrowIfNull(messageProperties, nameof(messageProperties));
-
-			var validationResults = new List<ValidationResult>();
-
-			// Validate required message properties
-			ValidateRequiredMessageProperties(schema, messageProperties, validationResults);
-
-			// Validate message property types and constraints
-			ValidateMessagePropertyTypesAndConstraints(schema, messageProperties, validationResults);
-
-			// Validate unknown message properties (properties not defined in schema) - only in strict mode
-			if (schema.IsStrict)
-			{
-				ValidateUnknownMessageProperties(schema, messageProperties, validationResults);
-			}
-
-			return validationResults;
-		}
-
 		#region Private Helper Methods
 
 		private static void ValidateRequiredParameters(IChannelSchema schema, ConnectionSettings connectionSettings, List<ValidationResult> validationResults)

@@ -620,9 +620,13 @@ public class ChannelSchemaIntegrationTests
 		};
 
 		// Act
-		var validResults = emailSchema.ValidateMessageProperties(validProperties);
-		var invalidResults = emailSchema.ValidateMessageProperties(invalidProperties).ToList();
-		var missingRequiredResults = emailSchema.ValidateMessageProperties(missingRequiredProperties).ToList();
+		var validMessage = CreateTestMessage(validProperties);
+		var invalidMessage = CreateTestMessage(invalidProperties);
+		var missingRequiredMessage = CreateTestMessage(missingRequiredProperties);
+		
+		var validResults = emailSchema.ValidateMessage(validMessage);
+		var invalidResults = emailSchema.ValidateMessage(invalidMessage).ToList();
+		var missingRequiredResults = emailSchema.ValidateMessage(missingRequiredMessage).ToList();
 
 		// Assert
 		// Valid properties should pass validation
@@ -699,9 +703,13 @@ public class ChannelSchemaIntegrationTests
 		};
 
 		// Act
-		var validResults = smsSchema.ValidateMessageProperties(validSmsProperties);
-		var minimalResults = smsSchema.ValidateMessageProperties(minimalSmsProperties);
-		var invalidResults = smsSchema.ValidateMessageProperties(invalidSmsProperties).ToList();
+		var validMessage = CreateTestMessage(validSmsProperties);
+		var minimalMessage = CreateTestMessage(minimalSmsProperties);
+		var invalidMessage = CreateTestMessage(invalidSmsProperties);
+		
+		var validResults = smsSchema.ValidateMessage(validMessage);
+		var minimalResults = smsSchema.ValidateMessage(minimalMessage);
+		var invalidResults = smsSchema.ValidateMessage(invalidMessage).ToList();
 
 		// Assert
 		Assert.Equal("Enhanced Twilio SMS Connector", smsSchema.DisplayName);
@@ -737,4 +745,21 @@ public class ChannelSchemaIntegrationTests
 			Assert.Equal(defaultValue, parameter.DefaultValue);
 		}
 	}
+
+	#region Helper Methods
+
+	private static Message CreateTestMessage(IDictionary<string, object?> properties)
+	{
+		return new Message
+		{
+			Id = "test-message-id",
+			Content = new TextContent("Test message content"),
+			Properties = properties?.ToDictionary(
+				kvp => kvp.Key,
+				kvp => new MessageProperty(kvp.Key, kvp.Value),
+				StringComparer.OrdinalIgnoreCase)
+		};
+	}
+
+	#endregion
 }

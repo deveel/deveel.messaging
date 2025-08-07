@@ -127,20 +127,20 @@ public class ChannelSchemaStrictModeTests
 	}
 
 	[Fact]
-	public void ValidateMessageProperties_StrictMode_RejectsUnknownProperties()
+	public void ValidateMessage_StrictMode_RejectsUnknownProperties()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.AddMessageProperty("KnownProperty", DataType.String);
 
-		var messageProperties = new Dictionary<string, object?>
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
 			{ "KnownProperty", "value" },
 			{ "UnknownProperty", "unknown value" }
-		};
+		});
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties).ToList();
+		var results = schema.ValidateMessage(message).ToList();
 
 		// Assert
 		Assert.Single(results);
@@ -149,21 +149,21 @@ public class ChannelSchemaStrictModeTests
 	}
 
 	[Fact]
-	public void ValidateMessageProperties_FlexibleMode_AllowsUnknownProperties()
+	public void ValidateMessage_FlexibleMode_AllowsUnknownProperties()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
 			.AddMessageProperty("KnownProperty", DataType.String);
 
-		var messageProperties = new Dictionary<string, object?>
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
 			{ "KnownProperty", "value" },
 			{ "UnknownProperty", "unknown value" }
-		};
+		});
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties);
+		var results = schema.ValidateMessage(message);
 
 		// Assert
 		Assert.Empty(results);
@@ -242,16 +242,16 @@ public class ChannelSchemaStrictModeTests
 	}
 
 	[Fact]
-	public void ValidateMessageProperties_StrictMode_StillValidatesRequiredProperties()
+	public void ValidateMessage_StrictMode_StillValidatesRequiredProperties()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true);
 
-		var messageProperties = new Dictionary<string, object?>();
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>());
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties).ToList();
+		var results = schema.ValidateMessage(message).ToList();
 
 		// Assert
 		Assert.Single(results);
@@ -259,17 +259,17 @@ public class ChannelSchemaStrictModeTests
 	}
 
 	[Fact]
-	public void ValidateMessageProperties_FlexibleMode_StillValidatesRequiredProperties()
+	public void ValidateMessage_FlexibleMode_StillValidatesRequiredProperties()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
 			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true);
 
-		var messageProperties = new Dictionary<string, object?>();
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>());
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties).ToList();
+		var results = schema.ValidateMessage(message).ToList();
 
 		// Assert
 		Assert.Single(results);
@@ -277,19 +277,19 @@ public class ChannelSchemaStrictModeTests
 	}
 
 	[Fact]
-	public void ValidateMessageProperties_StrictMode_StillValidatesPropertyTypes()
+	public void ValidateMessage_StrictMode_StillValidatesPropertyTypes()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.AddMessageProperty("IntProp", DataType.Integer);
 
-		var messageProperties = new Dictionary<string, object?>
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
 			{ "IntProp", "not an integer" }
-		};
+		});
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties).ToList();
+		var results = schema.ValidateMessage(message).ToList();
 
 		// Assert
 		Assert.Single(results);
@@ -297,20 +297,20 @@ public class ChannelSchemaStrictModeTests
 	}
 
 	[Fact]
-	public void ValidateMessageProperties_FlexibleMode_StillValidatesPropertyTypes()
+	public void ValidateMessage_FlexibleMode_StillValidatesPropertyTypes()
 	{
 		// Arrange
 		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
 			.AddMessageProperty("IntProp", DataType.Integer);
 
-		var messageProperties = new Dictionary<string, object?>
+		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
 			{ "IntProp", "not an integer" }
-		};
+		});
 
 		// Act
-		var results = schema.ValidateMessageProperties(messageProperties).ToList();
+		var results = schema.ValidateMessage(message).ToList();
 
 		// Assert
 		Assert.Single(results);
@@ -395,14 +395,15 @@ public class ChannelSchemaStrictModeTests
 			{ "CustomProp1", "custom value 1" },
 			{ "CustomProp2", "custom value 2" }
 		};
+		var validMessage = CreateTestMessage(properties: messageProperties);
 
 		// Act - Validate with strict schema
 		var strictConnectionResults = strictSchema.ValidateConnectionSettings(connectionSettings).ToList();
-		var strictMessageResults = strictSchema.ValidateMessageProperties(messageProperties).ToList();
+		var strictMessageResults = strictSchema.ValidateMessage(validMessage).ToList();
 
 		// Act - Validate with flexible schema
 		var flexibleConnectionResults = flexibleSchema.ValidateConnectionSettings(connectionSettings).ToList();
-		var flexibleMessageResults = flexibleSchema.ValidateMessageProperties(messageProperties).ToList();
+		var flexibleMessageResults = flexibleSchema.ValidateMessage(validMessage).ToList();
 
 		// Assert - Strict schema rejects unknown parameters and properties
 		Assert.Equal(2, strictConnectionResults.Count);
@@ -470,4 +471,28 @@ public class ChannelSchemaStrictModeTests
 		Assert.True(strictBaseSchema.IsStrict);
 		Assert.False(flexibleDerived.IsStrict);
 	}
+
+	#region Helper Methods
+
+	private static Message CreateTestMessage(
+		string id = "test-message-id",
+		IEndpoint? sender = null,
+		IEndpoint? receiver = null,
+		IMessageContent? content = null,
+		IDictionary<string, object?>? properties = null)
+	{
+		return new Message
+		{
+			Id = id,
+			Sender = sender != null ? new Endpoint(sender) : null,
+			Receiver = receiver != null ? new Endpoint(receiver) : null,
+			Content = content != null ? MessageContent.Create(content) : new TextContent("Test message"),
+			Properties = properties?.ToDictionary(
+				kvp => kvp.Key,
+				kvp => new MessageProperty(kvp.Key, kvp.Value),
+				StringComparer.OrdinalIgnoreCase)
+		};
+	}
+
+	#endregion
 }
