@@ -100,9 +100,9 @@ namespace Deveel.Messaging
 			}
 
 			// Validate authentication types are a subset
-			foreach (var authType in schema.AuthenticationTypes)
+			foreach (var authType in schema.GetAuthenticationTypes())
 			{
-				if (!targetSchema.AuthenticationTypes.Contains(authType))
+				if (!targetSchema.SupportsAuthenticationType(authType))
 				{
 					validationResults.Add(new ValidationResult(
 						$"Authentication type '{authType}' is not supported by target schema"));
@@ -306,171 +306,55 @@ namespace Deveel.Messaging
 
 		private static void ValidateAuthenticationRequirements(IChannelSchema schema, ConnectionSettings connectionSettings, List<ValidationResult> validationResults)
 		{
-			// Skip authentication validation if no authentication types are defined
-			if (!schema.AuthenticationTypes.Any())
+			// Always use authentication configurations - no more fallback to legacy validation
+			ValidateAuthenticationConfigurationRequirements(schema, connectionSettings, validationResults);
+		}
+
+		private static void ValidateAuthenticationConfigurationRequirements(IChannelSchema schema, ConnectionSettings connectionSettings, List<ValidationResult> validationResults)
+		{
+			// Skip authentication validation if no authentication configurations are defined
+			if (!schema.AuthenticationConfigurations.Any())
 			{
 				return;
 			}
 
 			// If None is the only authentication type, no authentication parameters are required
-			if (schema.AuthenticationTypes.Count == 1 && schema.AuthenticationTypes.Contains(AuthenticationType.None))
+			if (schema.AuthenticationConfigurations.Count == 1 && 
+				schema.AuthenticationConfigurations.Single().AuthenticationType == AuthenticationType.None)
 			{
 				return;
 			}
 
-			// Check if at least one authentication type's requirements are satisfied
+			// Check if at least one authentication configuration's requirements are satisfied
 			bool hasValidAuthentication = false;
 			var authenticationErrors = new List<string>();
 
-			foreach (var authType in schema.AuthenticationTypes.Where(a => a != AuthenticationType.None))
+			foreach (var authConfig in schema.AuthenticationConfigurations.Where(c => c.AuthenticationType != AuthenticationType.None))
 			{
-				var authValidationResults = ValidateAuthenticationTypeRequirements(authType, connectionSettings);
-				
-				if (!authValidationResults.Any())
+				if (authConfig.IsSatisfiedBy(connectionSettings))
 				{
 					hasValidAuthentication = true;
 					break; // Found valid authentication, no need to check others
 				}
 				else
 				{
-					authenticationErrors.Add($"{authType}: {string.Join(", ", authValidationResults)}");
+					var configErrors = authConfig.Validate(connectionSettings);
+					if (configErrors.Any())
+					{
+						authenticationErrors.Add($"{authConfig.DisplayName}: {string.Join(", ", configErrors)}");
+					}
 				}
 			}
 
 			// If no valid authentication was found and None is not supported, add validation error
-			if (!hasValidAuthentication && !schema.AuthenticationTypes.Contains(AuthenticationType.None))
+			if (!hasValidAuthentication && !schema.AuthenticationConfigurations.Any(c => c.AuthenticationType == AuthenticationType.None))
 			{
+				var supportedTypes = string.Join(", ", schema.AuthenticationConfigurations.Select(c => c.DisplayName));
 				validationResults.Add(new ValidationResult(
-					$"Connection settings do not satisfy any of the supported authentication types. " +
-					$"Supported types: {string.Join(", ", schema.AuthenticationTypes)}. " +
+					$"Connection settings do not satisfy any of the supported authentication methods. " +
+					$"Supported methods: {supportedTypes}. " +
 					$"Validation errors: {string.Join("; ", authenticationErrors)}",
 					new[] { "Authentication" }));
-			}
-		}
-
-		private static List<string> ValidateAuthenticationTypeRequirements(AuthenticationType authenticationType, ConnectionSettings connectionSettings)
-		{
-			var errors = new List<string>();
-			switch (authenticationType)
-			{
-				case AuthenticationType.Basic:
-					ValidateBasicAuthentication(connectionSettings, errors);
-					break;
-				case AuthenticationType.ApiKey:
-					ValidateApiKeyAuthentication(connectionSettings, errors);
-					break;
-				case AuthenticationType.Token:
-					ValidateTokenAuthentication(connectionSettings, errors);
-					break;
-				case AuthenticationType.ClientCredentials:
-					ValidateClientCredentialsAuthentication(connectionSettings, errors);
-					break;
-				case AuthenticationType.Certificate:
-					ValidateCertificateAuthentication(connectionSettings, errors);
-					break;
-				case AuthenticationType.Custom:
-					ValidateCustomAuthentication(connectionSettings, errors);
-					break;
-			}
-
-			return errors;
-		}
-
-		private static void ValidateBasicAuthentication(ConnectionSettings connectionSettings, List<string> errors)
-		{
-			// Check for standard Basic authentication (username/password)
-			var username = connectionSettings.GetParameter("Username");
-			var password = connectionSettings.GetParameter("Password");
-			
-			// Check for Twilio-style Basic authentication (AccountSid/AuthToken)
-			var accountSid = connectionSettings.GetParameter("AccountSid");
-			var authToken = connectionSettings.GetParameter("AuthToken");
-
-			// Check for other common Basic auth variations
-			var user = connectionSettings.GetParameter("User");
-			var pass = connectionSettings.GetParameter("Pass");
-			var clientId = connectionSettings.GetParameter("ClientId");
-			var clientSecret = connectionSettings.GetParameter("ClientSecret");
-
-			bool hasValidBasicAuth = 
-				(username != null && password != null) ||
-				(accountSid != null && authToken != null) ||
-				(user != null && pass != null) ||
-				(clientId != null && clientSecret != null);
-
-			if (!hasValidBasicAuth)
-			{
-				errors.Add("Basic authentication requires one of the following parameter pairs: " +
-						  "(Username, Password), (AccountSid, AuthToken), (User, Pass), or (ClientId, ClientSecret)");
-			}
-		}
-
-		private static void ValidateApiKeyAuthentication(ConnectionSettings connectionSettings, List<string> errors)
-		{
-			var apiKey = connectionSettings.GetParameter("ApiKey");
-			var key = connectionSettings.GetParameter("Key");
-			var accessKey = connectionSettings.GetParameter("AccessKey");
-
-			if (apiKey == null && key == null && accessKey == null)
-			{
-				errors.Add("API Key authentication requires one of the following parameters: ApiKey, Key, or AccessKey");
-			}
-		}
-
-		private static void ValidateTokenAuthentication(ConnectionSettings connectionSettings, List<string> errors)
-		{
-			var token = connectionSettings.GetParameter("Token");
-			var accessToken = connectionSettings.GetParameter("AccessToken");
-			var bearerToken = connectionSettings.GetParameter("BearerToken");
-			var authToken = connectionSettings.GetParameter("AuthToken");
-
-			if (token == null && accessToken == null && bearerToken == null && authToken == null)
-			{
-				errors.Add("Token authentication requires one of the following parameters: Token, AccessToken, BearerToken, or AuthToken");
-			}
-		}
-
-		private static void ValidateClientCredentialsAuthentication(ConnectionSettings connectionSettings, List<string> errors)
-		{
-			var clientId = connectionSettings.GetParameter("ClientId");
-			var clientSecret = connectionSettings.GetParameter("ClientSecret");
-
-			if (clientId == null || clientSecret == null)
-			{
-				errors.Add("Client Credentials authentication requires both ClientId and ClientSecret parameters");
-			}
-		}
-
-		private static void ValidateCertificateAuthentication(ConnectionSettings connectionSettings, List<string> errors)
-		{
-			var certificate = connectionSettings.GetParameter("Certificate");
-			var certificatePath = connectionSettings.GetParameter("CertificatePath");
-			var certificateThumbprint = connectionSettings.GetParameter("CertificateThumbprint");
-			var pfxFile = connectionSettings.GetParameter("PfxFile");
-
-			if (certificate == null && certificatePath == null && certificateThumbprint == null && pfxFile == null)
-			{
-				errors.Add("Certificate authentication requires one of the following parameters: " +
-						  "Certificate, CertificatePath, CertificateThumbprint, or PfxFile");
-			}
-		}
-
-		private static void ValidateCustomAuthentication(ConnectionSettings connectionSettings, List<string> errors)
-		{
-			// For custom authentication, we look for any authentication-related parameters
-			// This is more flexible to accommodate various custom authentication schemes
-			var authParams = new []
-			{
-				"CustomAuth", "AuthenticationData", "Credentials", "AuthConfig",
-				"SecretKey", "PrivateKey", "Signature", "Hash"
-			};
-
-			bool hasCustomAuthParam = authParams.Any(param => connectionSettings.GetParameter(param) != null);
-
-			if (!hasCustomAuthParam)
-			{
-				errors.Add("Custom authentication requires at least one authentication parameter. " +
-						  $"Common parameters include: {string.Join(", ", authParams)}");
 			}
 		}
 
@@ -500,55 +384,10 @@ namespace Deveel.Messaging
 		{
 			var authParams = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-			// Only include authentication parameters if corresponding authentication types are supported
-			foreach (var authType in schema.AuthenticationTypes)
+			// Add parameter names from authentication configurations
+			foreach (var authConfig in schema.AuthenticationConfigurations)
 			{
-				switch (authType)
-				{
-					case AuthenticationType.Basic:
-						authParams.Add("Username");
-						authParams.Add("Password");
-						authParams.Add("AccountSid");
-						authParams.Add("AuthToken");
-						authParams.Add("User");
-						authParams.Add("Pass");
-						authParams.Add("ClientId");
-						authParams.Add("ClientSecret");
-						break;
-					case AuthenticationType.ApiKey:
-						authParams.Add("ApiKey");
-						authParams.Add("Key");
-						authParams.Add("AccessKey");
-						break;
-					case AuthenticationType.Token:
-						authParams.Add("Token");
-						authParams.Add("AccessToken");
-						authParams.Add("BearerToken");
-						authParams.Add("AuthToken");
-						break;
-					case AuthenticationType.ClientCredentials:
-						authParams.Add("ClientId");
-						authParams.Add("ClientSecret");
-						break;
-					case AuthenticationType.Certificate:
-						authParams.Add("Certificate");
-						authParams.Add("CertificatePath");
-						authParams.Add("CertificateThumbprint");
-						authParams.Add("PfxFile");
-						authParams.Add("CertificatePassword");
-						authParams.Add("PfxPassword");
-						break;
-					case AuthenticationType.Custom:
-						authParams.Add("CustomAuth");
-						authParams.Add("AuthenticationData");
-						authParams.Add("Credentials");
-						authParams.Add("AuthConfig");
-						authParams.Add("SecretKey");
-						authParams.Add("PrivateKey");
-						authParams.Add("Signature");
-						authParams.Add("Hash");
-						break;
-				}
+				authParams.UnionWith(authConfig.GetAllFieldNames());
 			}
 
 			return authParams;
@@ -669,5 +508,32 @@ namespace Deveel.Messaging
 		}
 
 		#endregion
+
+		/// <summary>
+		/// Gets the collection of authentication types supported by the channel.
+		/// </summary>
+		/// <param name="schema">The channel schema.</param>
+		/// <returns>An enumerable of authentication types extracted from authentication configurations.</returns>
+		/// <remarks>
+		/// This extension method provides backward compatibility for code that uses AuthenticationTypes.
+		/// For new implementations, use AuthenticationConfigurations directly.
+		/// </remarks>
+		public static IEnumerable<AuthenticationType> GetAuthenticationTypes(this IChannelSchema schema)
+		{
+			ArgumentNullException.ThrowIfNull(schema, nameof(schema));
+			return schema.AuthenticationConfigurations.Select(c => c.AuthenticationType).Distinct();
+		}
+
+		/// <summary>
+		/// Checks if the schema supports a specific authentication type.
+		/// </summary>
+		/// <param name="schema">The channel schema.</param>
+		/// <param name="authenticationType">The authentication type to check.</param>
+		/// <returns>True if the authentication type is supported; otherwise, false.</returns>
+		public static bool SupportsAuthenticationType(this IChannelSchema schema, AuthenticationType authenticationType)
+		{
+			ArgumentNullException.ThrowIfNull(schema, nameof(schema));
+			return schema.AuthenticationConfigurations.Any(c => c.AuthenticationType == authenticationType);
+		}
 	}
 }

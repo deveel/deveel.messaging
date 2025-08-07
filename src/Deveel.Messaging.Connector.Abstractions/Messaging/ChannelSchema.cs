@@ -46,7 +46,7 @@ namespace Deveel.Messaging
 			Parameters = new List<ChannelParameter>();
 			MessageProperties = new List<MessagePropertyConfiguration>();
 			ContentTypes = new List<MessageContentType>();
-			AuthenticationTypes = new List<AuthenticationType>();
+			AuthenticationConfigurations = new List<AuthenticationConfiguration>();
 			Endpoints = new List<ChannelEndpointConfiguration>();
 			Capabilities = ChannelCapability.SendMessages; // Default capability
 		}
@@ -112,7 +112,44 @@ namespace Deveel.Messaging
 			}
 
 			ContentTypes = new List<MessageContentType>(sourceSchema.ContentTypes);
-			AuthenticationTypes = new List<AuthenticationType>(sourceSchema.AuthenticationTypes);
+			
+			// Copy authentication configurations
+			AuthenticationConfigurations = new List<AuthenticationConfiguration>();
+			foreach (var authConfig in sourceSchema.AuthenticationConfigurations)
+			{
+				// Create a deep copy of the authentication configuration
+				var newAuthConfig = new AuthenticationConfiguration(authConfig.AuthenticationType, authConfig.DisplayName);
+				
+				// Copy required fields
+				foreach (var field in authConfig.RequiredFields)
+				{
+					var newField = new AuthenticationField(field.FieldName, field.DataType)
+					{
+						IsSensitive = field.IsSensitive,
+						DisplayName = field.DisplayName,
+						Description = field.Description,
+						AuthenticationRole = field.AuthenticationRole,
+						AllowedValues = field.AllowedValues?.ToList()
+					};
+					newAuthConfig.WithRequiredField(newField);
+				}
+				
+				// Copy optional fields
+				foreach (var field in authConfig.OptionalFields)
+				{
+					var newField = new AuthenticationField(field.FieldName, field.DataType)
+					{
+						IsSensitive = field.IsSensitive,
+						DisplayName = field.DisplayName,
+						Description = field.Description,
+						AuthenticationRole = field.AuthenticationRole,
+						AllowedValues = field.AllowedValues?.ToList()
+					};
+					newAuthConfig.WithOptionalField(newField);
+				}
+				
+				AuthenticationConfigurations.Add(newAuthConfig);
+			}
 			
 			Endpoints = new List<ChannelEndpointConfiguration>();
 			foreach (var endpoint in sourceSchema.Endpoints)
@@ -156,10 +193,21 @@ namespace Deveel.Messaging
 		public IList<MessageContentType> ContentTypes { get; }
 
 		/// <inheritdoc/>
-		public IList<AuthenticationType> AuthenticationTypes { get; }
+		public IList<AuthenticationConfiguration> AuthenticationConfigurations { get; }
 
 		/// <inheritdoc/>
 		public IList<ChannelEndpointConfiguration> Endpoints { get; }
+
+		/// <summary>
+		/// Gets the collection of authentication types supported by the channel.
+		/// </summary>
+		/// <remarks>
+		/// This property provides backward compatibility by extracting authentication types 
+		/// from the authentication configurations. For new implementations, use 
+		/// <see cref="AuthenticationConfigurations"/> directly.
+		/// </remarks>
+		public IEnumerable<AuthenticationType> AuthenticationTypes => 
+			AuthenticationConfigurations.Select(c => c.AuthenticationType).Distinct();
 
 		/// <summary>
 		/// Adds a parameter to the schema configuration.
@@ -286,10 +334,135 @@ namespace Deveel.Messaging
 		/// </summary>
 		/// <param name="authenticationType">The authentication type to add.</param>
 		/// <returns>The current schema instance for method chaining.</returns>
+		/// <remarks>
+		/// This method is maintained for backward compatibility. It creates a basic 
+		/// authentication configuration for the specified type with default validation logic.
+		/// For new implementations, use <see cref="AddAuthenticationConfiguration"/> to define 
+		/// detailed authentication requirements with field mappings.
+		/// </remarks>
 		public ChannelSchema AddAuthenticationType(AuthenticationType authenticationType)
 		{
-			AuthenticationTypes.Add(authenticationType);
+			// Create a basic authentication configuration for backward compatibility
+			var config = CreateBasicAuthenticationConfiguration(authenticationType);
+			return AddAuthenticationConfiguration(config);
+		}
+
+		/// <summary>
+		/// Creates a basic authentication configuration for backward compatibility.
+		/// </summary>
+		/// <param name="authenticationType">The authentication type to create a configuration for.</param>
+		/// <returns>A basic authentication configuration.</returns>
+		private static AuthenticationConfiguration CreateBasicAuthenticationConfiguration(AuthenticationType authenticationType)
+		{
+			return authenticationType switch
+			{
+				AuthenticationType.None => new AuthenticationConfiguration(AuthenticationType.None, "No Authentication"),
+				AuthenticationType.Basic => Messaging.AuthenticationConfigurations.FlexibleBasicAuthentication(),
+				AuthenticationType.ApiKey => Messaging.AuthenticationConfigurations.FlexibleApiKeyAuthentication(),
+				AuthenticationType.Token => Messaging.AuthenticationConfigurations.FlexibleTokenAuthentication(),
+				AuthenticationType.ClientCredentials => Messaging.AuthenticationConfigurations.ClientCredentialsAuthentication(),
+				AuthenticationType.Certificate => Messaging.AuthenticationConfigurations.FlexibleCertificateAuthentication(),
+				AuthenticationType.Custom => CreateFlexibleCustomAuthentication(),
+				_ => throw new ArgumentException($"Unsupported authentication type: {authenticationType}", nameof(authenticationType))
+			};
+		}
+
+		/// <summary>
+		/// Creates a flexible custom authentication configuration that accepts common custom authentication parameters.
+		/// </summary>
+		/// <returns>A flexible custom authentication configuration.</returns>
+		private static AuthenticationConfiguration CreateFlexibleCustomAuthentication()
+		{
+			var config = new FlexibleAuthenticationConfiguration(AuthenticationType.Custom, "Custom Authentication");
+
+			// Add common custom authentication fields as optional
+			config.WithOptionalField("CustomAuth", DataType.String, field =>
+				{
+					field.DisplayName = "Custom Auth";
+					field.Description = "Custom authentication data";
+					field.AuthenticationRole = "CustomAuth";
+				})
+				.WithOptionalField("AuthenticationData", DataType.String, field =>
+				{
+					field.DisplayName = "Authentication Data";
+					field.Description = "Custom authentication data";
+					field.AuthenticationRole = "AuthenticationData";
+				})
+				.WithOptionalField("Credentials", DataType.String, field =>
+				{
+					field.DisplayName = "Credentials";
+					field.Description = "Custom credentials";
+					field.AuthenticationRole = "Credentials";
+				})
+				.WithOptionalField("AuthConfig", DataType.String, field =>
+				{
+					field.DisplayName = "Auth Config";
+					field.Description = "Authentication configuration";
+					field.AuthenticationRole = "AuthConfig";
+				})
+				.WithOptionalField("SecretKey", DataType.String, field =>
+				{
+					field.DisplayName = "Secret Key";
+					field.Description = "Secret key for authentication";
+					field.AuthenticationRole = "SecretKey";
+					field.IsSensitive = true;
+				})
+				.WithOptionalField("PrivateKey", DataType.String, field =>
+				{
+					field.DisplayName = "Private Key";
+					field.Description = "Private key for authentication";
+					field.AuthenticationRole = "PrivateKey";
+					field.IsSensitive = true;
+				})
+				.WithOptionalField("Signature", DataType.String, field =>
+				{
+					field.DisplayName = "Signature";
+					field.Description = "Authentication signature";
+					field.AuthenticationRole = "Signature";
+				})
+				.WithOptionalField("Hash", DataType.String, field =>
+				{
+					field.DisplayName = "Hash";
+					field.Description = "Authentication hash";
+					field.AuthenticationRole = "Hash";
+				});
+
+			return config;
+		}
+
+		/// <summary>
+		/// Adds an authentication configuration that defines detailed authentication requirements.
+		/// </summary>
+		/// <param name="authenticationConfiguration">The authentication configuration to add.</param>
+		/// <returns>The current schema instance for method chaining.</returns>
+		/// <exception cref="ArgumentNullException">Thrown when authenticationConfiguration is null.</exception>
+		/// <exception cref="InvalidOperationException">
+		/// Thrown when an authentication configuration for the same authentication type already exists.
+		/// </exception>
+		public ChannelSchema AddAuthenticationConfiguration(AuthenticationConfiguration authenticationConfiguration)
+		{
+			ArgumentNullException.ThrowIfNull(authenticationConfiguration, nameof(authenticationConfiguration));
+			
+			if (AuthenticationConfigurations.Any(c => c.AuthenticationType == authenticationConfiguration.AuthenticationType))
+			{
+				throw new InvalidOperationException($"An authentication configuration for '{authenticationConfiguration.AuthenticationType}' authentication type already exists in the schema.");
+			}
+			
+			AuthenticationConfigurations.Add(authenticationConfiguration);
 			return this;
+		}
+
+		/// <summary>
+		/// Adds an authentication configuration using a factory method.
+		/// </summary>
+		/// <param name="configurationFactory">A factory method that creates the authentication configuration.</param>
+		/// <returns>The current schema instance for method chaining.</returns>
+		/// <exception cref="ArgumentNullException">Thrown when configurationFactory is null.</exception>
+		public ChannelSchema AddAuthenticationConfiguration(Func<AuthenticationConfiguration> configurationFactory)
+		{
+			ArgumentNullException.ThrowIfNull(configurationFactory, nameof(configurationFactory));
+			var config = configurationFactory();
+			return AddAuthenticationConfiguration(config);
 		}
 
 		/// <summary>
@@ -506,22 +679,27 @@ namespace Deveel.Messaging
 		/// <returns>The current schema instance for method chaining.</returns>
 		public ChannelSchema RemoveAuthenticationType(AuthenticationType authenticationType)
 		{
-			AuthenticationTypes.Remove(authenticationType);
+			var configToRemove = AuthenticationConfigurations.FirstOrDefault(c => c.AuthenticationType == authenticationType);
+			if (configToRemove != null)
+			{
+				AuthenticationConfigurations.Remove(configToRemove);
+			}
+			
 			return this;
 		}
 
 		/// <summary>
-		/// Removes an endpoint configuration from the schema.
-		/// This is useful when deriving schemas to restrict certain endpoints.
+		/// Removes an authentication configuration from the schema.
+		/// This is useful when deriving schemas to restrict certain authentication methods.
 		/// </summary>
-		/// <param name="endpointType">The type of endpoint to remove.</param>
+		/// <param name="authenticationType">The authentication type of the configuration to remove.</param>
 		/// <returns>The current schema instance for method chaining.</returns>
-		public ChannelSchema RemoveEndpoint(EndpointType endpointType)
-		{			
-			var endpoint = Endpoints.FirstOrDefault(e => e.Type == endpointType);
-			if (endpoint != null)
+		public ChannelSchema RemoveAuthenticationConfiguration(AuthenticationType authenticationType)
+		{
+			var configToRemove = AuthenticationConfigurations.FirstOrDefault(c => c.AuthenticationType == authenticationType);
+			if (configToRemove != null)
 			{
-				Endpoints.Remove(endpoint);
+				AuthenticationConfigurations.Remove(configToRemove);
 			}
 			
 			return this;
@@ -587,10 +765,37 @@ namespace Deveel.Messaging
 		{
 			ArgumentNullException.ThrowIfNull(allowedAuthenticationTypes, nameof(allowedAuthenticationTypes));
 			
-			AuthenticationTypes.Clear();
-			foreach (var authType in allowedAuthenticationTypes)
+			// Remove authentication configurations that are not in the allowed list
+			var configurationsToRemove = AuthenticationConfigurations
+				.Where(c => !allowedAuthenticationTypes.Contains(c.AuthenticationType))
+				.ToList();
+			
+			foreach (var config in configurationsToRemove)
 			{
-				AuthenticationTypes.Add(authType);
+				AuthenticationConfigurations.Remove(config);
+			}
+			
+			return this;
+		}
+
+		/// <summary>
+		/// Clears all authentication configurations and adds only the specified ones.
+		/// This is useful when deriving schemas to restrict authentication methods.
+		/// </summary>
+		/// <param name="allowedConfigurations">The authentication configurations to allow.</param>
+		/// <returns>The current schema instance for method chaining.</returns>
+		/// <exception cref="ArgumentNullException">
+		/// Thrown when allowedConfigurations is null.
+		/// </exception>
+		public ChannelSchema RestrictAuthenticationConfigurations(params AuthenticationConfiguration[] allowedConfigurations)
+		{
+			ArgumentNullException.ThrowIfNull(allowedConfigurations, nameof(allowedConfigurations));
+			
+			AuthenticationConfigurations.Clear();
+			
+			foreach (var config in allowedConfigurations)
+			{
+				AuthenticationConfigurations.Add(config);
 			}
 			
 			return this;
@@ -676,6 +881,23 @@ namespace Deveel.Messaging
 			}
 			
 			updateAction(endpoint);
+			return this;
+		}
+
+		/// <summary>
+		/// Removes an endpoint configuration from the schema.
+		/// This is useful when deriving schemas to restrict certain endpoints.
+		/// </summary>
+		/// <param name="endpointType">The type of endpoint to remove.</param>
+		/// <returns>The current schema instance for method chaining.</returns>
+		public ChannelSchema RemoveEndpoint(EndpointType endpointType)
+		{			
+			var endpoint = Endpoints.FirstOrDefault(e => e.Type == endpointType);
+			if (endpoint != null)
+			{
+				Endpoints.Remove(endpoint);
+			}
+			
 			return this;
 		}
 	}

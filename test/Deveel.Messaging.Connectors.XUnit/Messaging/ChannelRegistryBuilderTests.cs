@@ -24,7 +24,7 @@ namespace Deveel.Messaging.XUnit {
 		}
 
 		[Fact]
-		public void RegisterConnector_Throws_On_NonConnectorType() {
+		public void RegisterConnector_Throws_On_NonConnector_Type() {
 			var services = CreateServices();
 			var builder = services.AddChannelRegistry();
 			Assert.Throws<ArgumentException>(() => builder.RegisterConnector(typeof(string)));
@@ -144,7 +144,7 @@ namespace Deveel.Messaging.XUnit {
 			public IList<ChannelParameter> Parameters => new List<ChannelParameter>();
 			public IList<MessagePropertyConfiguration> MessageProperties => new List<MessagePropertyConfiguration>();
 			public IList<MessageContentType> ContentTypes => new List<MessageContentType>();
-			public IList<AuthenticationType> AuthenticationTypes => new List<AuthenticationType>();
+			public IList<AuthenticationConfiguration> AuthenticationConfigurations => new List<AuthenticationConfiguration>();
 		}
 	}
 }

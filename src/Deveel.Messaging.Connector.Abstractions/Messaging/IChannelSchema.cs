@@ -79,9 +79,14 @@ namespace Deveel.Messaging
 		IList<MessageContentType> ContentTypes { get; }
 
 		/// <summary>
-		/// Gets the list of authentication types supported or required
-		/// by the channel.
+		/// Gets the collection of authentication configurations that define 
+		/// the detailed authentication requirements for the channel.
 		/// </summary>
-		IList<AuthenticationType> AuthenticationTypes { get; }
+		/// <remarks>
+		/// Each authentication configuration specifies the exact connection settings
+		/// fields required for a particular authentication method, providing more
+		/// precise control than generic authentication type validation.
+		/// </remarks>
+		IList<AuthenticationConfiguration> AuthenticationConfigurations { get; }
 	}
 }

@@ -287,8 +287,8 @@ public class ChannelSchemaDerivationIntegrationTests
 		Assert.False(smsOnlySchema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
 		Assert.Single(smsOnlySchema.ContentTypes);
 		Assert.Contains(MessageContentType.PlainText, smsOnlySchema.ContentTypes);
-		Assert.Single(smsOnlySchema.AuthenticationTypes); // Restricted to Token only
-		Assert.Contains(AuthenticationType.Token, smsOnlySchema.AuthenticationTypes);
+		Assert.Single(smsOnlySchema.GetAuthenticationTypes()); // Restricted to Token only
+		Assert.Contains(AuthenticationType.Token, smsOnlySchema.GetAuthenticationTypes());
 		Assert.Equal(2, smsOnlySchema.Endpoints.Count); // sms and webhook only
 		Assert.Contains(smsOnlySchema.Endpoints, e => e.Type == EndpointType.PhoneNumber && e.IsRequired);
 		Assert.DoesNotContain(smsOnlySchema.Endpoints, e => e.Type == EndpointType.EmailAddress);
@@ -318,7 +318,7 @@ public class ChannelSchemaDerivationIntegrationTests
 		// Verify base schema is unchanged
 		Assert.Equal(4, baseMessagingSchema.Endpoints.Count);
 		Assert.Equal(3, baseMessagingSchema.MessageProperties.Count); // Recipient, Priority, MessageType
-		Assert.Equal(2, baseMessagingSchema.AuthenticationTypes.Count); // Base has both Token and ApiKey
+		Assert.Equal(2, baseMessagingSchema.GetAuthenticationTypes().Count()); // Base has both Token and ApiKey
 		Assert.True(baseMessagingSchema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
 		Assert.True(baseMessagingSchema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
 
