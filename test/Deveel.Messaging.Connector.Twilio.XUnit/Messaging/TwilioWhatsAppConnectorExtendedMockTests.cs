@@ -360,7 +360,7 @@ public class TwilioWhatsAppConnectorExtendedMockTests
             Id = "test-media-message-id",
             Sender = new Endpoint(EndpointType.PhoneNumber, "whatsapp:+1234567890"), // Add required Sender
             Receiver = new Endpoint(EndpointType.PhoneNumber, "whatsapp:+1987654321"),
-            Content = new MediaContent(MediaType.Image, "media.jpg", Encoding.UTF8.GetBytes("Media content"))
+            Content = new MediaContent(MediaType.Image, "media.jpg", new byte[] { 0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01 }) // Mock JPEG header bytes
         };
 
         // Act
