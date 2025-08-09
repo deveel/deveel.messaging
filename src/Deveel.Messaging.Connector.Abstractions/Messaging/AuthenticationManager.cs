@@ -220,15 +220,6 @@ namespace Deveel.Messaging
             // Refresh if expired or will expire within 5 minutes
             return credential.IsExpired || credential.WillExpireSoon(TimeSpan.FromMinutes(5));
         }
-
-        /// <summary>
-        /// Gets information about registered authentication providers.
-        /// </summary>
-        /// <returns>A collection of provider information.</returns>
-        public IEnumerable<AuthenticationProviderInfo> GetProviders()
-        {
-            return _providers.Select(p => new AuthenticationProviderInfo(p.AuthenticationType, p.DisplayName));
-        }
     }
 
     /// <summary>
@@ -262,16 +253,5 @@ namespace Deveel.Messaging
         /// <param name="connectionSettings">The connection settings.</param>
         /// <param name="configuration">The authentication configuration.</param>
         void InvalidateCredential(ConnectionSettings connectionSettings, AuthenticationConfiguration configuration);
-
-        /// <summary>
-        /// Gets information about registered authentication providers.
-        /// </summary>
-        /// <returns>A collection of provider information.</returns>
-        IEnumerable<AuthenticationProviderInfo> GetProviders();
     }
-
-    /// <summary>
-    /// Provides information about an authentication provider.
-    /// </summary>
-    public record AuthenticationProviderInfo(AuthenticationType AuthenticationType, string DisplayName);
 }

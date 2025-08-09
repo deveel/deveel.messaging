@@ -343,7 +343,7 @@ namespace Deveel.Messaging
 		/// <remarks>
 		/// This method is maintained for backward compatibility. It creates a basic 
 		/// authentication configuration for the specified type with default validation logic.
-		/// For new implementations, use <see cref="AddAuthenticationConfiguration"/> to define 
+		/// For new implementations, use <see cref="AddAuthenticationConfiguration(AuthenticationConfiguration)"/> to define 
 		/// detailed authentication requirements with field mappings.
 		/// </remarks>
 		public ChannelSchema AddAuthenticationType(AuthenticationType authenticationType)

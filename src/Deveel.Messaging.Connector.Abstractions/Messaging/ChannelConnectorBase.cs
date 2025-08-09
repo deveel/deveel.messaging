@@ -43,7 +43,7 @@ namespace Deveel.Messaging
 		{
 			Schema = schema ?? throw new ArgumentNullException(nameof(schema));
 			Logger = logger ?? NullLogger.Instance; // Use a null logger if none is provided
-			_authenticationManager = authenticationManager ?? new AuthenticationManager(logger: logger as ILogger<AuthenticationManager>);
+			_authenticationManager = authenticationManager ?? new AuthenticationManager(logger: NullLogger<AuthenticationManager>.Instance);
 		}
 
 		/// <inheritdoc/>
@@ -175,19 +175,19 @@ namespace Deveel.Messaging
 
 			try
 			{
-				Logger.LogDebug("Starting authentication process");
+				Logger.LogStartingAuthentication();
 
 				// Find the first authentication configuration that is satisfied by the connection settings
 				var authConfig = Schema.AuthenticationConfigurations.FirstOrDefault(config => config.IsSatisfiedBy(connectionSettings));
 				
 				if (authConfig == null)
 				{
-					Logger.LogWarning("No suitable authentication configuration found for the provided connection settings");
+					Logger.LogNoAuthenticationConfigurationFound();
 					return ConnectorResult<bool>.Fail(ConnectorErrorCodes.AuthenticationFailed, 
 						"No suitable authentication configuration found for the provided connection settings");
 				}
 
-				Logger.LogDebug("Using authentication configuration: {AuthenticationType}", authConfig.AuthenticationType);
+				Logger.LogUsingAuthenticationConfiguration(authConfig.AuthenticationType.ToString());
 
 				// Perform authentication
 				var authResult = await _authenticationManager.AuthenticateAsync(connectionSettings, authConfig, cancellationToken);
@@ -195,19 +195,19 @@ namespace Deveel.Messaging
 				if (authResult.IsSuccessful && authResult.Credential != null)
 				{
 					_authenticationCredential = authResult.Credential;
-					Logger.LogInformation("Authentication successful using {AuthenticationType}", authConfig.AuthenticationType);
+					Logger.LogAuthenticationSuccessful(authConfig.AuthenticationType.ToString());
 					return ConnectorResult<bool>.Success(true);
 				}
 				else
 				{
-					Logger.LogError("Authentication failed: {ErrorMessage}", authResult.ErrorMessage);
+					Logger.LogAuthenticationFailed(authResult.ErrorMessage ?? "Unknown error");
 					return ConnectorResult<bool>.Fail(ConnectorErrorCodes.AuthenticationFailed, 
 						authResult.ErrorMessage ?? "Authentication failed");
 				}
 			}
 			catch (Exception ex)
 			{
-				Logger.LogError(ex, "Unexpected error during authentication");
+				Logger.LogAuthenticationException(ex);
 				return ConnectorResult<bool>.Fail(ConnectorErrorCodes.AuthenticationFailed, 
 					$"Authentication error: {ex.Message}");
 			}
@@ -225,13 +225,13 @@ namespace Deveel.Messaging
 
 			if (_authenticationCredential == null)
 			{
-				Logger.LogWarning("No authentication credential to refresh");
+				Logger.LogNoCredentialToRefresh();
 				return await AuthenticateAsync(connectionSettings, cancellationToken);
 			}
 
 			try
 			{
-				Logger.LogDebug("Refreshing authentication credential");
+				Logger.LogRefreshingAuthenticationCredential();
 
 				// Find the authentication configuration
 				var authConfig = Schema.AuthenticationConfigurations.FirstOrDefault(config => 
@@ -239,8 +239,7 @@ namespace Deveel.Messaging
 				
 				if (authConfig == null)
 				{
-					Logger.LogWarning("Authentication configuration not found for credential type: {AuthenticationType}", 
-						_authenticationCredential.AuthenticationType);
+					Logger.LogAuthenticationConfigurationNotFound(_authenticationCredential.AuthenticationType.ToString());
 					return await AuthenticateAsync(connectionSettings, cancellationToken);
 				}
 
@@ -250,19 +249,19 @@ namespace Deveel.Messaging
 				if (authResult.IsSuccessful && authResult.Credential != null)
 				{
 					_authenticationCredential = authResult.Credential;
-					Logger.LogInformation("Authentication credential refreshed successfully");
+					Logger.LogAuthenticationCredentialRefreshed();
 					return ConnectorResult<bool>.Success(true);
 				}
 				else
 				{
-					Logger.LogError("Authentication refresh failed: {ErrorMessage}", authResult.ErrorMessage);
+					Logger.LogAuthenticationRefreshFailed(authResult.ErrorMessage ?? "Unknown error");
 					return ConnectorResult<bool>.Fail(ConnectorErrorCodes.AuthenticationFailed, 
 						authResult.ErrorMessage ?? "Authentication refresh failed");
 				}
 			}
 			catch (Exception ex)
 			{
-				Logger.LogError(ex, "Unexpected error during authentication refresh");
+				Logger.LogAuthenticationRefreshException(ex);
 				return ConnectorResult<bool>.Fail(ConnectorErrorCodes.AuthenticationFailed, 
 					$"Authentication refresh error: {ex.Message}");
 			}

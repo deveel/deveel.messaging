@@ -5,10 +5,14 @@
 
 using FirebaseAdmin;
 using FirebaseAdmin.Messaging;
+
 using Microsoft.Extensions.Logging;
+
 using Moq;
 
 using System.Reflection;
+
+using Xunit.Abstractions;
 
 namespace Deveel.Messaging
 {
@@ -19,12 +23,6 @@ namespace Deveel.Messaging
     /// </summary>
     public class FirebasePushConnectorIntegrationTests
     {
-        private readonly Mock<ILogger<FirebasePushConnector>> _mockLogger;
-
-        public FirebasePushConnectorIntegrationTests()
-        {
-            _mockLogger = new Mock<ILogger<FirebasePushConnector>>();
-        }
 
         #region Full Lifecycle Tests
 
@@ -36,7 +34,7 @@ namespace Deveel.Messaging
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var schema = FirebaseTestSchemas.TestFirebasePush; // Use test schema instead of production schema
             
-            var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object, _mockLogger.Object);
+            var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
 
             // Act & Assert - Full lifecycle
             
@@ -58,7 +56,7 @@ namespace Deveel.Messaging
             // 4. Get health
             var healthResult = await connector.GetHealthAsync(CancellationToken.None);
             Assert.True(healthResult.Successful, $"Get health failed: {healthResult.Error?.ErrorCode} - {healthResult.Error?.ErrorMessage}");
-            Assert.True(healthResult.Value.IsHealthy);
+            Assert.True(healthResult.Value!.IsHealthy);
 
             // 5. Send single message
             var message = CreateTestMessage();
@@ -89,7 +87,7 @@ namespace Deveel.Messaging
                 // Arrange
                 var mockFirebaseService = CreateComprehensiveMockFirebaseService();
                 var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
-                var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object, _mockLogger.Object);
+                var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
 
                 // Act
                 var initResult = await connector.InitializeAsync(CancellationToken.None);
@@ -117,7 +115,7 @@ namespace Deveel.Messaging
             connectionSettings.SetParameter("ProjectId", "auth-test-project");
             connectionSettings.SetParameter("ServiceAccountKey", FirebaseMockFactory.CreateTestServiceAccountKey());
             
-            var connector = new FirebasePushConnector(FirebaseTestSchemas.TestFirebasePush, connectionSettings, mockFirebaseService.Object, _mockLogger.Object);
+            var connector = new FirebasePushConnector(FirebaseTestSchemas.TestFirebasePush, connectionSettings, mockFirebaseService.Object);
 
             // Act
             var initResult = await connector.InitializeAsync(CancellationToken.None);
@@ -255,8 +253,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(
                 FirebaseTestSchemas.TestFirebasePush, // Use test schema instead of production schema
                 FirebaseMockFactory.CreateValidConnectionSettings(), 
-                mockFirebaseService.Object,
-                _mockLogger.Object);
+                mockFirebaseService.Object);
 
             await connector.InitializeAsync(CancellationToken.None);
 
@@ -281,7 +278,7 @@ namespace Deveel.Messaging
             // Use test schema that has corrected endpoint validation
             var schema = FirebaseTestSchemas.TestFirebasePush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
-            var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService, _mockLogger.Object);
+            var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             
             var result = await connector.InitializeAsync(CancellationToken.None);
             Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
@@ -294,7 +291,7 @@ namespace Deveel.Messaging
             // Use test bulk schema that has corrected endpoint validation
             var schema = FirebaseTestSchemas.TestBulkPush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
-            var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService, _mockLogger.Object);
+            var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             
             var result = await connector.InitializeAsync(CancellationToken.None);
             Assert.True(result.Successful, $"Failed to initialize bulk connector: {result.Error?.ErrorMessage}");
@@ -511,7 +508,7 @@ namespace Deveel.Messaging
                 Content = new TextContent($"Test notification {id}")
             };
 
-            message.With("Title", $"Test Title {id}");
+            message.With(FirebaseConnectorConstants.TitleMessageProperty, $"Test Title {id}");
 
             return message;
         }

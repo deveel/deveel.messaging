@@ -4,9 +4,8 @@
 //
 
 using FirebaseAdmin.Messaging;
-using Microsoft.Extensions.Logging;
+
 using Moq;
-using System.Text.Json;
 
 namespace Deveel.Messaging
 {
@@ -17,13 +16,6 @@ namespace Deveel.Messaging
     /// </summary>
     public class FirebaseMessageBuildingTests
     {
-        private readonly Mock<ILogger<FirebasePushConnector>> _mockLogger;
-
-        public FirebaseMessageBuildingTests()
-        {
-            _mockLogger = new Mock<ILogger<FirebasePushConnector>>();
-        }
-
         #region Content Type Tests
 
         [Fact]
@@ -521,7 +513,7 @@ namespace Deveel.Messaging
             
             // Create connector manually with custom settings
             var schema = FirebaseTestSchemas.TestFirebasePush;
-            var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object, _mockLogger.Object);
+            var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
             
             var result = await connector.InitializeAsync(CancellationToken.None);
             Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
@@ -548,7 +540,7 @@ namespace Deveel.Messaging
             // Use test schema that has corrected endpoint validation
             var schema = FirebaseTestSchemas.TestFirebasePush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
-            var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService, _mockLogger.Object);
+            var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             
             var result = await connector.InitializeAsync(CancellationToken.None);
             Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");

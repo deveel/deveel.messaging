@@ -4,9 +4,10 @@
 //
 
 using FirebaseAdmin.Messaging;
-using Microsoft.Extensions.Logging;
+
+using Microsoft.Extensions.Logging.Abstractions;
+
 using Moq;
-using System.ComponentModel.DataAnnotations;
 
 namespace Deveel.Messaging
 {
@@ -63,10 +64,9 @@ namespace Deveel.Messaging
             // Arrange
             var schema = FirebaseChannelSchemas.FirebasePush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
-            var logger = new TestLogger<FirebasePushConnector>();
 
             // Act
-            var connector = new FirebasePushConnector(schema, connectionSettings, null, logger);
+            var connector = new FirebasePushConnector(schema, connectionSettings, null, NullLogger<FirebasePushConnector>.Instance);
 
             // Assert
             Assert.Same(schema, connector.Schema);
@@ -502,24 +502,6 @@ namespace Deveel.Messaging
             mock.SetupGet(x => x.SuccessCount).Returns(responses.Count(r => r.IsSuccess));
             mock.SetupGet(x => x.FailureCount).Returns(responses.Count(r => !r.IsSuccess));
             return mock.Object;
-        }
-    }
-
-    /// <summary>
-    /// Simple test logger implementation.
-    /// </summary>
-    public class TestLogger<T> : ILogger<T>
-    {
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => new TestScope();
-        public bool IsEnabled(LogLevel logLevel) => true;
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-        {
-            // Simple implementation for testing
-        }
-
-        private class TestScope : IDisposable
-        {
-            public void Dispose() { }
         }
     }
 }

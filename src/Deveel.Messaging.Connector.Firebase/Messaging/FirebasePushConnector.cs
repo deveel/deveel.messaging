@@ -64,7 +64,7 @@ namespace Deveel.Messaging
         {
             try
             {
-                Logger.LogInformation("Initializing Firebase push connector");
+                Logger.LogInitializingConnector();
 
                 // Perform authentication first
                 var authResult = await AuthenticateAsync(_connectionSettings, cancellationToken);
@@ -98,12 +98,12 @@ namespace Deveel.Messaging
                 // Initialize Firebase service
                 await _firebaseService.InitializeAsync(_serviceAccountKey, _projectId);
 
-                Logger.LogInformation("Firebase push connector initialized successfully for project {ProjectId}", _projectId);
+                Logger.LogConnectorInitialized(_projectId);
                 return ConnectorResult<bool>.Success(true);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to initialize Firebase push connector");
+                Logger.LogInitializationFailed(ex);
                 return ConnectorResult<bool>.Fail(ConnectorErrorCodes.InitializationError, ex.Message);
             }
         }
@@ -113,24 +113,24 @@ namespace Deveel.Messaging
         {
             try
             {
-                Logger.LogDebug("Testing Firebase connection");
+                Logger.LogTestingConnection();
 
                 var isConnected = await _firebaseService.TestConnectionAsync(cancellationToken);
                 
                 if (isConnected)
                 {
-                    Logger.LogDebug("Firebase connection test successful");
+                    Logger.LogConnectionTestSuccessful();
                     return ConnectorResult<bool>.Success(true);
                 }
                 else
                 {
-                    Logger.LogWarning("Firebase connection test failed");
+                    Logger.LogConnectionTestFailed();
                     return ConnectorResult<bool>.Fail(ConnectorErrorCodes.ConnectionTestError, "Firebase connection test failed");
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Firebase connection test threw an exception");
+                Logger.LogConnectionTestException(ex);
                 return ConnectorResult<bool>.Fail(ConnectorErrorCodes.ConnectionTestError, ex.Message);
             }
         }
@@ -140,7 +140,7 @@ namespace Deveel.Messaging
         {
             try
             {
-                Logger.LogDebug("Sending push notification to {ReceiverAddress}", message.Receiver?.Address);
+                Logger.LogSendingPushNotification(message.Receiver?.Address);
 
                 var firebaseMessage = await BuildFirebaseMessageAsync(message, cancellationToken);
                 var messageId = await _firebaseService.SendAsync(firebaseMessage, _dryRun, cancellationToken);
@@ -150,12 +150,12 @@ namespace Deveel.Messaging
                 result.AdditionalData["ProjectId"] = _projectId!;
                 result.AdditionalData["DryRun"] = _dryRun;
 
-                Logger.LogInformation("Push notification sent successfully. MessageId: {MessageId}", messageId);
+                Logger.LogPushNotificationSent(messageId);
                 return ConnectorResult<SendResult>.Success(result);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to send push notification");
+                Logger.LogPushNotificationSendFailed(ex);
                 return ConnectorResult<SendResult>.Fail(ConnectorErrorCodes.SendMessageError, ex.Message);
             }
         }
@@ -165,7 +165,7 @@ namespace Deveel.Messaging
         {
             try
             {
-                Logger.LogDebug("Sending batch of {MessageCount} push notifications", batch.Messages.Count());
+                Logger.LogSendingBatch(batch.Messages.Count());
 
                 var batchId = Guid.NewGuid().ToString();
                 var messages = new List<FirebaseAdmin.Messaging.Message>();
@@ -201,14 +201,13 @@ namespace Deveel.Messaging
 
                 var batchResult = new BatchSendResult(batchId, batchId, results);
                 
-                Logger.LogInformation("Batch push notification sent successfully. BatchId: {BatchId}, MessageCount: {MessageCount}", 
-                    batchId, results.Count);
+                Logger.LogBatchSent(batchId, results.Count);
                 
                 return ConnectorResult<BatchSendResult>.Success(batchResult);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to send batch push notifications");
+                Logger.LogBatchSendFailed(ex);
                 return ConnectorResult<BatchSendResult>.Fail(ConnectorErrorCodes.SendBatchError, ex.Message);
             }
         }

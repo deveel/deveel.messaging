@@ -3,8 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 //
 
-using FirebaseAdmin.Messaging;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Deveel.Messaging
@@ -15,13 +13,6 @@ namespace Deveel.Messaging
     /// </summary>
     public class FirebaseTextContentTests
     {
-        private readonly Mock<ILogger<FirebasePushConnector>> _mockLogger;
-
-        public FirebaseTextContentTests()
-        {
-            _mockLogger = new Mock<ILogger<FirebasePushConnector>>();
-        }
-
         [Fact]
         public async Task SendMessageAsync_WithTextContent_UsesTextForNotificationBody()
         {
@@ -234,7 +225,7 @@ namespace Deveel.Messaging
         {
             var schema = FirebaseTestSchemas.TestFirebasePush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
-            var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService, _mockLogger.Object);
+            var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             
             var result = await connector.InitializeAsync(CancellationToken.None);
             Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");

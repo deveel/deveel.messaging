@@ -13,12 +13,12 @@ namespace Deveel.Messaging
         /// <summary>
         /// The provider identifier for Firebase connectors.
         /// </summary>
-        public const string Provider = "Firebase";
+        public const string Provider = "firebase";
 
         /// <summary>
-        /// The channel type identifier for Firebase Cloud Messaging (FCM) push notifications.
+        /// The channel type identifier for Firebase Cloud Messaging (FCM) push notifications - push
         /// </summary>
-        public const string PushChannel = "FCM";
+        public const string PushChannel = "push";
 
         /// <summary>
         /// The default Firebase project URL template.
@@ -29,6 +29,16 @@ namespace Deveel.Messaging
         /// The Firebase Admin SDK service account key file parameter name.
         /// </summary>
         public const string ServiceAccountKeyParameter = "ServiceAccountKey";
+
+        /// <summary>
+        /// The priority of a message
+        /// </summary>
+        public const string PriorityMessageProperty = "Priority";
+
+        /// <summary>
+        /// The title of the notification
+        /// </summary>
+        public const string TitleMessageProperty = "Title";
 
         /// <summary>
         /// The Firebase project ID parameter name.

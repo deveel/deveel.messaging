@@ -64,7 +64,7 @@ namespace Deveel.Messaging
         {
             try
             {
-                Logger.LogInformation("Initializing SendGrid email connector...");
+                Logger.LogInitializingConnector();
 
                 // Extract required parameters first
                 _apiKey = _connectionSettings.GetParameter("ApiKey") as string;
@@ -76,6 +76,19 @@ namespace Deveel.Messaging
                 _defaultFromName = _connectionSettings.GetParameter("DefaultFromName") as string;
                 _defaultReplyTo = _connectionSettings.GetParameter("DefaultReplyTo") as string;
 
+                // Log configuration details
+                Logger.LogSandboxMode(_sandboxMode);
+                Logger.LogTrackingSettings(_trackingSettings);
+                
+                if (!string.IsNullOrEmpty(_webhookUrl))
+                    Logger.LogWebhookConfigured(_webhookUrl);
+                    
+                if (!string.IsNullOrEmpty(_defaultFromName))
+                    Logger.LogDefaultFromName(_defaultFromName);
+                    
+                if (!string.IsNullOrEmpty(_defaultReplyTo))
+                    Logger.LogDefaultReplyTo(_defaultReplyTo);
+
                 // Perform custom validation logic
                 if (string.IsNullOrWhiteSpace(_apiKey))
                 {
@@ -84,25 +97,25 @@ namespace Deveel.Messaging
                 }
 
                 // Validate connection settings against schema
-                    var validationResults = Schema.ValidateConnectionSettings(_connectionSettings);
-                    var validationErrors = validationResults.ToList();
-                    if (validationErrors.Count > 0)
-                    {
-                        Logger.LogError("Connection settings validation failed: {Errors}", 
-                            string.Join(", ", validationErrors.Select(e => e.ErrorMessage)));
-                        return ConnectorResult<bool>.ValidationFailedTask(SendGridErrorCodes.InvalidConnectionSettings, 
-                            "Connection settings validation failed", validationErrors);
-                    }
+                var validationResults = Schema.ValidateConnectionSettings(_connectionSettings);
+                var validationErrors = validationResults.ToList();
+                if (validationErrors.Count > 0)
+                {
+                    var errorMessage = string.Join(", ", validationErrors.Select(e => e.ErrorMessage));
+                    Logger.LogConnectionSettingsValidationFailed(errorMessage);
+                    return ConnectorResult<bool>.ValidationFailedTask(SendGridErrorCodes.InvalidConnectionSettings, 
+                        "Connection settings validation failed", validationErrors);
+                }
 
                 // Initialize SendGrid client
                 _sendGridService.Initialize(_apiKey);
 
-                Logger.LogInformation("SendGrid email connector initialized successfully");
+                Logger.LogConnectorInitialized();
                 return ConnectorResult<bool>.SuccessTask(true);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to initialize SendGrid email connector");
+                Logger.LogInitializationFailed(ex);
                 return ConnectorResult<bool>.FailTask(ConnectorErrorCodes.InitializationError, ex.Message);
             }
         }
