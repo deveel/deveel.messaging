@@ -48,14 +48,14 @@ namespace Deveel.Messaging
             .AddContentType(MessageContentType.PlainText)
             .HandlesMessageEndpoint(EndpointType.DeviceId, e =>
             {
-                e.CanSend = true;
-                e.CanReceive = false; // Push notifications are send-only
+                e.CanSend = false; // Push notifications are send-only
+				e.CanReceive = true; 
                 e.IsRequired = true; // Device token is required for sending
             })
             .HandlesMessageEndpoint(EndpointType.Topic, e =>
             {
-                e.CanSend = true;
-                e.CanReceive = false; // Topic notifications are send-only
+                e.CanSend = false; // Topic notifications are send-only
+				e.CanReceive = true; 
                 e.IsRequired = false; // Alternative to device tokens
             })
             .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationType.Certificate, "Firebase Service Account Authentication")

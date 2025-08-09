@@ -163,7 +163,7 @@ namespace Deveel.Messaging
         {
             // Arrange - Use TestSimplePush schema which explicitly removes BulkMessaging capability
             var mockFirebaseService = CreateMockFirebaseService();
-            var schema = FirebaseTestSchemas.TestSimplePush; // This schema has BulkMessaging removed
+            var schema = FirebaseChannelSchemas.SimplePush; // This schema has BulkMessaging removed
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
             
@@ -319,7 +319,7 @@ namespace Deveel.Messaging
         private async Task<FirebasePushConnector> CreateInitializedConnectorAsync(IFirebaseService firebaseService, bool enableBulkMessaging = false)
         {
             // Use test schemas that have corrected endpoint validation
-            var schema = enableBulkMessaging ? FirebaseTestSchemas.TestBulkPush : FirebaseTestSchemas.TestFirebasePush;
+            var schema = enableBulkMessaging ? FirebaseChannelSchemas.BulkPush : FirebaseChannelSchemas.FirebasePush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             

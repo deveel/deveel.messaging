@@ -32,7 +32,7 @@ namespace Deveel.Messaging
             // Arrange
             var mockFirebaseService = CreateComprehensiveMockFirebaseService();
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
-            var schema = FirebaseTestSchemas.TestFirebasePush; // Use test schema instead of production schema
+            var schema = FirebaseChannelSchemas.FirebasePush;
             
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
 
@@ -77,9 +77,8 @@ namespace Deveel.Messaging
             // Test all different Firebase test schemas
             var schemas = new[]
             {
-                FirebaseTestSchemas.TestSimplePush,
-                FirebaseTestSchemas.TestFirebasePush
-                // Skip TestBulkPush due to batch testing complexities with sealed classes
+                FirebaseChannelSchemas.FirebasePush,
+                FirebaseChannelSchemas.SimplePush
             };
 
             foreach (var schema in schemas)
@@ -114,8 +113,8 @@ namespace Deveel.Messaging
             var connectionSettings = new ConnectionSettings();
             connectionSettings.SetParameter("ProjectId", "auth-test-project");
             connectionSettings.SetParameter("ServiceAccountKey", FirebaseMockFactory.CreateTestServiceAccountKey());
-            
-            var connector = new FirebasePushConnector(FirebaseTestSchemas.TestFirebasePush, connectionSettings, mockFirebaseService.Object);
+
+            var connector = new FirebasePushConnector(FirebaseChannelSchemas.FirebasePush, connectionSettings, mockFirebaseService.Object);
 
             // Act
             var initResult = await connector.InitializeAsync(CancellationToken.None);
@@ -251,8 +250,8 @@ namespace Deveel.Messaging
             // Arrange
             var mockFirebaseService = CreateDisposableMockFirebaseService();
             var connector = new FirebasePushConnector(
-                FirebaseTestSchemas.TestFirebasePush, // Use test schema instead of production schema
-                FirebaseMockFactory.CreateValidConnectionSettings(), 
+                FirebaseChannelSchemas.FirebasePush,
+                FirebaseMockFactory.CreateValidConnectionSettings(),
                 mockFirebaseService.Object);
 
             await connector.InitializeAsync(CancellationToken.None);
@@ -276,7 +275,7 @@ namespace Deveel.Messaging
         private async Task<FirebasePushConnector> CreateInitializedConnectorAsync(IFirebaseService firebaseService)
         {
             // Use test schema that has corrected endpoint validation
-            var schema = FirebaseTestSchemas.TestFirebasePush;
+            var schema = FirebaseChannelSchemas.FirebasePush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             
@@ -289,7 +288,7 @@ namespace Deveel.Messaging
         private async Task<FirebasePushConnector> CreateInitializedBulkConnectorAsync(IFirebaseService firebaseService)
         {
             // Use test bulk schema that has corrected endpoint validation
-            var schema = FirebaseTestSchemas.TestBulkPush;
+            var schema = FirebaseChannelSchemas.BulkPush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             

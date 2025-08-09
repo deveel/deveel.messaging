@@ -169,18 +169,14 @@ namespace Deveel.Messaging
             message.With("CustomData", "invalid-json-{not-valid}");
 
             // Act
-            await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, CancellationToken.None);
 
-            // Assert
-            mockFirebaseService.Verify(x => x.SendAsync(
-                It.Is<FirebaseAdmin.Messaging.Message>(m => 
-                    m.Data != null &&
-                    m.Data.ContainsKey("customData") &&
-                    m.Data["customData"] == "invalid-json-{not-valid}"
-                ), 
-                It.IsAny<bool>(),
-                It.IsAny<CancellationToken>()
-            ), Times.Once);
+			// Assert
+			Assert.False(result.Successful);
+            Assert.NotNull(result.Error);
+
+            var validationError = Assert.IsType<MessageValidationError>(result.Error);
+            Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, validationError.ErrorCode);
         }
 
         #endregion
@@ -512,7 +508,7 @@ namespace Deveel.Messaging
             connectionSettings.SetParameter("DryRun", false);
             
             // Create connector manually with custom settings
-            var schema = FirebaseTestSchemas.TestFirebasePush;
+            var schema = FirebaseChannelSchemas.FirebasePush;
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
             
             var result = await connector.InitializeAsync(CancellationToken.None);
@@ -538,7 +534,7 @@ namespace Deveel.Messaging
         private async Task<FirebasePushConnector> CreateInitializedConnectorAsync(IFirebaseService firebaseService)
         {
             // Use test schema that has corrected endpoint validation
-            var schema = FirebaseTestSchemas.TestFirebasePush;
+            var schema = FirebaseChannelSchemas.FirebasePush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             

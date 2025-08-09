@@ -75,14 +75,14 @@ namespace Deveel.Messaging
             // Assert
             var deviceEndpoint = schema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.DeviceId);
             Assert.NotNull(deviceEndpoint);
-            Assert.True(deviceEndpoint.CanSend);
-            Assert.False(deviceEndpoint.CanReceive);
+            Assert.True(deviceEndpoint.CanReceive);
+            Assert.False(deviceEndpoint.CanSend);
             Assert.True(deviceEndpoint.IsRequired);
 
             var topicEndpoint = schema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.Topic);
             Assert.NotNull(topicEndpoint);
-            Assert.True(topicEndpoint.CanSend);
-            Assert.False(topicEndpoint.CanReceive);
+            Assert.True(topicEndpoint.CanReceive);
+            Assert.False(topicEndpoint.CanSend);
             Assert.False(topicEndpoint.IsRequired);
         }
 

@@ -223,7 +223,7 @@ namespace Deveel.Messaging
 
         private async Task<FirebasePushConnector> CreateInitializedConnectorAsync(IFirebaseService firebaseService)
         {
-            var schema = FirebaseTestSchemas.TestFirebasePush;
+            var schema = FirebaseChannelSchemas.FirebasePush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             

@@ -77,7 +77,7 @@ namespace Deveel.Messaging
         public async Task InitializeAsync_WithValidSettings_ReturnsSuccess()
         {
             // Arrange
-            var schema = FirebaseTestSchemas.TestSimplePush; // Use test simple schema instead of production
+            var schema = FirebaseChannelSchemas.SimplePush;
             var connectionSettings = FirebaseMockFactory.CreateMinimalConnectionSettings();
             var mockFirebaseService = FirebaseMockFactory.CreateMockFirebaseService();
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
@@ -97,7 +97,7 @@ namespace Deveel.Messaging
         public async Task InitializeAsync_WithMissingProjectId_ReturnsFailure()
         {
             // Arrange
-            var schema = FirebaseTestSchemas.TestFirebasePush; // Use test schema instead of production
+            var schema = FirebaseChannelSchemas.FirebasePush;
             var connectionSettings = new ConnectionSettings();
             connectionSettings.SetParameter("ServiceAccountKey", FirebaseMockFactory.CreateTestServiceAccountKey());
             var connector = new FirebasePushConnector(schema, connectionSettings);
@@ -116,7 +116,7 @@ namespace Deveel.Messaging
         public async Task InitializeAsync_WithMissingServiceAccountKey_ReturnsFailure()
         {
             // Arrange
-            var schema = FirebaseTestSchemas.TestFirebasePush; // Use test schema instead of production
+            var schema = FirebaseChannelSchemas.FirebasePush;
             var connectionSettings = new ConnectionSettings();
             connectionSettings.SetParameter("ProjectId", "test-project");
             var connector = new FirebasePushConnector(schema, connectionSettings);
@@ -138,7 +138,7 @@ namespace Deveel.Messaging
         public async Task InitializeAsync_WithFirebaseServiceFailure_ReturnsFailure()
         {
             // Arrange
-            var schema = FirebaseTestSchemas.TestFirebasePush; // Use test schema instead of production
+            var schema = FirebaseChannelSchemas.FirebasePush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var mockFirebaseService = FirebaseMockFactory.CreateFailingFirebaseService();
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
@@ -170,7 +170,7 @@ namespace Deveel.Messaging
         public async Task TestConnectionAsync_WithInvalidConnection_ReturnsFailure()
         {
             // Arrange
-            var schema = FirebaseTestSchemas.TestFirebasePush; // Use test schema instead of production
+            var schema = FirebaseChannelSchemas.FirebasePush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var mockFirebaseService = new Mock<IFirebaseService>();
             mockFirebaseService.SetupGet(x => x.IsInitialized).Returns(true);
@@ -282,7 +282,7 @@ namespace Deveel.Messaging
         public async Task GetHealthAsync_WithUnhealthyConnector_ReturnsUnhealthyStatus()
         {
             // Arrange
-            var schema = FirebaseTestSchemas.TestFirebasePush; // Use test schema instead of production
+            var schema = FirebaseChannelSchemas.FirebasePush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var mockFirebaseService = new Mock<IFirebaseService>();
             mockFirebaseService.SetupGet(x => x.IsInitialized).Returns(false);
@@ -310,8 +310,8 @@ namespace Deveel.Messaging
 
             // Assert
             Assert.NotNull(deviceEndpoint);
-            Assert.True(deviceEndpoint.CanSend);
-            Assert.False(deviceEndpoint.CanReceive);
+            Assert.True(deviceEndpoint.CanReceive);
+            Assert.False(deviceEndpoint.CanSend);
             Assert.True(deviceEndpoint.IsRequired);
         }
 
@@ -326,8 +326,8 @@ namespace Deveel.Messaging
 
             // Assert
             Assert.NotNull(topicEndpoint);
-            Assert.True(topicEndpoint.CanSend);
-            Assert.False(topicEndpoint.CanReceive);
+            Assert.True(topicEndpoint.CanReceive);
+            Assert.False(topicEndpoint.CanSend);
             Assert.False(topicEndpoint.IsRequired);
         }
 
@@ -406,7 +406,7 @@ namespace Deveel.Messaging
         /// </summary>
         private async Task<FirebasePushConnector> CreateInitializedConnectorAsync()
         {
-            var schema = FirebaseTestSchemas.TestFirebasePush; // Use test schema instead of production schema
+            var schema = FirebaseChannelSchemas.FirebasePush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var mockFirebaseService = FirebaseMockFactory.CreateMockFirebaseService();
             
@@ -422,7 +422,7 @@ namespace Deveel.Messaging
         /// </summary>
         private async Task<FirebasePushConnector> CreateInitializedConnectorAsync(IFirebaseService firebaseService)
         {
-            var schema = FirebaseTestSchemas.TestFirebasePush; // Use test schema instead of production schema
+            var schema = FirebaseChannelSchemas.FirebasePush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
@@ -437,7 +437,7 @@ namespace Deveel.Messaging
         /// </summary>
         private async Task<FirebasePushConnector> CreateInitializedBulkConnectorAsync(IFirebaseService firebaseService)
         {
-            var schema = FirebaseTestSchemas.TestBulkPush; // Use test bulk schema instead of production schema
+            var schema = FirebaseChannelSchemas.BulkPush;
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
