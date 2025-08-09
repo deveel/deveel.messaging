@@ -21,7 +21,6 @@ namespace Deveel.Messaging
     public class FirebasePushConnector : ChannelConnectorBase
     {
         private readonly ConnectionSettings _connectionSettings;
-        private readonly ILogger<FirebasePushConnector>? _logger;
         private readonly IFirebaseService _firebaseService;
         private readonly DateTime _startTime = DateTime.UtcNow;
 
@@ -36,13 +35,16 @@ namespace Deveel.Messaging
         /// <param name="connectionSettings">The connection settings containing Firebase credentials and configuration.</param>
         /// <param name="firebaseService">The Firebase service for FCM operations.</param>
         /// <param name="logger">Optional logger for diagnostic and operational logging.</param>
+        /// <param name="authenticationManager">Optional authentication manager for handling authentication flows.</param>
         /// <exception cref="ArgumentNullException">Thrown when schema or connectionSettings is null.</exception>
-        public FirebasePushConnector(IChannelSchema schema, ConnectionSettings connectionSettings, IFirebaseService? firebaseService = null, ILogger<FirebasePushConnector>? logger = null)
-            : base(schema)
+        public FirebasePushConnector(IChannelSchema schema, ConnectionSettings connectionSettings, IFirebaseService? firebaseService = null, ILogger<FirebasePushConnector>? logger = null, IAuthenticationManager? authenticationManager = null)
+            : base(schema, logger, authenticationManager)
         {
             _connectionSettings = connectionSettings ?? throw new ArgumentNullException(nameof(connectionSettings));
             _firebaseService = firebaseService ?? new FirebaseService();
-            _logger = logger;
+
+            // Register Firebase-specific authentication provider
+            AuthenticationManager.RegisterProvider(new FirebaseServiceAccountAuthenticationProvider());
         }
 
         /// <summary>
@@ -51,8 +53,9 @@ namespace Deveel.Messaging
         /// <param name="connectionSettings">The connection settings containing Firebase credentials and configuration.</param>
         /// <param name="firebaseService">The Firebase service for FCM operations.</param>
         /// <param name="logger">Optional logger for diagnostic and operational logging.</param>
-        public FirebasePushConnector(ConnectionSettings connectionSettings, IFirebaseService? firebaseService = null, ILogger<FirebasePushConnector>? logger = null)
-            : this(FirebaseChannelSchemas.FirebasePush, connectionSettings, firebaseService, logger)
+        /// <param name="authenticationManager">Optional authentication manager for handling authentication flows.</param>
+        public FirebasePushConnector(ConnectionSettings connectionSettings, IFirebaseService? firebaseService = null, ILogger<FirebasePushConnector>? logger = null, IAuthenticationManager? authenticationManager = null)
+            : this(FirebaseChannelSchemas.FirebasePush, connectionSettings, firebaseService, logger, authenticationManager)
         {
         }
 
@@ -61,15 +64,20 @@ namespace Deveel.Messaging
         {
             try
             {
-                _logger?.LogInformation("Initializing Firebase push connector");
+                Logger.LogInformation("Initializing Firebase push connector");
+
+                // Perform authentication first
+                var authResult = await AuthenticateAsync(_connectionSettings, cancellationToken);
+                if (!authResult.Successful)
+                {
+                    return authResult;
+                }
 
                 // Extract configuration from connection settings with proper handling of missing values
                 var projectIdParam = _connectionSettings.GetParameter("ProjectId");
-                var serviceAccountKeyParam = _connectionSettings.GetParameter("ServiceAccountKey");
                 var dryRunParam = _connectionSettings.GetParameter("DryRun");
 
                 _projectId = projectIdParam?.ToString();
-                _serviceAccountKey = serviceAccountKeyParam?.ToString();
                 _dryRun = dryRunParam != null && Convert.ToBoolean(dryRunParam);
 
                 if (string.IsNullOrWhiteSpace(_projectId))
@@ -77,20 +85,25 @@ namespace Deveel.Messaging
                     return ConnectorResult<bool>.Fail(ConnectorErrorCodes.InitializationError, "ProjectId is required");
                 }
 
-                if (string.IsNullOrWhiteSpace(_serviceAccountKey))
+                // Get the service account key from the authenticated credential
+                if (AuthenticationCredential?.AuthenticationType == AuthenticationType.Certificate)
                 {
-                    return ConnectorResult<bool>.Fail(ConnectorErrorCodes.InitializationError, "ServiceAccountKey is required");
+                    _serviceAccountKey = AuthenticationCredential.CredentialValue;
+                }
+                else
+                {
+                    return ConnectorResult<bool>.Fail(ConnectorErrorCodes.InitializationError, "Service account authentication is required for Firebase");
                 }
 
                 // Initialize Firebase service
                 await _firebaseService.InitializeAsync(_serviceAccountKey, _projectId);
 
-                _logger?.LogInformation("Firebase push connector initialized successfully for project {ProjectId}", _projectId);
+                Logger.LogInformation("Firebase push connector initialized successfully for project {ProjectId}", _projectId);
                 return ConnectorResult<bool>.Success(true);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Failed to initialize Firebase push connector");
+                Logger.LogError(ex, "Failed to initialize Firebase push connector");
                 return ConnectorResult<bool>.Fail(ConnectorErrorCodes.InitializationError, ex.Message);
             }
         }
@@ -100,24 +113,24 @@ namespace Deveel.Messaging
         {
             try
             {
-                _logger?.LogDebug("Testing Firebase connection");
+                Logger.LogDebug("Testing Firebase connection");
 
                 var isConnected = await _firebaseService.TestConnectionAsync(cancellationToken);
                 
                 if (isConnected)
                 {
-                    _logger?.LogDebug("Firebase connection test successful");
+                    Logger.LogDebug("Firebase connection test successful");
                     return ConnectorResult<bool>.Success(true);
                 }
                 else
                 {
-                    _logger?.LogWarning("Firebase connection test failed");
+                    Logger.LogWarning("Firebase connection test failed");
                     return ConnectorResult<bool>.Fail(ConnectorErrorCodes.ConnectionTestError, "Firebase connection test failed");
                 }
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Firebase connection test threw an exception");
+                Logger.LogError(ex, "Firebase connection test threw an exception");
                 return ConnectorResult<bool>.Fail(ConnectorErrorCodes.ConnectionTestError, ex.Message);
             }
         }
@@ -127,7 +140,7 @@ namespace Deveel.Messaging
         {
             try
             {
-                _logger?.LogDebug("Sending push notification to {ReceiverAddress}", message.Receiver?.Address);
+                Logger.LogDebug("Sending push notification to {ReceiverAddress}", message.Receiver?.Address);
 
                 var firebaseMessage = await BuildFirebaseMessageAsync(message, cancellationToken);
                 var messageId = await _firebaseService.SendAsync(firebaseMessage, _dryRun, cancellationToken);
@@ -137,12 +150,12 @@ namespace Deveel.Messaging
                 result.AdditionalData["ProjectId"] = _projectId!;
                 result.AdditionalData["DryRun"] = _dryRun;
 
-                _logger?.LogInformation("Push notification sent successfully. MessageId: {MessageId}", messageId);
+                Logger.LogInformation("Push notification sent successfully. MessageId: {MessageId}", messageId);
                 return ConnectorResult<SendResult>.Success(result);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Failed to send push notification");
+                Logger.LogError(ex, "Failed to send push notification");
                 return ConnectorResult<SendResult>.Fail(ConnectorErrorCodes.SendMessageError, ex.Message);
             }
         }
@@ -152,7 +165,7 @@ namespace Deveel.Messaging
         {
             try
             {
-                _logger?.LogDebug("Sending batch of {MessageCount} push notifications", batch.Messages.Count());
+                Logger.LogDebug("Sending batch of {MessageCount} push notifications", batch.Messages.Count());
 
                 var batchId = Guid.NewGuid().ToString();
                 var messages = new List<FirebaseAdmin.Messaging.Message>();
@@ -188,20 +201,20 @@ namespace Deveel.Messaging
 
                 var batchResult = new BatchSendResult(batchId, batchId, results);
                 
-                _logger?.LogInformation("Batch push notification sent successfully. BatchId: {BatchId}, MessageCount: {MessageCount}", 
+                Logger.LogInformation("Batch push notification sent successfully. BatchId: {BatchId}, MessageCount: {MessageCount}", 
                     batchId, results.Count);
                 
                 return ConnectorResult<BatchSendResult>.Success(batchResult);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Failed to send batch push notifications");
+                Logger.LogError(ex, "Failed to send batch push notifications");
                 return ConnectorResult<BatchSendResult>.Fail(ConnectorErrorCodes.SendBatchError, ex.Message);
             }
         }
 
         /// <inheritdoc/>
-        protected override async Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -211,11 +224,11 @@ namespace Deveel.Messaging
                 status.AdditionalData["DryRun"] = _dryRun;
                 status.AdditionalData["Uptime"] = DateTime.UtcNow - _startTime;
 
-                return ConnectorResult<StatusInfo>.Success(status);
+                return ConnectorResult<StatusInfo>.SuccessTask(status);
             }
             catch (Exception ex)
             {
-                return ConnectorResult<StatusInfo>.Fail(ConnectorErrorCodes.GetStatusError, ex.Message);
+                return ConnectorResult<StatusInfo>.FailTask(ConnectorErrorCodes.GetStatusError, ex.Message);
             }
         }
 
@@ -334,8 +347,8 @@ namespace Deveel.Messaging
         private Notification? BuildNotification(IMessage message)
         {
             var title = GetMessageProperty(message, "Title");
-            var body = GetMessageProperty(message, "Body") ?? 
-                      (message.Content as ITextContent)?.Text;
+            var body = (message.Content as ITextContent)?.Text ?? 
+                      GetMessageProperty(message, "Body");
             var imageUrl = GetMessageProperty(message, "ImageUrl");
 
             // If no title or body, return null (data-only message)

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using SendGrid.Helpers.Mail;
 using System.Net;
 using System;
+using System.Text.Json;
 
 namespace Deveel.Messaging
 {
@@ -21,7 +22,6 @@ namespace Deveel.Messaging
     public class SendGridEmailConnector : ChannelConnectorBase
     {
         private readonly ConnectionSettings _connectionSettings;
-        private readonly ILogger<SendGridEmailConnector>? _logger;
         private readonly ISendGridService _sendGridService;
         private readonly DateTime _startTime = DateTime.UtcNow;
 
@@ -41,11 +41,10 @@ namespace Deveel.Messaging
         /// <param name="logger">Optional logger for diagnostic and operational logging.</param>
         /// <exception cref="ArgumentNullException">Thrown when schema or connectionSettings is null.</exception>
         public SendGridEmailConnector(IChannelSchema schema, ConnectionSettings connectionSettings, ISendGridService? sendGridService = null, ILogger<SendGridEmailConnector>? logger = null)
-            : base(schema)
+            : base(schema, logger)
         {
             _connectionSettings = connectionSettings ?? throw new ArgumentNullException(nameof(connectionSettings));
             _sendGridService = sendGridService ?? new SendGridService();
-            _logger = logger;
         }
 
         /// <summary>
@@ -65,7 +64,7 @@ namespace Deveel.Messaging
         {
             try
             {
-                _logger?.LogInformation("Initializing SendGrid email connector...");
+                Logger.LogInformation("Initializing SendGrid email connector...");
 
                 // Extract required parameters first
                 _apiKey = _connectionSettings.GetParameter("ApiKey") as string;
@@ -85,28 +84,25 @@ namespace Deveel.Messaging
                 }
 
                 // Validate connection settings against schema
-                if (Schema is ChannelSchema channelSchema)
-                {
-                    var validationResults = channelSchema.ValidateConnectionSettings(_connectionSettings);
+                    var validationResults = Schema.ValidateConnectionSettings(_connectionSettings);
                     var validationErrors = validationResults.ToList();
                     if (validationErrors.Count > 0)
                     {
-                        _logger?.LogError("Connection settings validation failed: {Errors}", 
+                        Logger.LogError("Connection settings validation failed: {Errors}", 
                             string.Join(", ", validationErrors.Select(e => e.ErrorMessage)));
                         return ConnectorResult<bool>.ValidationFailedTask(SendGridErrorCodes.InvalidConnectionSettings, 
                             "Connection settings validation failed", validationErrors);
                     }
-                }
 
                 // Initialize SendGrid client
                 _sendGridService.Initialize(_apiKey);
 
-                _logger?.LogInformation("SendGrid email connector initialized successfully");
+                Logger.LogInformation("SendGrid email connector initialized successfully");
                 return ConnectorResult<bool>.SuccessTask(true);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Failed to initialize SendGrid email connector");
+                Logger.LogError(ex, "Failed to initialize SendGrid email connector");
                 return ConnectorResult<bool>.FailTask(ConnectorErrorCodes.InitializationError, ex.Message);
             }
         }
@@ -116,7 +112,7 @@ namespace Deveel.Messaging
         {
             try
             {
-                _logger?.LogDebug("Testing SendGrid connection...");
+                Logger.LogDebug("Testing SendGrid connection...");
 
                 // Test connection by validating API key
                 var isConnected = await _sendGridService.TestConnectionAsync(cancellationToken);
@@ -127,12 +123,12 @@ namespace Deveel.Messaging
                         "Unable to connect to SendGrid API - please verify your API key");
                 }
 
-                _logger?.LogDebug("Connection test successful");
+                Logger.LogDebug("Connection test successful");
                 return ConnectorResult<bool>.Success(true);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Connection test failed");
+                Logger.LogError(ex, "Connection test failed");
                 return ConnectorResult<bool>.Fail(SendGridErrorCodes.ConnectionTestFailed, ex.Message);
             }
         }
@@ -142,7 +138,7 @@ namespace Deveel.Messaging
         {
             try
             {
-                _logger?.LogDebug("Sending email message {MessageId}", message.Id);
+                Logger.LogDebug("Sending email message {MessageId}", message.Id);
 
                 // Note: Message validation is already performed by the base class in SendMessageAsync()
                 // before calling this method, so we don't need to duplicate it here.
@@ -210,7 +206,7 @@ namespace Deveel.Messaging
                 {
                     var messageId = ExtractMessageIdFromResponse(response);
                     
-                    _logger?.LogInformation("Email message sent successfully. MessageId: {MessageId}, StatusCode: {StatusCode}", 
+                    Logger.LogInformation("Email message sent successfully. MessageId: {MessageId}, StatusCode: {StatusCode}", 
                         messageId ?? message.Id, response.StatusCode);
 
                     var result = new SendResult(message.Id, messageId ?? Guid.NewGuid().ToString())
@@ -231,7 +227,7 @@ namespace Deveel.Messaging
                 else
                 {
                     var errorMessage = await response.Body.ReadAsStringAsync();
-                    _logger?.LogError("Failed to send email. StatusCode: {StatusCode}, Error: {Error}", 
+                    Logger.LogError("Failed to send email. StatusCode: {StatusCode}, Error: {Error}", 
                         response.StatusCode, errorMessage);
 
                     var errorCode = response.StatusCode == HttpStatusCode.TooManyRequests 
@@ -244,7 +240,7 @@ namespace Deveel.Messaging
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Failed to send email message {MessageId}", message.Id);
+                Logger.LogError(ex, "Failed to send email message {MessageId}", message.Id);
                 return ConnectorResult<SendResult>.Fail(SendGridErrorCodes.SendMessageFailed, ex.Message);
             }
         }
@@ -254,7 +250,7 @@ namespace Deveel.Messaging
         {
             try
             {
-                _logger?.LogDebug("Querying status for message {MessageId}", messageId);
+                Logger.LogDebug("Querying status for message {MessageId}", messageId);
 
                 // Note: SendGrid doesn't provide a direct message status API like Twilio
                 // In a real implementation, you would need to:
@@ -276,7 +272,7 @@ namespace Deveel.Messaging
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Failed to query message status for {MessageId}", messageId);
+                Logger.LogError(ex, "Failed to query message status for {MessageId}", messageId);
                 return ConnectorResult<StatusUpdatesResult>.Fail(SendGridErrorCodes.StatusQueryFailed, ex.Message);
             }
         }
@@ -298,7 +294,7 @@ namespace Deveel.Messaging
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Failed to get connector status");
+                Logger.LogError(ex, "Failed to get connector status");
                 return ConnectorResult<StatusInfo>.FailTask(SendGridErrorCodes.StatusError, ex.Message);
             }
         }
@@ -456,7 +452,7 @@ namespace Deveel.Messaging
                     }
                     catch (System.Text.Json.JsonException ex)
                     {
-                        _logger?.LogWarning(ex, "Failed to parse CustomArgs as JSON: {CustomArgs}", customArgs);
+                        Logger.LogWarning(ex, "Failed to parse CustomArgs as JSON: {CustomArgs}", customArgs);
                     }
                 }
             }
@@ -554,7 +550,7 @@ namespace Deveel.Messaging
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "Failed to extract message ID from SendGrid response");
+                Logger.LogWarning(ex, "Failed to extract message ID from SendGrid response");
             }
 
             return null;
@@ -613,7 +609,7 @@ namespace Deveel.Messaging
         {
             try
             {
-                _logger?.LogDebug("Receiving email message from SendGrid webhook");
+                Logger.LogDebug("Receiving email message from SendGrid webhook");
 
                 if (source.ContentType == MessageSource.JsonContentType)
                 {
@@ -648,7 +644,7 @@ namespace Deveel.Messaging
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Failed to receive email message from SendGrid webhook");
+                Logger.LogError(ex, "Failed to receive email message from SendGrid webhook");
                 return ConnectorResult<ReceiveResult>.FailTask(SendGridErrorCodes.ReceiveMessageFailed, ex.Message);
             }
         }
@@ -658,7 +654,7 @@ namespace Deveel.Messaging
         {
             try
             {
-                _logger?.LogDebug("Receiving email status update from SendGrid webhook");
+                Logger.LogDebug("Receiving email status update from SendGrid webhook");
 
                 if (source.ContentType == MessageSource.JsonContentType)
                 {
@@ -677,7 +673,7 @@ namespace Deveel.Messaging
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Failed to receive email status from SendGrid webhook");
+                Logger.LogError(ex, "Failed to receive email status from SendGrid webhook");
                 return ConnectorResult<StatusUpdateResult>.FailTask(SendGridErrorCodes.ReceiveStatusFailed, ex.Message);
             }
         }
@@ -771,12 +767,12 @@ namespace Deveel.Messaging
                 {
                     var value = property.Value.ValueKind switch
                     {
-                        System.Text.Json.JsonValueKind.String => property.Value.GetString() ?? "",
-                        System.Text.Json.JsonValueKind.Number => property.Value.GetInt64().ToString(),
-                        System.Text.Json.JsonValueKind.True => "true",
-                        System.Text.Json.JsonValueKind.False => "false",
-                        System.Text.Json.JsonValueKind.Array => property.Value.ToString(),
-                        System.Text.Json.JsonValueKind.Object => property.Value.ToString(),
+                        JsonValueKind.String => property.Value.GetString() ?? "",
+                        JsonValueKind.Number => property.Value.GetInt64().ToString(),
+                        JsonValueKind.True => "true",
+                        JsonValueKind.False => "false",
+                        JsonValueKind.Array => property.Value.ToString(),
+                        JsonValueKind.Object => property.Value.ToString(),
                         _ => property.Value.ToString()
                     };
                     message.Properties[property.Name] = new MessageProperty(property.Name, value);
@@ -965,20 +961,6 @@ namespace Deveel.Messaging
                 "inbound" => MessageStatus.Received, // Inbound email received
                 _ => MessageStatus.Unknown
             };
-        }
-
-        private static EndpointType GetSendGridEndpointType(string address)
-        {
-            if (string.IsNullOrEmpty(address))
-                return EndpointType.Id;
-
-            if (address.Contains("@"))
-                return EndpointType.EmailAddress;
-
-            if (address.StartsWith("http"))
-                return EndpointType.Url;
-
-            return EndpointType.Id;
         }
     }
 }

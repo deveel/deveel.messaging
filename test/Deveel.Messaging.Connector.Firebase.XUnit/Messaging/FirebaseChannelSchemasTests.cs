@@ -105,7 +105,8 @@ namespace Deveel.Messaging
 
             // Assert
             Assert.Single(schema.AuthenticationConfigurations);
-            Assert.Equal(AuthenticationType.ApiKey, schema.AuthenticationConfigurations.First().AuthenticationType);
+            // Firebase uses Certificate authentication for service account keys
+            Assert.Equal(AuthenticationType.Certificate, schema.AuthenticationConfigurations.First().AuthenticationType);
         }
 
         [Fact]
@@ -119,11 +120,6 @@ namespace Deveel.Messaging
             Assert.NotNull(titleProp);
             Assert.Equal(DataType.String, titleProp.DataType);
             Assert.Equal(FirebaseConnectorConstants.MaxTitleLength, titleProp.MaxLength);
-
-            var bodyProp = schema.MessageProperties.FirstOrDefault(p => p.Name == "Body");
-            Assert.NotNull(bodyProp);
-            Assert.Equal(DataType.String, bodyProp.DataType);
-            Assert.Equal(FirebaseConnectorConstants.MaxBodyLength, bodyProp.MaxLength);
 
             var priorityProp = schema.MessageProperties.FirstOrDefault(p => p.Name == "Priority");
             Assert.NotNull(priorityProp);

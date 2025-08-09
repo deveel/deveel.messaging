@@ -58,19 +58,27 @@ namespace Deveel.Messaging
                 e.CanReceive = false; // Topic notifications are send-only
                 e.IsRequired = false; // Alternative to device tokens
             })
-            .AddAuthenticationType(AuthenticationType.ApiKey)
+            .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationType.Certificate, "Firebase Service Account Authentication")
+                .WithRequiredField("ServiceAccountKey", DataType.String, field =>
+                {
+                    field.DisplayName = "Service Account Key";
+                    field.Description = "Firebase service account key JSON or file path";
+                    field.AuthenticationRole = "Certificate";
+                    field.IsSensitive = true;
+                })
+                .WithOptionalField("ProjectId", DataType.String, field =>
+                {
+                    field.DisplayName = "Project ID";
+                    field.Description = "Firebase project ID (can be extracted from service account key)";
+                    field.AuthenticationRole = "ProjectId";
+                }))
             .AddMessageProperty("Title", DataType.String, p =>
             {
                 p.IsRequired = false;
                 p.Description = "Notification title";
                 p.MaxLength = FirebaseConnectorConstants.MaxTitleLength;
             })
-            .AddMessageProperty("Body", DataType.String, p =>
-            {
-                p.IsRequired = false;
-                p.Description = "Notification body text";
-                p.MaxLength = FirebaseConnectorConstants.MaxBodyLength;
-            })
+            // Body text now comes from TextContent instead of a message property
             .AddMessageProperty("ImageUrl", DataType.String, p =>
             {
                 p.IsRequired = false;

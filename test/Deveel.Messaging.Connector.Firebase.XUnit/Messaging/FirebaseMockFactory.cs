@@ -117,7 +117,6 @@ namespace Deveel.Messaging
             
             // Add some properties using the fluent API
             message.With("Title", "Test Notification")
-                   .With("Body", "This is a test notification")
                    .With("Priority", "high");
             
             return message;
@@ -135,8 +134,7 @@ namespace Deveel.Messaging
                 Content = new TextContent("Hello topic subscribers!")
             };
             
-            message.With("Title", "Topic Notification")
-                   .With("Body", "This is a topic notification");
+            message.With("Title", "Topic Notification");
             
             return message;
         }

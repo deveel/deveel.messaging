@@ -38,6 +38,19 @@ namespace Deveel.Messaging
 
         #endregion
 
+        #region Authentication Errors
+
+        /// <summary>
+        /// Indicates that authentication failed during connector initialization or operation.
+        /// </summary>
+        /// <remarks>
+        /// This error occurs when the connector cannot authenticate with the remote service
+        /// using the provided credentials or authentication parameters.
+        /// </remarks>
+        public const string AuthenticationFailed = "AUTHENTICATION_FAILED";
+
+        #endregion
+
         #region Connection Errors
 
         /// <summary>

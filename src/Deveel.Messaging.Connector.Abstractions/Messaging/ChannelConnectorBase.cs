@@ -3,6 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 //
 
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.CompilerServices;
 
@@ -10,35 +13,56 @@ namespace Deveel.Messaging
 {
 	/// <summary>
 	/// Provides a base implementation of the <see cref="IChannelConnector"/> interface
-	/// with common functionality for state management and capability validation.
+	/// with common functionality for state management, capability validation, and authentication.
 	/// </summary>
 	/// <remarks>
 	/// This abstract class handles the common concerns of connector implementations such as
-	/// state transitions, capability checking, and providing sensible default implementations
-	/// for operations that may not be supported by all connectors.
+	/// state transitions, capability checking, authentication management, and providing sensible 
+	/// default implementations for operations that may not be supported by all connectors.
 	/// 
 	/// Derived classes need to implement the abstract methods to provide connector-specific
-	/// functionality while benefiting from the state management and validation logic
-	/// provided by this base class.
+	/// functionality while benefiting from the state management, validation logic, and 
+	/// authentication support provided by this base class.
 	/// </remarks>
 	public abstract class ChannelConnectorBase : IChannelConnector
 	{
 		private ConnectorState _state = ConnectorState.Uninitialized;
 		private readonly object _stateLock = new object();
+		private AuthenticationCredential? _authenticationCredential;
+		private readonly IAuthenticationManager _authenticationManager;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="ChannelConnectorBase"/> class
 		/// with the specified schema.
 		/// </summary>
 		/// <param name="schema">The schema describing the connector's capabilities and configuration.</param>
+		/// <param name="logger">A service used to log messages</param>
+		/// <param name="authenticationManager">Optional authentication manager for handling authentication flows</param>
 		/// <exception cref="ArgumentNullException">Thrown when <paramref name="schema"/> is null.</exception>
-		protected ChannelConnectorBase(IChannelSchema schema)
+		protected ChannelConnectorBase(IChannelSchema schema, ILogger? logger = null, IAuthenticationManager? authenticationManager = null)
 		{
 			Schema = schema ?? throw new ArgumentNullException(nameof(schema));
+			Logger = logger ?? NullLogger.Instance; // Use a null logger if none is provided
+			_authenticationManager = authenticationManager ?? new AuthenticationManager(logger: logger as ILogger<AuthenticationManager>);
 		}
 
 		/// <inheritdoc/>
 		public IChannelSchema Schema { get; }
+
+		/// <summary>
+		/// Provides a service for the connector to log messages.
+		/// </summary>
+		protected ILogger Logger { get; }
+
+		/// <summary>
+		/// Gets the authentication manager used by this connector.
+		/// </summary>
+		protected IAuthenticationManager AuthenticationManager => _authenticationManager;
+
+		/// <summary>
+		/// Gets the current authentication credential, if available.
+		/// </summary>
+		protected AuthenticationCredential? AuthenticationCredential => _authenticationCredential;
 
 		/// <inheritdoc/>
 		public ConnectorState State
@@ -132,10 +156,172 @@ namespace Deveel.Messaging
 
 		/// <summary>
 		/// When overridden in a derived class, performs the actual connector initialization logic.
+		/// This method can call <see cref="AuthenticateAsync(ConnectionSettings, CancellationToken)"/> 
+		/// to handle authentication during initialization.
 		/// </summary>
 		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
 		/// <returns>A task that represents the asynchronous initialization operation.</returns>
 		protected abstract Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken);
+
+		/// <summary>
+		/// Performs authentication using the connection settings and the first supported authentication configuration.
+		/// </summary>
+		/// <param name="connectionSettings">The connection settings containing authentication parameters.</param>
+		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+		/// <returns>A task representing the asynchronous authentication operation.</returns>
+		protected async Task<ConnectorResult<bool>> AuthenticateAsync(ConnectionSettings connectionSettings, CancellationToken cancellationToken = default)
+		{
+			ArgumentNullException.ThrowIfNull(connectionSettings, nameof(connectionSettings));
+
+			try
+			{
+				Logger.LogDebug("Starting authentication process");
+
+				// Find the first authentication configuration that is satisfied by the connection settings
+				var authConfig = Schema.AuthenticationConfigurations.FirstOrDefault(config => config.IsSatisfiedBy(connectionSettings));
+				
+				if (authConfig == null)
+				{
+					Logger.LogWarning("No suitable authentication configuration found for the provided connection settings");
+					return ConnectorResult<bool>.Fail(ConnectorErrorCodes.AuthenticationFailed, 
+						"No suitable authentication configuration found for the provided connection settings");
+				}
+
+				Logger.LogDebug("Using authentication configuration: {AuthenticationType}", authConfig.AuthenticationType);
+
+				// Perform authentication
+				var authResult = await _authenticationManager.AuthenticateAsync(connectionSettings, authConfig, cancellationToken);
+
+				if (authResult.IsSuccessful && authResult.Credential != null)
+				{
+					_authenticationCredential = authResult.Credential;
+					Logger.LogInformation("Authentication successful using {AuthenticationType}", authConfig.AuthenticationType);
+					return ConnectorResult<bool>.Success(true);
+				}
+				else
+				{
+					Logger.LogError("Authentication failed: {ErrorMessage}", authResult.ErrorMessage);
+					return ConnectorResult<bool>.Fail(ConnectorErrorCodes.AuthenticationFailed, 
+						authResult.ErrorMessage ?? "Authentication failed");
+				}
+			}
+			catch (Exception ex)
+			{
+				Logger.LogError(ex, "Unexpected error during authentication");
+				return ConnectorResult<bool>.Fail(ConnectorErrorCodes.AuthenticationFailed, 
+					$"Authentication error: {ex.Message}");
+			}
+		}
+
+		/// <summary>
+		/// Refreshes the current authentication credential if it's about to expire or has expired.
+		/// </summary>
+		/// <param name="connectionSettings">The connection settings containing authentication parameters.</param>
+		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+		/// <returns>A task representing the asynchronous refresh operation.</returns>
+		protected async Task<ConnectorResult<bool>> RefreshAuthenticationAsync(ConnectionSettings connectionSettings, CancellationToken cancellationToken = default)
+		{
+			ArgumentNullException.ThrowIfNull(connectionSettings, nameof(connectionSettings));
+
+			if (_authenticationCredential == null)
+			{
+				Logger.LogWarning("No authentication credential to refresh");
+				return await AuthenticateAsync(connectionSettings, cancellationToken);
+			}
+
+			try
+			{
+				Logger.LogDebug("Refreshing authentication credential");
+
+				// Find the authentication configuration
+				var authConfig = Schema.AuthenticationConfigurations.FirstOrDefault(config => 
+					config.AuthenticationType == _authenticationCredential.AuthenticationType);
+				
+				if (authConfig == null)
+				{
+					Logger.LogWarning("Authentication configuration not found for credential type: {AuthenticationType}", 
+						_authenticationCredential.AuthenticationType);
+					return await AuthenticateAsync(connectionSettings, cancellationToken);
+				}
+
+				// Refresh the credential
+				var authResult = await _authenticationManager.AuthenticateAsync(connectionSettings, authConfig, cancellationToken);
+
+				if (authResult.IsSuccessful && authResult.Credential != null)
+				{
+					_authenticationCredential = authResult.Credential;
+					Logger.LogInformation("Authentication credential refreshed successfully");
+					return ConnectorResult<bool>.Success(true);
+				}
+				else
+				{
+					Logger.LogError("Authentication refresh failed: {ErrorMessage}", authResult.ErrorMessage);
+					return ConnectorResult<bool>.Fail(ConnectorErrorCodes.AuthenticationFailed, 
+						authResult.ErrorMessage ?? "Authentication refresh failed");
+				}
+			}
+			catch (Exception ex)
+			{
+				Logger.LogError(ex, "Unexpected error during authentication refresh");
+				return ConnectorResult<bool>.Fail(ConnectorErrorCodes.AuthenticationFailed, 
+					$"Authentication refresh error: {ex.Message}");
+			}
+		}
+
+		/// <summary>
+		/// Gets the authentication header value for HTTP requests, if applicable.
+		/// </summary>
+		/// <returns>The authentication header value, or null if not applicable.</returns>
+		protected virtual string? GetAuthenticationHeader()
+		{
+			if (_authenticationCredential == null)
+				return null;
+
+			return _authenticationCredential.AuthenticationType switch
+			{
+				AuthenticationType.Token => GetTokenAuthHeader(),
+				AuthenticationType.Basic => GetBasicAuthHeader(),
+				AuthenticationType.ApiKey => null, // API keys are usually added as custom headers or query parameters
+				_ => null
+			};
+		}
+
+		private string? GetTokenAuthHeader()
+		{
+			if (_authenticationCredential == null)
+				return null;
+
+			var tokenType = _authenticationCredential.Properties.TryGetValue("TokenType", out var type) ? type?.ToString() : "Bearer";
+			return $"{tokenType} {_authenticationCredential.CredentialValue}";
+		}
+
+		private string? GetBasicAuthHeader()
+		{
+			if (_authenticationCredential == null)
+				return null;
+
+			return $"Basic {_authenticationCredential.CredentialValue}";
+		}
+
+		/// <summary>
+		/// Gets the API key for requests, if applicable.
+		/// </summary>
+		/// <returns>The API key value, or null if not applicable.</returns>
+		protected virtual string? GetApiKey()
+		{
+			return _authenticationCredential?.AuthenticationType == AuthenticationType.ApiKey 
+				? _authenticationCredential.CredentialValue 
+				: null;
+		}
+
+		/// <summary>
+		/// Checks if the connector is configured for anonymous access (no authentication required).
+		/// </summary>
+		/// <returns>True if the connector is anonymous, false otherwise.</returns>
+		protected virtual bool IsAnonymousConnector()
+		{
+			return Schema.AuthenticationConfigurations.Count == 0;
+		}
 
 		/// <inheritdoc/>
 		public async Task<ConnectorResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
