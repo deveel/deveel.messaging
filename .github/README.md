@@ -1,10 +1,9 @@
 # Deveel Messaging Framework
 
-![Deveel Logo](deveel-logo.png)
-
 [![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%209.0-512BD4)](https://dotnet.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![NuGet](https://img.shields.io/badge/NuGet-Available-blue)](https://www.nuget.org/)
+[![NuGet](https://img.shields.io/badge/NuGet-Available-blue)](https://www.nuget.org/) [![CodeCov](https://codecov.io/gh/deveel/deveel.message.model/branch/main/graph/badge.svg)](https://codecov.io/gh/deveel/deveel.message.model)
+
 
 A modern, extensible messaging framework for .NET that provides a unified abstraction layer for various messaging providers including SMS, email, WhatsApp, and push notifications. The framework offers strong type safety, comprehensive validation, and flexible connector architecture.
 
@@ -473,6 +472,12 @@ Deveel is committed to creating high-quality, open-source software solutions for
 - **Issues**: [GitHub Issues](https://github.com/deveel/deveel.message.model/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/deveel/deveel.message.model/discussions)
 - **Email**: support@deveel.com
+
+## Copilot Disclaimer
+
+While the majority of the source code is _designed, written and curated by humans_, the authors of this project leverage the [GitHub Copilot](https://github.com/features/copilot) for time-consuming activities like **documentation** and **test generation**.
+
+Over time, the codebase may contain contributions of these kinds made by AI tools, which may not be fully reviewed and might therefore contain outdated or incorrect information - Please report any issues you find in these areas.
 
 ---
 
