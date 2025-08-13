@@ -1,366 +1,247 @@
 # Getting Started with Deveel Messaging Framework
 
-This guide will walk you through setting up and using the Deveel Messaging Framework for the first time.
+This guide walks you through setting up and sending your first message using the Deveel Messaging Framework.
 
-## Prerequisites
+## ?? Prerequisites
 
 - **.NET 8.0** or **.NET 9.0** SDK
-- Basic understanding of C# and async/await patterns
-- An IDE like Visual Studio 2022 or VS Code
+- **Visual Studio 2022** (17.4+) or **JetBrains Rider** or **VS Code** with C# extension
+- **An IDE** that supports modern C# features
 
-## Installation
+## ?? Quick Start
 
-### 1. Create a New Project
+### Step 1: Install the Framework
 
-```bash
-dotnet new console -n MyMessagingApp
-cd MyMessagingApp
-```
-
-### 2. Install Core Packages
+Choose the connector package(s) you need:
 
 ```bash
-# Required: Core messaging abstractions
-dotnet add package Deveel.Messaging.Abstractions
-
-# Required for custom connectors: Connector base classes
-dotnet add package Deveel.Messaging.Connector.Abstractions
-
-# Optional: Pre-built connectors
+# For SMS and WhatsApp messaging
 dotnet add package Deveel.Messaging.Connector.Twilio
+
+# For email messaging  
 dotnet add package Deveel.Messaging.Connector.Sendgrid
+
+# For push notifications
+dotnet add package Deveel.Messaging.Connector.Firebase
+
+# For core abstractions (if building custom connectors)
+dotnet add package Deveel.Messaging.Connector.Abstractions
 ```
 
-### 3. Add Required Using Statements
+### Step 2: Choose Your Messaging Provider
+
+The framework supports multiple messaging providers. Select based on your needs:
+
+| Use Case | Recommended Connector | Package |
+|----------|----------------------|---------|
+| **SMS Messages** | [Twilio SMS](connectors/twilio-sms-connector.md) | `Deveel.Messaging.Connector.Twilio` |
+| **WhatsApp Business** | [Twilio WhatsApp](connectors/twilio-whatsapp-connector.md) | `Deveel.Messaging.Connector.Twilio` |
+| **Email** | [SendGrid Email](connectors/sendgrid-email-connector.md) | `Deveel.Messaging.Connector.Sendgrid` |
+| **Push Notifications** | [Firebase FCM](connectors/firebase-push-connector.md) | `Deveel.Messaging.Connector.Firebase` |
+
+### Step 3: Your First Message
+
+Let's send a simple SMS using Twilio:
 
 ```csharp
 using Deveel.Messaging;
-using Deveel.Messaging.Connector;
-```
 
-## Your First Message
+// 1. Configure the connector schema
+var schema = TwilioChannelSchemas.TwilioSms;
 
-### Step 1: Create a Simple Email Schema
+// 2. Set up connection parameters
+var connectionSettings = new ConnectionSettings()
+    .AddParameter("AccountSid", "your_twilio_account_sid")
+    .AddParameter("AuthToken", "your_twilio_auth_token");
 
-```csharp
-using Deveel.Messaging;
+// 3. Create the connector
+var connector = new TwilioSmsConnector(schema, connectionSettings);
 
-// Define an email connector schema
-var emailSchema = new ChannelSchema("SMTP", "Email", "1.0.0")
-    .WithDisplayName("Simple SMTP Email")
-    .WithCapabilities(ChannelCapability.SendMessages)
-    .AddParameter(new ChannelParameter("Host", ParameterType.String)
-    {
-        IsRequired = true,
-        Description = "SMTP server hostname"
-    })
-    .AddParameter(new ChannelParameter("Port", ParameterType.Integer)
-    {
-        DefaultValue = 587,
-        Description = "SMTP server port"
-    })
-    .AddParameter(new ChannelParameter("Username", ParameterType.String)
-    {
-        IsRequired = true,
-        Description = "SMTP username"
-    })
-    .AddParameter(new ChannelParameter("Password", ParameterType.String)
-    {
-        IsRequired = true,
-        IsSensitive = true,
-        Description = "SMTP password"
-    })
-    .AddContentType(MessageContentType.PlainText)
-    .AddContentType(MessageContentType.Html)
-    .AllowsMessageEndpoint(EndpointType.EmailAddress)
-    .AddAuthenticationType(AuthenticationType.Basic);
-```
+// 4. Initialize the connector
+await connector.InitializeAsync(CancellationToken.None);
 
-### Step 2: Create a Message
-
-```csharp
-// Build a message using the fluent API
+// 5. Build your message
 var message = new MessageBuilder()
-    .WithId("my-first-message")
-    .WithEmailSender("sender@example.com")
-    .WithEmailReceiver("recipient@example.com")
-    .WithTextContent("Hello from Deveel Messaging Framework!")
-    .WithProperty("Subject", "My First Message")
+    .WithId("welcome-sms-001")
+    .WithPhoneSender("+1234567890")      // Your Twilio number
+    .WithPhoneReceiver("+0987654321")    // Recipient number
+    .WithTextContent("Welcome! Your account has been created successfully.")
     .Message;
 
-// Validate the message (optional, but recommended)
-var validationResult = message.Validate();
-if (!validationResult.IsValid)
+// 6. Send the message
+var result = await connector.SendMessageAsync(message, CancellationToken.None);
+
+// 7. Check the result
+if (result.IsSuccess)
 {
-    foreach (var error in validationResult.Errors)
-    {
-        Console.WriteLine($"Validation Error: {error}");
-    }
-    return;
+    Console.WriteLine($"? Message sent successfully! ID: {result.Value?.MessageId}");
+}
+else
+{
+    Console.WriteLine($"? Failed to send message: {result.ErrorMessage}");
 }
 ```
 
-### Step 3: Use a Connector (Mock Example)
-
-Since this is a getting started guide, we'll create a simple mock connector:
-
-```csharp
-// For demonstration purposes - real connectors would implement actual sending
-public class MockEmailConnector : ChannelConnectorBase
-{
-    public MockEmailConnector(IChannelSchema schema) : base(schema) { }
-
-    protected override async Task<ConnectorResult<bool>> InitializeCoreAsync(CancellationToken cancellationToken)
-    {
-        Console.WriteLine("MockEmailConnector: Initializing...");
-        SetState(ConnectorState.Connected);
-        return ConnectorResult<bool>.Success(true);
-    }
-
-    protected override async Task<ConnectorResult<bool>> TestConnectionCoreAsync(CancellationToken cancellationToken)
-    {
-        Console.WriteLine("MockEmailConnector: Testing connection...");
-        return ConnectorResult<bool>.Success(true);
-    }
-
-    protected override async Task<ConnectorResult<MessageResult>> SendMessageCoreAsync(
-        IMessage message, CancellationToken cancellationToken)
-    {
-        Console.WriteLine($"MockEmailConnector: Sending message from {message.Sender} to {message.Receiver}");
-        Console.WriteLine($"Content: {message.Content?.Value}");
-        
-        var messageId = Guid.NewGuid().ToString();
-        var result = new MessageResult(messageId, MessageStatus.Sent)
-        {
-            SentAt = DateTime.UtcNow
-        };
-        
-        return ConnectorResult<MessageResult>.Success(result);
-    }
-
-    // Other required implementations...
-    protected override async Task<ConnectorResult<IEnumerable<MessageResult>>> SendMessagesAsync(
-        IEnumerable<IMessage> messages, CancellationToken cancellationToken)
-    {
-        var results = new List<MessageResult>();
-        foreach (var message in messages)
-        {
-            var result = await SendMessageCoreAsync(message, cancellationToken);
-            if (result.IsSuccess && result.Value != null)
-            {
-                results.Add(result.Value);
-            }
-        }
-        return ConnectorResult<IEnumerable<MessageResult>>.Success(results);
-    }
-
-    protected override async Task<ConnectorResult<MessageResult?>> GetMessageStatusAsync(
-        string messageId, CancellationToken cancellationToken)
-    {
-        return ConnectorResult<MessageResult?>.Success(null);
-    }
-
-    protected override async Task<ConnectorResult<bool>> DisconnectCoreAsync(CancellationToken cancellationToken)
-    {
-        SetState(ConnectorState.Disconnected);
-        return ConnectorResult<bool>.Success(true);
-    }
-}
-```
-
-### Step 4: Put It All Together
+## ?? Email Example (SendGrid)
 
 ```csharp
 using Deveel.Messaging;
 
-class Program
-{
-    static async Task Main(string[] args)
-    {
-        // Create schema
-        var schema = new ChannelSchema("Mock", "Email", "1.0.0")
-            .WithCapabilities(ChannelCapability.SendMessages)
-            .AddContentType(MessageContentType.PlainText)
-            .AllowsMessageEndpoint(EndpointType.EmailAddress);
+// Configure SendGrid connector
+var emailSchema = SendGridChannelSchemas.SendGridEmail;
+var emailSettings = new ConnectionSettings()
+    .AddParameter("ApiKey", "your_sendgrid_api_key");
 
-        // Create connector
-        var connector = new MockEmailConnector(schema);
+var emailConnector = new SendGridEmailConnector(emailSchema, emailSettings);
+await emailConnector.InitializeAsync(CancellationToken.None);
 
-        try
-        {
-            // Initialize
-            var initResult = await connector.InitializeAsync(CancellationToken.None);
-            if (!initResult.IsSuccess)
-            {
-                Console.WriteLine($"Failed to initialize: {initResult.ErrorMessage}");
-                return;
-            }
-
-            // Create message
-            var message = new MessageBuilder()
-                .WithId("welcome-001")
-                .WithEmailSender("welcome@myapp.com")
-                .WithEmailReceiver("user@example.com")
-                .WithTextContent("Welcome to our service! Thanks for signing up.")
-                .Message;
-
-            // Send message
-            var sendResult = await connector.SendMessageAsync(message, CancellationToken.None);
-            if (sendResult.IsSuccess)
-            {
-                Console.WriteLine($"? Message sent successfully!");
-                Console.WriteLine($"Message ID: {sendResult.Value?.MessageId}");
-                Console.WriteLine($"Status: {sendResult.Value?.Status}");
-            }
-            else
-            {
-                Console.WriteLine($"? Failed to send message: {sendResult.ErrorMessage}");
-            }
-        }
-        finally
-        {
-            // Clean up
-            await connector.DisconnectAsync(CancellationToken.None);
-        }
-    }
-}
-```
-
-## Using Real Connectors
-
-### Twilio SMS Example
-
-```csharp
-// Install: dotnet add package Deveel.Messaging.Connector.Twilio
-
-var twilioSchema = new ChannelSchema("Twilio", "SMS", "2.1.0")
-    .WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.MessageStatusQuery)
-    .AddParameter(new ChannelParameter("AccountSid", ParameterType.String)
-    {
-        IsRequired = true,
-        Description = "Your Twilio Account SID"
-    })
-    .AddParameter(new ChannelParameter("AuthToken", ParameterType.String)
-    {
-        IsRequired = true,
-        IsSensitive = true,
-        Description = "Your Twilio Auth Token"
-    })
-    .AddParameter(new ChannelParameter("FromNumber", ParameterType.String)
-    {
-        IsRequired = true,
-        Description = "Your Twilio phone number"
-    })
-    .AddContentType(MessageContentType.PlainText)
-    .AllowsMessageEndpoint(EndpointType.PhoneNumber);
-
-// Configure with your Twilio credentials
-var configuration = new Dictionary<string, object>
-{
-    ["AccountSid"] = "your_account_sid",
-    ["AuthToken"] = "your_auth_token",
-    ["FromNumber"] = "+1234567890"
-};
-
-var twilioConnector = new TwilioConnector(twilioSchema, configuration);
-
-var smsMessage = new MessageBuilder()
-    .WithId("sms-001")
-    .WithPhoneSender("+1234567890")
-    .WithPhoneReceiver("+0987654321")
-    .WithTextContent("Your verification code is: 123456")
-    .Message;
-
-await twilioConnector.InitializeAsync(CancellationToken.None);
-var result = await twilioConnector.SendMessageAsync(smsMessage, CancellationToken.None);
-```
-
-### SendGrid Email Example
-
-```csharp
-// Install: dotnet add package Deveel.Messaging.Connector.Sendgrid
-
-var sendGridSchema = new ChannelSchema("SendGrid", "Email", "1.0.0")
-    .WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.Templates)
-    .AddParameter(new ChannelParameter("ApiKey", ParameterType.String)
-    {
-        IsRequired = true,
-        IsSensitive = true,
-        Description = "Your SendGrid API key"
-    })
-    .AddContentType(MessageContentType.Html)
-    .AddContentType(MessageContentType.PlainText)
-    .AllowsMessageEndpoint(EndpointType.EmailAddress);
-
-var configuration = new Dictionary<string, object>
-{
-    ["ApiKey"] = "your_sendgrid_api_key"
-};
-
-var sendGridConnector = new SendGridConnector(sendGridSchema, configuration);
-
-var emailMessage = new MessageBuilder()
-    .WithId("email-001")
-    .WithEmailSender("noreply@yourapp.com")
+// Send HTML email
+var email = new MessageBuilder()
+    .WithId("welcome-email-001")
+    .WithEmailSender("noreply@yourcompany.com")
     .WithEmailReceiver("customer@example.com")
-    .WithHtmlContent("<h1>Welcome!</h1><p>Thanks for joining our service.</p>")
-    .WithProperty("Subject", "Welcome to Our Service")
+    .WithHtmlContent(@"
+        <h1>Welcome to Our Service!</h1>
+        <p>Thank you for joining us. Your account is now active.</p>
+        <a href='https://yourapp.com/dashboard'>Go to Dashboard</a>
+    ")
+    .WithProperty("Subject", "Welcome to Our Service!")
     .Message;
+
+var emailResult = await emailConnector.SendMessageAsync(email, CancellationToken.None);
 ```
 
-## Key Concepts to Remember
+## ?? Push Notification Example (Firebase)
 
-### 1. Type Safety
-Always use strongly-typed endpoints:
 ```csharp
-// ? Good - Type safe
-.WithEmailReceiver("user@example.com")
-.WithPhoneReceiver("+1234567890")
+using Deveel.Messaging;
 
-// ? Avoid - Error prone
-.WithReceiver(new Endpoint("user@example.com", "email"))
+// Configure Firebase connector
+var pushSchema = FirebaseChannelSchemas.FirebasePush;
+var pushSettings = new ConnectionSettings()
+    .AddParameter("ProjectId", "your-firebase-project")
+    .AddParameter("ServiceAccountKey", serviceAccountJson);
+
+var pushConnector = new FirebasePushConnector(pushSchema, pushSettings);
+await pushConnector.InitializeAsync(CancellationToken.None);
+
+// Send push notification
+var notification = new MessageBuilder()
+    .WithId("push-notification-001")
+    .WithDeviceReceiver("device-token-here")
+    .WithTextContent("You have a new message!")
+    .WithProperty("Title", "New Message")
+    .WithProperty("ImageUrl", "https://yourapp.com/notification-icon.png")
+    .Message;
+
+var pushResult = await pushConnector.SendMessageAsync(notification, CancellationToken.None);
 ```
 
-### 2. Schema Configuration
-Define schemas that accurately represent your connector's capabilities:
+## ?? WhatsApp Business Example
+
 ```csharp
-var schema = new ChannelSchema("Provider", "Type", "Version")
-    .WithCapabilities(/* only what you actually support */)
-    .AddContentType(/* only supported content types */)
-    .AllowsMessageEndpoint(/* only supported endpoint types */);
+using Deveel.Messaging;
+
+// Configure WhatsApp connector
+var whatsAppSchema = TwilioChannelSchemas.TwilioWhatsApp;
+var whatsAppSettings = new ConnectionSettings()
+    .AddParameter("AccountSid", "your_twilio_account_sid")
+    .AddParameter("AuthToken", "your_twilio_auth_token");
+
+var whatsAppConnector = new TwilioWhatsAppConnector(whatsAppSchema, whatsAppSettings);
+await whatsAppConnector.InitializeAsync(CancellationToken.None);
+
+// Send WhatsApp message
+var whatsAppMessage = new MessageBuilder()
+    .WithId("whatsapp-001")
+    .WithPhoneSender("whatsapp:+1234567890")
+    .WithPhoneReceiver("whatsapp:+0987654321")
+    .WithTextContent("Hello! Thanks for contacting us. How can we help you today?")
+    .Message;
+
+var whatsAppResult = await whatsAppConnector.SendMessageAsync(whatsAppMessage, CancellationToken.None);
 ```
 
-### 3. Error Handling
-Always check results and handle errors appropriately:
+## ?? Receiving Messages (Webhooks)
+
+Many connectors support receiving messages through webhooks. Here's a basic webhook handler:
+
 ```csharp
-var result = await connector.SendMessageAsync(message, cancellationToken);
-if (!result.IsSuccess)
+[ApiController]
+[Route("api/webhooks")]
+public class WebhookController : ControllerBase
 {
-    // Log error, retry, or handle gracefully
-    logger.LogError($"Message send failed: {result.ErrorMessage}");
-}
-```
+    private readonly TwilioSmsConnector _smsConnector;
+    private readonly TwilioWhatsAppConnector _whatsAppConnector;
 
-### 4. Resource Management
-Properly initialize and dispose connectors:
-```csharp
-try
-{
-    await connector.InitializeAsync(cancellationToken);
-    // Use connector...
-}
-finally
-{
-    await connector.DisconnectAsync(cancellationToken);
+    public WebhookController(
+        TwilioSmsConnector smsConnector, 
+        TwilioWhatsAppConnector whatsAppConnector)
+    {
+        _smsConnector = smsConnector;
+        _whatsAppConnector = whatsAppConnector;
+    }
+
+    [HttpPost("twilio/sms")]
+    public async Task<IActionResult> ReceiveSms([FromForm] Dictionary<string, string> formData)
+    {
+        var messageSource = MessageSource.FromFormData(formData);
+        var result = await _smsConnector.ReceiveMessagesAsync(messageSource, CancellationToken.None);
+        
+        if (result.IsSuccess)
+        {
+            foreach (var message in result.Value.Messages)
+            {
+                // Process incoming SMS
+                await ProcessIncomingSms(message);
+            }
+        }
+        
+        return Ok();
+    }
+
+    [HttpPost("twilio/whatsapp")]
+    public async Task<IActionResult> ReceiveWhatsApp([FromForm] Dictionary<string, string> formData)
+    {
+        var messageSource = MessageSource.FromFormData(formData);
+        var result = await _whatsAppConnector.ReceiveMessagesAsync(messageSource, CancellationToken.None);
+        
+        if (result.IsSuccess)
+        {
+            foreach (var message in result.Value.Messages)
+            {
+                // Process incoming WhatsApp message
+                await ProcessWhatsAppMessage(message);
+            }
+        }
+        
+        return Ok();
+    }
+
+    [HttpPost("twilio/status")]
+    public async Task<IActionResult> ReceiveStatus([FromForm] Dictionary<string, string> formData)
+    {
+        var messageSource = MessageSource.FromFormData(formData);
+        var result = await _whatsAppConnector.ReceiveMessageStatusAsync(messageSource, CancellationToken.None);
+        
+        if (result.IsSuccess)
+        {
+            // Process status update
+            await ProcessStatusUpdate(result.Value);
+        }
+        
+        return Ok();
+    }
 }
 ```
 
 ## Next Steps
 
-1. **[Channel Schema Guide](ChannelSchema-Usage.md)** - Learn advanced schema configuration
-2. **[Endpoint Type Guide](EndpointType-Usage.md)** - Master type-safe endpoints
-3. **[Connector Implementation](ChannelConnector-Usage.md)** - Build custom connectors
-4. **[Examples](../test/)** - Study the test projects for more examples
+1. **[Connector Documentation](connectors/README.md)** - Detailed guides for each connector
+2. **[Channel Schema Guide](ChannelSchema-Usage.md)** - Learn advanced schema configuration
+3. **[Endpoint Type Guide](EndpointType-Usage.md)** - Master type-safe endpoints
+4. **[Connector Implementation](ChannelConnector-Usage.md)** - Build custom connectors
+5. **[Examples](../test/)** - Study the test projects for more examples
 
 ## Troubleshooting
 
@@ -392,16 +273,24 @@ var message = new MessageBuilder()
 ```csharp
 // Make sure all required parameters are provided
 var schema = new ChannelSchema("Provider", "Type", "1.0")
-    .AddParameter(new ChannelParameter("ApiKey", ParameterType.String)
+    .AddParameter(new ChannelParameter("ApiKey", DataType.String)
     {
         IsRequired = true // This must be provided during initialization
     });
 ```
 
+**Issue**: Firebase authentication errors
+```csharp
+// Ensure your service account JSON is valid
+var configuration = new ConnectionSettings()
+    .AddParameter("ProjectId", "your-project-id")
+    .AddParameter("ServiceAccountKey", File.ReadAllText("path/to/service-account.json"));
+```
+
 ## Support
 
 If you encounter issues:
-1. Check the [documentation](../docs/)
+1. Check the [connector documentation](connectors/README.md)
 2. Review [examples](../test/)
 3. [Open an issue](https://github.com/deveel/deveel.message.model/issues)
 4. Join our [discussions](https://github.com/deveel/deveel.message.model/discussions)
