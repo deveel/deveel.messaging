@@ -6,45 +6,80 @@ This directory contains comprehensive documentation for all available connectors
 
 | Connector | Provider | Type | Documentation | Package |
 |-----------|----------|------|---------------|---------|
-| **Twilio SMS** | Twilio | SMS | [Documentation](twilio-sms-connector.md) | `Deveel.Messaging.Connector.Twilio` |
-| **Twilio WhatsApp** | Twilio | WhatsApp | [Documentation](twilio-whatsapp-connector.md) | `Deveel.Messaging.Connector.Twilio` |
-| **Firebase FCM** | Firebase | Push | [Documentation](firebase-push-connector.md) | `Deveel.Messaging.Connector.Firebase` |
-| **SendGrid Email** | SendGrid | Email | [Documentation](sendgrid-email-connector.md) | `Deveel.Messaging.Connector.Sendgrid` |
+| **Twilio SMS** | Twilio | SMS | [?? Complete Guide](twilio-sms-connector.md) | `Deveel.Messaging.Connector.Twilio` |
+| **Twilio WhatsApp** | Twilio | WhatsApp | [?? Complete Guide](twilio-whatsapp-connector.md) | `Deveel.Messaging.Connector.Twilio` |
+| **Firebase FCM** | Firebase | Push | [?? Complete Guide](firebase-push-connector.md) | `Deveel.Messaging.Connector.Firebase` |
+| **SendGrid Email** | SendGrid | Email | [?? Complete Guide](sendgrid-email-connector.md) | `Deveel.Messaging.Connector.Sendgrid` |
 
-## ?? Quick Start Guide
+## ?? Quick Start by Provider
 
-### 1. Choose Your Connector
-
-Select the appropriate connector based on your messaging needs:
-
-- **SMS Messaging**: Use [Twilio SMS Connector](twilio-sms-connector.md)
-- **WhatsApp Business**: Use [Twilio WhatsApp Connector](twilio-whatsapp-connector.md)
-- **Push Notifications**: Use [Firebase FCM Connector](firebase-push-connector.md)
-- **Email Messaging**: Use [SendGrid Email Connector](sendgrid-email-connector.md)
-
-### 2. Install the Package
-
+### SMS Messaging
+**Install and configure Twilio SMS connector:**
 ```bash
-# For SMS and WhatsApp
 dotnet add package Deveel.Messaging.Connector.Twilio
+```
+?? **[Complete Twilio SMS Setup Guide](twilio-sms-connector.md)**
 
-# For Push Notifications
+### WhatsApp Business  
+**Install and configure WhatsApp Business messaging:**
+```bash
+dotnet add package Deveel.Messaging.Connector.Twilio
+```
+?? **[Complete WhatsApp Business Setup Guide](twilio-whatsapp-connector.md)**
+
+### Push Notifications
+**Install and configure Firebase Cloud Messaging:**
+```bash
 dotnet add package Deveel.Messaging.Connector.Firebase
+```
+?? **[Complete Firebase FCM Setup Guide](firebase-push-connector.md)**
 
-# For Email
+### Email Delivery
+**Install and configure SendGrid email:**
+```bash
 dotnet add package Deveel.Messaging.Connector.Sendgrid
 ```
+?? **[Complete SendGrid Email Setup Guide](sendgrid-email-connector.md)**
 
-### 3. Follow the Documentation
+## ?? What Each Guide Includes
 
-Each connector has comprehensive documentation including:
-- ? **Schema Specifications** - Available schemas and capabilities
-- ?? **Connection Parameters** - Required and optional configuration
-- ?? **Message Properties** - Supported message properties and validation
-- ?? **Usage Examples** - Code samples for common scenarios
-- ?? **Webhook Integration** - Event handling and status updates
-- ? **Error Handling** - Common errors and solutions
-- ? **Best Practices** - Production-ready patterns
+Each connector documentation provides comprehensive coverage:
+
+### ?? **Installation & Setup**
+- NuGet package installation instructions
+- Required dependencies and prerequisites  
+- Configuration parameter setup
+- Authentication and credential management
+
+### ?? **Configuration & Schemas**
+- Available channel schemas and capabilities
+- Required and optional connection parameters
+- Schema customization and derivation examples
+- Environment-specific configuration patterns
+
+### ?? **Usage Examples**
+- Basic message sending examples
+- Advanced feature demonstrations
+- Template and media message examples
+- Batch processing and bulk operations
+
+### ?? **Integration Patterns**
+- Webhook setup and configuration
+- Bidirectional messaging (send/receive)
+- Status tracking and delivery confirmations
+- Error handling and retry strategies
+
+### ?? **Testing & Development**
+- Unit testing examples and patterns
+- Integration testing with real providers
+- Mock connector setup for development
+- Debugging and troubleshooting guides
+
+### ?? **Production Considerations**
+- Performance optimization techniques
+- Security best practices and credential management
+- Rate limiting and quota management
+- Monitoring and health checks
 
 ## ?? Connector Capabilities Matrix
 
@@ -88,167 +123,56 @@ Each connector has comprehensive documentation including:
 | **App Notifications** | [Firebase FCM](firebase-push-connector.md) | In-app alerts |
 | **WhatsApp Support** | [Twilio WhatsApp](twilio-whatsapp-connector.md) | Two-way conversation |
 
-## ?? Configuration Patterns
+## ?? Multi-Connector Patterns
 
-### Basic Configuration
-
-Each connector follows a similar configuration pattern:
-
-```csharp
-// 1. Choose schema
-var schema = ProviderChannelSchemas.SchemaName;
-
-// 2. Configure connection
-var connectionSettings = new ConnectionSettings()
-    .AddParameter("RequiredParam", "value")
-    .AddParameter("OptionalParam", "value");
-
-// 3. Create connector
-var connector = new ProviderConnector(schema, connectionSettings);
-
-// 4. Initialize
-await connector.InitializeAsync(cancellationToken);
+### Installation for Multiple Providers
+```bash
+# Install multiple connectors for comprehensive messaging
+dotnet add package Deveel.Messaging.Connector.Twilio      # SMS + WhatsApp
+dotnet add package Deveel.Messaging.Connector.Firebase    # Push notifications  
+dotnet add package Deveel.Messaging.Connector.Sendgrid    # Email delivery
 ```
 
-### Advanced Configuration Examples
-
-#### Multi-Connector Setup
-
+### Multi-Channel Service Example
 ```csharp
-public class MessagingService
+public class NotificationService
 {
     private readonly TwilioSmsConnector _smsConnector;
     private readonly SendGridEmailConnector _emailConnector;
     private readonly FirebasePushConnector _pushConnector;
     
-    public MessagingService()
+    public async Task SendNotification(User user, string message, NotificationChannel channel)
     {
-        // Configure all connectors
-        _smsConnector = new TwilioSmsConnector(TwilioChannelSchemas.TwilioSms, smsSettings);
-        _emailConnector = new SendGridEmailConnector(SendGridChannelSchemas.SendGridEmail, emailSettings);
-        _pushConnector = new FirebasePushConnector(FirebaseChannelSchemas.FirebasePush, pushSettings);
-    }
-    
-    public async Task SendMultiChannelNotification(string userId, string message)
-    {
-        var user = await GetUser(userId);
-        
-        // Send via preferred channel
-        switch (user.PreferredChannel)
+        switch (channel)
         {
-            case "sms":
-                await SendSms(user.PhoneNumber, message);
+            case NotificationChannel.SMS:
+                await _smsConnector.SendMessageAsync(CreateSmsMessage(user, message));
                 break;
-            case "email":
-                await SendEmail(user.Email, message);
+            case NotificationChannel.Email:
+                await _emailConnector.SendMessageAsync(CreateEmailMessage(user, message));
                 break;
-            case "push":
-                await SendPush(user.DeviceToken, message);
+            case NotificationChannel.Push:
+                await _pushConnector.SendMessageAsync(CreatePushMessage(user, message));
                 break;
         }
     }
-}
-```
-
-#### Environment-Specific Configuration
-
-```csharp
-public static class ConnectorFactory
-{
-    public static TConnector CreateConnector<TConnector>(IConfiguration config, string environment)
-        where TConnector : IChannelConnector
-    {
-        var settings = environment switch
-        {
-            "Development" => CreateDevelopmentSettings(config),
-            "Staging" => CreateStagingSettings(config),
-            "Production" => CreateProductionSettings(config),
-            _ => throw new ArgumentException($"Unknown environment: {environment}")
-        };
-        
-        return (TConnector)Activator.CreateInstance(typeof(TConnector), settings);
-    }
-}
-```
-
-## ?? Performance Considerations
-
-### Batch Processing
-
-| Connector | Batch Size | Rate Limit | Best Practice |
-|-----------|------------|------------|---------------|
-| **Twilio SMS** | 100 messages | 1/second | Use messaging service for bulk |
-| **Twilio WhatsApp** | Single only | 1/second | Sequential sending |
-| **Firebase FCM** | 500 tokens | 600k/minute | Use multicast for efficiency |
-| **SendGrid Email** | 1000 emails | No limit | Batch by 100-500 for tracking |
-
-### Connection Pooling
-
-```csharp
-// ? Good - Reuse connectors
-public class SingletonConnectorService
-{
-    private static readonly TwilioSmsConnector _smsConnector = 
-        new TwilioSmsConnector(schema, settings);
-        
-    public static async Task<IChannelConnector> GetSmsConnectorAsync()
-    {
-        if (_smsConnector.State != ConnectorState.Ready)
-        {
-            await _smsConnector.InitializeAsync(CancellationToken.None);
-        }
-        return _smsConnector;
-    }
-}
-```
-
-## ?? Security Best Practices
-
-### Credential Management
-
-```csharp
-// ? Good - Use secure configuration
-var settings = new ConnectionSettings()
-    .AddParameter("ApiKey", Environment.GetEnvironmentVariable("SENDGRID_API_KEY"))
-    .AddParameter("AccountSid", config["Twilio:AccountSid"])
-    .AddParameter("AuthToken", config["Twilio:AuthToken"]);
-
-// ? Avoid - Hardcoded credentials
-var badSettings = new ConnectionSettings()
-    .AddParameter("ApiKey", "SG.hardcoded-key-here");
-```
-
-### Webhook Security
-
-```csharp
-// ? Good - Validate webhook signatures
-[HttpPost("webhook/twilio")]
-public async Task<IActionResult> HandleWebhook([FromForm] Dictionary<string, string> data)
-{
-    if (!ValidateSignature(Request, data))
-    {
-        return Unauthorized();
-    }
-    
-    // Process webhook
-    return Ok();
 }
 ```
 
 ## ?? Testing Strategies
 
 ### Unit Testing
-
+Each connector guide includes unit testing examples:
 ```csharp
 [Test]
 public async Task SendMessage_ValidInput_ReturnsSuccess()
 {
     // Arrange
-    var mockConnector = new Mock<IChannelConnector>();
+    var connector = new MockConnector(schema);
     var message = CreateTestMessage();
     
-    // Act
-    var result = await mockConnector.SendMessageAsync(message, CancellationToken.None);
+    // Act  
+    var result = await connector.SendMessageAsync(message);
     
     // Assert
     Assert.IsTrue(result.IsSuccess);
@@ -256,17 +180,16 @@ public async Task SendMessage_ValidInput_ReturnsSuccess()
 ```
 
 ### Integration Testing
-
 ```csharp
 [Test]
 [Category("Integration")]
-public async Task SendMessage_RealConnector_DeliversMessage()
+public async Task SendMessage_RealProvider_DeliversMessage()
 {
     // Only run with real credentials
-    Skip.IfNot(HasTestCredentials(), "Test credentials not available");
+    Skip.IfNot(HasTestCredentials());
     
     var connector = CreateRealConnector();
-    var result = await connector.SendMessageAsync(testMessage, CancellationToken.None);
+    var result = await connector.SendMessageAsync(testMessage);
     
     Assert.IsTrue(result.IsSuccess);
 }
@@ -275,16 +198,14 @@ public async Task SendMessage_RealConnector_DeliversMessage()
 ## ?? Support and Resources
 
 ### Documentation Links
-
 - **[Framework Overview](../README.md)** - Main framework documentation
 - **[Getting Started](../getting-started.md)** - Quick start guide
 - **[Channel Schemas](../ChannelSchema-Usage.md)** - Schema configuration
 - **[Connector Implementation](../ChannelConnector-Usage.md)** - Custom connector guide
 
 ### Community Resources
-
-- **[GitHub Repository](https://github.com/deveel/deveel.message.model)** - Source code and issues
-- **[GitHub Discussions](https://github.com/deveel/deveel.message.model/discussions)** - Community support
+- **[GitHub Repository](https://github.com/deveel/deveel.messaging)** - Source code and issues
+- **[GitHub Discussions](https://github.com/deveel/deveel.messaging/discussions)** - Community support
 - **[Contributing Guide](../CONTRIBUTING.md)** - How to contribute
 
 ### Provider Resources
@@ -294,6 +215,19 @@ public async Task SendMessage_RealConnector_DeliversMessage()
 | **Twilio** | [Docs](https://www.twilio.com/docs) | [Console](https://console.twilio.com) | [Support](https://support.twilio.com) |
 | **Firebase** | [Docs](https://firebase.google.com/docs) | [Console](https://console.firebase.google.com) | [Support](https://firebase.google.com/support) |
 | **SendGrid** | [Docs](https://docs.sendgrid.com) | [Console](https://app.sendgrid.com) | [Support](https://support.sendgrid.com) |
+
+## ?? Contributing New Connectors
+
+Planning to add a new connector? Each guide follows our standard template:
+
+1. **?? Installation** - Package installation and setup
+2. **?? Configuration** - Schema and parameter setup  
+3. **?? Usage Examples** - Basic to advanced usage patterns
+4. **?? Integration** - Webhooks and bidirectional messaging
+5. **?? Testing** - Unit and integration testing guidance
+6. **?? Production** - Performance and security considerations
+
+See our [Connector Implementation Guide](../ChannelConnector-Usage.md) for creating new connectors.
 
 ---
 

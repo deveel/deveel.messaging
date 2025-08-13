@@ -26,13 +26,13 @@ We welcome contributions of all kinds:
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/deveel.message.model.git
-   cd deveel.message.model
+   git clone https://github.com/YOUR_USERNAME/deveel.messaging.git
+   cd deveel.messaging
    ```
 
 3. **Add the upstream remote**:
    ```bash
-   git remote add upstream https://github.com/deveel/deveel.message.model.git
+   git remote add upstream https://github.com/deveel/deveel.messaging.git
    ```
 
 4. **Build the solution**:
@@ -48,7 +48,7 @@ We welcome contributions of all kinds:
 ### Project Structure
 
 ```
-deveel.message.model/
+deveel.messaging/
 ├── src/                                    # Source code
 │   ├── Deveel.Messaging.Abstractions/     # Core abstractions
 │   ├── Deveel.Messaging.Connector.Abstractions/ # Connector base classes
@@ -565,7 +565,7 @@ By contributing to this project, you agree that your contributions will be licen
 
 If you have questions about contributing:
 
-1. Check existing [GitHub Discussions](https://github.com/deveel/deveel.message.model/discussions)
+1. Check existing [GitHub Discussions](https://github.com/deveel/deveel.messaging/discussions)
 2. Review [documentation](docs/README.md)
 3. Open a new discussion or issue
 4. Contact the maintainers

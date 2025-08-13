@@ -22,19 +22,20 @@ This directory contains comprehensive documentation for the Deveel Messaging Fra
 
 | Connector | Provider | Type | Documentation |
 |-----------|----------|------|---------------|
-| **Twilio SMS** | Twilio | SMS | [Complete Guide](connectors/twilio-sms-connector.md) |
-| **Twilio WhatsApp** | Twilio | WhatsApp | [Complete Guide](connectors/twilio-whatsapp-connector.md) |
-| **Firebase FCM** | Firebase | Push | [Complete Guide](connectors/firebase-push-connector.md) |
-| **SendGrid Email** | SendGrid | Email | [Complete Guide](connectors/sendgrid-email-connector.md) |
+| **Twilio SMS** | Twilio | SMS | [?? Complete Guide](connectors/twilio-sms-connector.md) |
+| **Twilio WhatsApp** | Twilio | WhatsApp | [?? Complete Guide](connectors/twilio-whatsapp-connector.md) |
+| **Firebase FCM** | Firebase | Push | [?? Complete Guide](connectors/firebase-push-connector.md) |
+| **SendGrid Email** | SendGrid | Email | [?? Complete Guide](connectors/sendgrid-email-connector.md) |
+
+**?? [Complete Connector Documentation](connectors/README.md)** - Comprehensive installation, configuration, and usage guides for all connectors.
 
 Each connector guide includes:
-- ? **Schema Specifications** - Available schemas and capabilities
-- ?? **Connection Parameters** - Required and optional configuration with examples
-- ?? **Message Properties** - Supported properties, validation rules, and limits
+- ?? **Installation & Setup** - Package installation and dependencies
+- ?? **Configuration** - Schema specifications and connection parameters
 - ?? **Usage Examples** - Complete code samples for common scenarios
 - ?? **Webhook Integration** - Event handling and bidirectional messaging
 - ? **Error Handling** - Common errors, solutions, and retry strategies
-- ? **Best Practices** - Production-ready patterns and optimization tips
+- ?? **Production Patterns** - Performance optimization and security best practices
 
 ### ?? Quick Connector Comparison
 
@@ -307,8 +308,8 @@ The framework provides excellent development experience:
 - Webhook processing examples
 
 ### Community Resources
-- [GitHub Discussions](https://github.com/deveel/deveel.message.model/discussions) - Ask questions and share ideas
-- [GitHub Issues](https://github.com/deveel/deveel.message.model/issues) - Report bugs and request features
+- [GitHub Discussions](https://github.com/deveel/deveel.messaging/discussions) - Ask questions and share ideas
+- [GitHub Issues](https://github.com/deveel/deveel.messaging/issues) - Report bugs and request features
 - [Contributing Guide](../CONTRIBUTING.md) - How to contribute to the project
 
 ## ?? Contributing

@@ -704,6 +704,6 @@ private async Task<bool> CanSendToNumber(string phoneNumber)
 ## Related Documentation
 
 - [Twilio SMS Connector](twilio-sms-connector.md)
-- [Template Messaging Guide](../template-messaging.md)
-- [Webhook Integration Guide](../webhook-integration.md)
+- [Channel Schema Usage Guide](../ChannelSchema-Usage.md)
+- [Connector Implementation Guide](../ChannelConnector-Usage.md)
 - [WhatsApp Business API Documentation](https://developers.facebook.com/docs/whatsapp)

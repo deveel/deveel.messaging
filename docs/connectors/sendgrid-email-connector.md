@@ -927,6 +927,6 @@ public async Task ScheduleOptimalSend(IMessage email, string recipientTimezone)
 ## Related Documentation
 
 - [SendGrid API Documentation](https://docs.sendgrid.com/api-reference/)
-- [Email Template Guide](../email-templates.md)
-- [Webhook Integration Guide](../webhook-integration.md)
-- [Email Deliverability Best Practices](../email-deliverability.md)
+- [Channel Schema Usage Guide](../ChannelSchema-Usage.md)
+- [Connector Implementation Guide](../ChannelConnector-Usage.md)
+- [Email Deliverability Best Practices](https://docs.sendgrid.com/ui/sending-email/deliverability)
