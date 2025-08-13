@@ -31,7 +31,7 @@ namespace Deveel.Messaging
 		/// </param>
 		public HtmlContentPart(string? html, IEnumerable<MessageAttachment>? attachments = null)
 		{
-			Html = html;
+			Html = html ?? "";
 			Attachments = attachments?.ToList() ?? new List<MessageAttachment>();
 		}
 

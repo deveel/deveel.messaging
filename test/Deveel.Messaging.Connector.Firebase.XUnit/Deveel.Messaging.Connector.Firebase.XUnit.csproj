@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Unit tests for the Deveel Twilio SMS connector implementation</Description>
-    <PackageTags>messaging;twilio;sms;connector;tests;deveel</PackageTags>
+    <Description>Unit tests for the Deveel Firebase Cloud Messaging connector implementation</Description>
+    <PackageTags>messaging;firebase;fcm;push;notifications;connector;tests;deveel</PackageTags>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Deveel.Messaging.Connector.Twilio\Deveel.Messaging.Connector.Twilio.csproj" />
+    <ProjectReference Include="..\..\src\Deveel.Messaging.Connector.Firebase\Deveel.Messaging.Connector.Firebase.csproj" />
     <ProjectReference Include="..\..\src\Deveel.Messaging.Connector.Abstractions\Deveel.Messaging.Connector.Abstractions.csproj" />
   </ItemGroup>
 
@@ -20,5 +20,6 @@
 
   <ItemGroup>
     <PackageReference Include="Moq" Version="4.20.70" />
+    <PackageReference Include="FirebaseAdmin" Version="2.4.0" />
   </ItemGroup>
 </Project>
