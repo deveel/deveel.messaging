@@ -173,6 +173,18 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }} /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:Exclude="[*.XUnit]*"
 
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: |
+          **/coverage.opencover.xml
+        flags: ${{ matrix.dotnet-framework }},${{ matrix.os }}
+        name: ${{ matrix.os }}-${{ matrix.dotnet-framework }}
+        fail_ci_if_error: false
+        verbose: true
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
   create-tag:
     needs: [validate-release, check-tag-exists, build]
     name: "Create Tag"

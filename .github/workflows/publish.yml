@@ -100,10 +100,6 @@ jobs:
       if: inputs.publish-to-nuget == true
       run: |
         echo "📤 Publishing packages to NuGet.org..."
-        if [ -z "${{ secrets.NUGET_API_KEY }}" ]; then
-          echo "❌ NUGET_API_KEY secret is not set"
-          exit 1
-        fi
         
         dotnet nuget push ./nuget/**/*.nupkg \
           --skip-duplicate \
