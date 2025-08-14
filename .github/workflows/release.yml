@@ -116,7 +116,8 @@ jobs:
   build:
     needs: [validate-release, check-tag-exists]
     name: "Build and Test (Release)"
-    if: always() && needs.validate-release.result == 'success' && (needs.check-tag-exists.result == 'skipped' || needs.check-tag-exists.outputs.tag-exists == 'false')
+    # Always build and test when validation succeeded, regardless of tag existence
+    if: always() && needs.validate-release.result == 'success'
     strategy:
       fail-fast: true
       matrix:
