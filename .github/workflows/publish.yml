@@ -13,6 +13,11 @@ on:
         required: false
         type: string
         default: 'Release'
+    secrets:
+      NUGET_API_KEY:
+        required: true
+        description: 'API key for NuGet.org to publish packages'
+
 
 permissions:
   contents: read
@@ -99,7 +104,7 @@ jobs:
       id: publish-nuget
       if: inputs.publish-to-nuget == true
       run: |
-        if [ -z "${NUGET_API_KEY}" ]; then
+        if [ -z "${{ secrets.NUGET_API_KEY}}" ]; then
             echo "❌ NUGET_API_KEY secret is not set"
             exit 1
         fi
@@ -108,13 +113,11 @@ jobs:
         
         dotnet nuget push ./nuget/**/*.nupkg \
           --skip-duplicate \
-          --api-key $NUGET_API_KEY \
+          --api-key ${{ secrets.NUGET_API_KEY }} \
           --source https://api.nuget.org/v3/index.json
         
         echo "✅ Successfully published to NuGet.org"
         echo "published=true" >> $GITHUB_OUTPUT
-      env:
-        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 
     - name: Upload Package Artifacts
       uses: actions/upload-artifact@v4
