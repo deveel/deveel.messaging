@@ -78,8 +78,30 @@ jobs:
     - name: Restore Dependencies
       run: dotnet restore
 
+    - name: Debug GitVersion Environment Variables
+      run: |
+        echo "🔍 GitVersion Environment Variables:"
+        echo "GitVersion_SemVer: ${{ inputs.version }}"
+        echo "GitVersion_NuGetVersion: ${{ inputs.nuget-version }}"
+        echo "GitVersion_AssemblySemVer: ${{ inputs.assembly-version }}"
+        echo "GitVersion_InformationalVersion: ${{ inputs.informational-version }}"
+        echo ""
+        echo "Environment variables that will be set:"
+        echo "GitVersion_SemVer=${{ inputs.version }}"
+        echo "GitVersion_NuGetVersion=${{ inputs.nuget-version }}"
+        echo "GitVersion_AssemblySemVer=${{ inputs.assembly-version }}"
+        echo "GitVersion_InformationalVersion=${{ inputs.informational-version }}"
+
     - name: Pack Packages
-      run: dotnet pack --configuration ${{ inputs.build-configuration }} --include-symbols --output ./nuget
+      run: |
+        echo "🏗️ Packing packages with explicit version overrides..."
+        dotnet pack --configuration ${{ inputs.build-configuration }} --include-symbols --output ./nuget \
+          -p:Version="${{ inputs.version }}" \
+          -p:PackageVersion="${{ inputs.nuget-version }}" \
+          -p:AssemblyVersion="${{ inputs.assembly-version }}" \
+          -p:FileVersion="${{ inputs.assembly-version }}" \
+          -p:InformationalVersion="${{ inputs.informational-version }}" \
+          -p:UseGitVersion=false
       env:
         GitVersion_SemVer: ${{ inputs.version }}
         GitVersion_AssemblySemVer: ${{ inputs.assembly-version }}
