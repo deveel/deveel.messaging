@@ -178,6 +178,7 @@ jobs:
           -p:FileVersion="${{ needs.calculate-version.outputs.file-version }}" \
           -p:InformationalVersion="${{ needs.calculate-version.outputs.informational-version }}" \
           -p:UseGitVersion=false
+      shell: bash
     
     - name: Test
       run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }}

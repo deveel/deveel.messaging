@@ -256,6 +256,7 @@ jobs:
           -p:FileVersion="${{ needs.calculate-version.outputs.final-file-version }}" \
           -p:InformationalVersion="${{ needs.calculate-version.outputs.final-informational-version }}" \
           -p:UseGitVersion=false
+      shell: bash
     
     - name: Test
       run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }} --collect:"XPlat Code Coverage" --results-directory ./coverage
