@@ -55,7 +55,7 @@ jobs:
       run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }}
 
   summary:
-    needs: [calculate-version, build]
+    needs: build
     runs-on: ubuntu-latest
     if: always()
     steps:
