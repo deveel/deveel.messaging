@@ -68,23 +68,22 @@ jobs:
         echo "| PR Number | #${{ github.event.number }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Source Branch | \`${{ github.head_ref }}\` |" >> $GITHUB_STEP_SUMMARY
         echo "| Target Branch | \`${{ github.base_ref }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| Version | \`${{ needs.calculate-version.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| NuGet Version | \`${{ needs.calculate-version.outputs.nuget-version }}\` |" >> $GITHUB_STEP_SUMMARY
         echo "| Build Status | ${{ needs.build.result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Coverage | ${{ needs.build.result == 'success' && '📊 Collected' || '❌ Not Available' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Coverage | 📊 Collected at Release Only |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
         if [ "${{ needs.build.result }}" == "success" ]; then
-          echo "✅ **Build Successful**: All tests passed and code coverage was collected." >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Build Successful**: All tests passed." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "📋 **Test Execution Notes**:" >> $GITHUB_STEP_SUMMARY
           echo "- **Ubuntu (.NET 8 & 9)**: All tests executed" >> $GITHUB_STEP_SUMMARY
           echo "- **Windows (.NET 8 & 9)**: All tests executed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Code Coverage**: Skipped (collected only during releases)" >> $GITHUB_STEP_SUMMARY
         else
           echo "❌ **Build Failed**: Please check the build logs for more details." >> $GITHUB_STEP_SUMMARY
         fi
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "📝 **Note**: This is a PR build - no packages are published." >> $GITHUB_STEP_SUMMARY
+        echo "📝 **Note**: This is a PR build - no packages are published and no coverage is collected." >> $GITHUB_STEP_SUMMARY
         
         if [ "${{ github.event.pull_request.draft }}" == "true" ]; then
           echo "" >> $GITHUB_STEP_SUMMARY

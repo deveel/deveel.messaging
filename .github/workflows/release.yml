@@ -146,16 +146,20 @@ jobs:
     - name: Override Version for Pre-release Tags
       id: version-override
       run: |
-        if [[ "${{ github.ref_name }}" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
-          # This is a valid semver tag, use it directly
-          TAG_VERSION="${{ github.ref_name }}"
-          # Remove 'v' prefix if present
-          CLEAN_VERSION="${TAG_VERSION#v}"
-          echo "🏷️ Using tag version: $CLEAN_VERSION"
-          echo "FINAL_VERSION=$CLEAN_VERSION" >> $GITHUB_OUTPUT
-          echo "FINAL_NUGET_VERSION=$CLEAN_VERSION" >> $GITHUB_OUTPUT
-          echo "FINAL_ASSEMBLY_VERSION=${CLEAN_VERSION%%-*}" >> $GITHUB_OUTPUT
-          echo "FINAL_INFORMATIONAL_VERSION=$CLEAN_VERSION" >> $GITHUB_OUTPUT
+        # Get the validated version from the validate-release job
+        VALIDATED_VERSION="${{ needs.validate-release.outputs.version }}"
+        TAG_NAME="${{ needs.validate-release.outputs.tag-name }}"
+        
+        # Check if this is a manual trigger or if we have a valid semver tag
+        if [[ "$VALIDATED_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
+          # This is a valid semver version, use it directly
+          echo "🏷️ Using validated version: $VALIDATED_VERSION"
+          echo "FINAL_VERSION=$VALIDATED_VERSION" >> $GITHUB_OUTPUT
+          echo "FINAL_NUGET_VERSION=$VALIDATED_VERSION" >> $GITHUB_OUTPUT
+          # For assembly version, remove pre-release and build metadata
+          ASSEMBLY_VERSION="${VALIDATED_VERSION%%[-+]*}"
+          echo "FINAL_ASSEMBLY_VERSION=$ASSEMBLY_VERSION" >> $GITHUB_OUTPUT
+          echo "FINAL_INFORMATIONAL_VERSION=$VALIDATED_VERSION" >> $GITHUB_OUTPUT
           echo "USE_TAG_VERSION=true" >> $GITHUB_OUTPUT
         else
           # Use GitVersion output
@@ -172,7 +176,7 @@ jobs:
         echo "🔍 Version Calculation Debug Information:"
         echo "Current Branch: $(git branch --show-current)"
         echo "Current Commit: $(git rev-parse HEAD)"
-        echo "Tag: ${{ github.ref_name }}"
+        echo "Tag: ${{ needs.validate-release.outputs.tag-name }}"
         echo "Expected Version: ${{ needs.validate-release.outputs.version }}"
         echo "Use Tag Version: ${{ steps.version-override.outputs.USE_TAG_VERSION }}"
         echo ""
@@ -222,6 +226,14 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ matrix.dotnet }}
+
+    - name: Debug Environment Variables
+      run: |
+        echo "🔍 Build Environment Debug:"
+        echo "GitVersion_SemVer: ${{ needs.calculate-version.outputs.final-version }}"
+        echo "GitVersion_NuGetVersion: ${{ needs.calculate-version.outputs.final-nuget-version }}"
+        echo "GitVersion_AssemblySemVer: ${{ needs.calculate-version.outputs.final-assembly-version }}"
+        echo "GitVersion_InformationalVersion: ${{ needs.calculate-version.outputs.final-informational-version }}"
           
     - name: Restore dependencies
       run: dotnet restore -p:TargetFramework=${{ matrix.dotnet-framework }}
@@ -236,13 +248,13 @@ jobs:
         GitVersion_NuGetVersion: ${{ needs.calculate-version.outputs.final-nuget-version }}
     
     - name: Test
-      run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }} /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:Exclude="[*.XUnit]*"
+      run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }} --collect:"XPlat Code Coverage" --results-directory ./coverage
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
         files: |
-          **/coverage.opencover.xml
+          ./coverage/**/coverage.cobertura.xml
         flags: ${{ matrix.dotnet-framework }},${{ matrix.os }}
         name: ${{ matrix.os }}-${{ matrix.dotnet-framework }}
         fail_ci_if_error: false
