@@ -139,7 +139,6 @@ jobs:
       id: gitversion
       uses: gittools/actions/gitversion/execute@v4.0.1
       with:
-        useConfigFile: true
         overrideConfig: |
           mode=ContinuousDeployment
           tag-prefix=[vV]?
