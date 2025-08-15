@@ -28,12 +28,12 @@ Modern applications often need to send notifications through multiple channels (
 
 ## 🔌 Available Connectors
 
-| Connector | Provider | Type | Documentation | Package |
-|-----------|----------|------|---------------|---------|
-| **Twilio SMS** | Twilio | SMS | [📖 Guide](docs/connectors/twilio-sms-connector.md) | `Deveel.Messaging.Connector.Twilio` |
-| **Twilio WhatsApp** | Twilio | WhatsApp | [📖 Guide](docs/connectors/twilio-whatsapp-connector.md) | `Deveel.Messaging.Connector.Twilio` |
-| **Firebase FCM** | Firebase | Push | [📖 Guide](docs/connectors/firebase-push-connector.md) | `Deveel.Messaging.Connector.Firebase` |
-| **SendGrid Email** | SendGrid | Email | [📖 Guide](docs/connectors/sendgrid-email-connector.md) | `Deveel.Messaging.Connector.Sendgrid` |
+| Connector | Provider | Type | Documentation | Package | Nuget |
+|-----------|----------|------|---------------|---------|--------|
+| **Twilio SMS** | Twilio | SMS | [📖 Guide](../docs/connectors/twilio-sms-connector.md) | `Deveel.Messaging.Connector.Twilio` | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Twilio.svg)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Twilio/) |
+| **Twilio WhatsApp** | Twilio | WhatsApp | [📖 Guide](../docs/connectors/twilio-whatsapp-connector.md) | `Deveel.Messaging.Connector.Twilio` | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Twilio.svg)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Twilio/) |
+| **Firebase FCM** | Firebase | Push | [📖 Guide](../docs/connectors/firebase-push-connector.md) | `Deveel.Messaging.Connector.Firebase` | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Firebase.svg)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Firebase/) |
+| **SendGrid Email** | SendGrid | Email | [📖 Guide](../docs/connectors/sendgrid-email-connector.md) | `Deveel.Messaging.Connector.Sendgrid` | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Sendgrid.svg)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Sendgrid/) |
 
 > **📋 [Complete Connector Documentation](docs/connectors/README.md)** - Detailed installation, configuration, and usage guides for all connectors.
 
@@ -145,21 +145,20 @@ if (!result.IsSuccess)
 ## 📚 Documentation
 
 ### Getting Started
-- **[📖 Getting Started Guide](docs/getting-started.md)** - Step-by-step setup and first message
-- **[🔌 Connector Documentation](docs/connectors/README.md)** - Complete connector guides
-- **[📋 Migration Guide](docs/migration-guide.md)** - Upgrading from previous versions
+- **[📖 Getting Started Guide](../docs/getting-started.md)** - Step-by-step setup and first message
+- **[🔌 Connector Documentation](../docs/connectors/README.md)** - Complete connector guides
 
-### Framework Guides  
-- **[🏗️ Channel Schema Guide](docs/ChannelSchema-Usage.md)** - Schema configuration
-- **[⚡ Connector Implementation](docs/ChannelConnector-Usage.md)** - Building custom connectors
-- **[🎯 Endpoint Types](docs/EndpointType-Usage.md)** - Type-safe endpoint usage
-- **[🚀 Advanced Configuration](docs/advanced-configuration.md)** - Production patterns
+### Framework Guides
+- **[🏗️ Channel Schema Guide](../docs/ChannelSchema-Usage.md)** - Schema configuration
+- **[⚡ Connector Implementation](../docs/ChannelConnector-Usage.md)** - Building custom connectors
+- **[🎯 Endpoint Types](../docs/EndpointType-Usage.md)** - Type-safe endpoint usage
+- **[🚀 Advanced Configuration](../docs/advanced-configuration.md)** - Production patterns
 
 ### Provider-Specific
-- **[📱 Twilio SMS](docs/connectors/twilio-sms-connector.md)** - SMS messaging with webhooks
-- **[💬 Twilio WhatsApp](docs/connectors/twilio-whatsapp-connector.md)** - WhatsApp Business integration
-- **[🔔 Firebase FCM](docs/connectors/firebase-push-connector.md)** - Push notifications
-- **[📧 SendGrid Email](docs/connectors/sendgrid-email-connector.md)** - Email delivery
+- **[📱 Twilio SMS](../docs/connectors/twilio-sms-connector.md)** - SMS messaging with webhooks
+- **[💬 Twilio WhatsApp](../docs/connectors/twilio-whatsapp-connector.md)** - WhatsApp Business integration
+- **[🔔 Firebase FCM](../docs/connectors/firebase-push-connector.md)** - Push notifications
+- **[📧 SendGrid Email](../docs/connectors/sendgrid-email-connector.md)** - Email delivery
 
 ## 🌟 Latest Features
 

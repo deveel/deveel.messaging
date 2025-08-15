@@ -88,6 +88,16 @@ namespace Deveel.Messaging
 		public static ConnectorResult<TValue> Fail(IMessagingError error, IDictionary<string, object>? data = null)
 			=> new ConnectorResult<TValue>(false, default, error, data);
 
+		/// <summary>
+		/// Creates a completed task that represents a failed operation with the specified error 
+		/// and optional additional data.
+		/// </summary>
+		/// <param name="error">The error describing the reason for the failure. Cannot be <see langword="null"/>.</param>
+		/// <param name="data">Optional additional data providing context about the failure. Can be <see langword="null"/>.</param>
+		/// <returns>
+		/// Returns a completed <see cref="Task{TResult}"/> containing a <see cref="ConnectorResult{TValue}"/> 
+		/// that represents the failure.
+		/// </returns>
 		public static Task<ConnectorResult<TValue>> FailTask(IMessagingError error, IDictionary<string, object>? data = null)
 			=> Task.FromResult(Fail(error, data));
 
@@ -102,6 +112,15 @@ namespace Deveel.Messaging
 		public static ConnectorResult<TValue> Fail(string errorCode, string? errorMessage = null, IDictionary<string, object>? data = null)
 			=> Fail(new MessagingError(errorCode, errorMessage), data);
 
+		/// <summary>
+		/// Creates a failed task result with the specified error details.
+		/// </summary>
+		/// <param name="errorCode">The error code representing the failure. Cannot be null or empty.</param>
+		/// <param name="errorMessage">An optional message providing additional details about the error. Can be null.</param>
+		/// <param name="data">An optional dictionary containing additional data related to the error. Can be null.</param>
+		/// <returns>
+		/// Returns a task that represents the failed result, containing the error details.
+		/// </returns>
 		public static Task<ConnectorResult<TValue>> FailTask(string errorCode, string? errorMessage = null, IDictionary<string, object>? data = null)
 			=> Task.FromResult(Fail(errorCode, errorMessage, data));
 
@@ -125,6 +144,22 @@ namespace Deveel.Messaging
 		public static ConnectorResult<TValue> ValidationFailed(string errorCode, string? errorMessage = null, IEnumerable<ValidationResult>? validationResults = null)
 			=> Fail(new MessageValidationError(errorCode, errorMessage, validationResults?.ToList() ?? new List<ValidationResult>()));
 
+		/// <summary>
+		/// Creates a completed <see cref="Task{TResult}"/> representing a validation failure.
+		/// </summary>
+		/// <remarks>
+		/// This method is useful for returning validation failure results in asynchronous workflows.
+		/// The <see cref="ConnectorResult{TValue}"/> will contain the specified error code, error message, 
+		/// and validation results.
+		/// </remarks>
+		/// <param name="errorCode">The error code that identifies the validation failure. Cannot be null or empty.</param>
+		/// <param name="errorMessage">An optional error message providing additional details about the validation failure. Can be null.</param>
+		/// <param name="validationResults">An optional collection of <see cref="ValidationResult"/> objects that provide detailed validation errors. Can be
+		/// null.</param>
+		/// <returns>
+		/// Returns a completed <see cref="Task{TResult}"/> containing a <see cref="ConnectorResult{TValue}"/> 
+		/// that represents the validation failure.
+		/// </returns>
 		public static Task<ConnectorResult<TValue>> ValidationFailedTask(string errorCode, string? errorMessage = null, IEnumerable<ValidationResult>? validationResults = null)
 			=> Task.FromResult(ValidationFailed(errorCode, errorMessage, validationResults));
 

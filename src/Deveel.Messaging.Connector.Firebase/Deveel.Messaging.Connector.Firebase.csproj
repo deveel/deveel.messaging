@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <Title>Deveel Messaging Firebase Connector</Title>
     <Description>Firebase Cloud Messaging (FCM) connector implementation for the Deveel Messaging Framework</Description>
     <PackageTags>messaging;firebase;fcm;push;notifications;connector;deveel</PackageTags>
   </PropertyGroup>

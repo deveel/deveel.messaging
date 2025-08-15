@@ -214,6 +214,17 @@ namespace Deveel.Messaging {
 		public static Endpoint AlphaNumeric(string label)
 			=> Create(EndpointType.Label, label);
 
+		/// <summary>
+		/// Creates an instance of <see cref="Endpoint"/> from an existing
+		/// abstraction of <see cref="IEndpoint"/>.
+		/// </summary>
+		/// <param name="endpoint">
+		/// The source instance of <see cref="IEndpoint"/> to convert.
+		/// </param>
+		/// <returns>
+		/// Returns a new instance of <see cref="Endpoint"/> that is created
+		/// from the provided <paramref name="endpoint"/>.
+		/// </returns>
 		public static Endpoint? Create(IEndpoint? endpoint)
 		{
 			if (endpoint == null)
@@ -242,11 +253,11 @@ namespace Deveel.Messaging {
 				"phone" => EndpointType.PhoneNumber,
 				"url" => EndpointType.Url,
 				"topic" => EndpointType.Topic,
-				"user-id" => EndpointType.UserId,
-				"app-id" => EndpointType.ApplicationId,
-				"endpoint-id" => EndpointType.Id,
-				"device-id" => EndpointType.DeviceId,
-				"label" => EndpointType.Label,
+				"user-id" or "userid" => EndpointType.UserId,
+				"app-id" or "appid" or "applicationid" => EndpointType.ApplicationId,
+				"endpoint-id" or "id" or "endpointid" => EndpointType.Id,
+				"device-id" or "device" or "deviceid" => EndpointType.DeviceId,
+				"label" or "alphanumeric" => EndpointType.Label,
 				_ => throw new ArgumentException($"Unknown endpoint type: {type}", nameof(type))
 			};
 		}

@@ -452,7 +452,7 @@ var message = new MessageBuilder()
 
 // ? Good - Smart encoding for international characters
 var internationalMessage = new MessageBuilder()
-    .WithTextContent("Bonjour! Votre code: 123456 ??")
+    .WithTextContent("Bonjour! Votre code: 123456 !")
     .WithProperty("SmartEncoded", true) // Let Twilio optimize encoding
     .Message;
 ```
@@ -556,4 +556,5 @@ public class SmsService : IDisposable
 
 - [Twilio WhatsApp Connector](twilio-whatsapp-connector.md)
 - [Channel Schema Usage Guide](../ChannelSchema-Usage.md)
-- [Connector Implementation Guide](../ChannelConnector-Usage.md)- [Error Handling Best Practices](../error-handling.md)
+- [Connector Implementation Guide](../ChannelConnector-Usage.md)
+- [Error Handling Best Practices](../error-handling.md)

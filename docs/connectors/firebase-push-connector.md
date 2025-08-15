@@ -230,7 +230,7 @@ var richNotification = new MessageBuilder()
     .WithTextContent("Your order #12345 has been shipped and is on its way!")
     .WithProperty("Title", "Order Shipped")
     .WithProperty("ImageUrl", "https://example.com/shipping-truck.jpg")
-    .WithProperty("Actions", JsonSerializer.Serialize(new[]
+    .WithProperty("Actions", JsonSerializer.Serialize(new[] 
     {
         new { action = "track", title = "Track Package" },
         new { action = "contact", title = "Contact Support" }
@@ -774,7 +774,7 @@ public async Task MonitorNotificationMetrics()
     }
     else
     {
-        Console.WriteLine("? Firebase connector issues detected");
+        Console.WriteLine("?? Firebase connector issues detected");
         foreach (var issue in health.Value.Issues)
         {
             Console.WriteLine($"  - {issue}");

@@ -6,14 +6,14 @@ namespace Deveel.Messaging;
 /// <summary>
 /// Custom JSON converter for Dictionary<string, object> that converts JsonElement values to primitive types.
 /// </summary>
-public class JsonObjectDictionaryConverter : JsonConverter<IDictionary<string, object>>
+public class JsonObjectDictionaryConverter : JsonConverter<IDictionary<string, object?>>
 {
-    public override IDictionary<string, object> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override IDictionary<string, object?> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
             throw new JsonException("Expected StartObject token");
 
-        var dictionary = new Dictionary<string, object>();
+        var dictionary = new Dictionary<string, object?>();
 
         while (reader.Read())
         {
@@ -32,7 +32,7 @@ public class JsonObjectDictionaryConverter : JsonConverter<IDictionary<string, o
         throw new JsonException("Expected EndObject token");
     }
 
-    public override void Write(Utf8JsonWriter writer, IDictionary<string, object> value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, IDictionary<string, object?> value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
 
