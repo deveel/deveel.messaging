@@ -32,4 +32,20 @@ jobs:
           package-name: 'Deveel.Messaging.Connector.Twilio'
           package-type: 'nuget'
           min-versions-to-keep: 15
-          delete-only-pre-release-versions: "true"
+          delete-only-pre-release-versions: true
+
+      - name: "Clean Old Deveel.Messaging.Connector.SendGrid Nuget Packages"
+        uses: actions/delete-package-versions@v4
+        with:
+          package-name: 'Deveel.Messaging.Connector.Sendgrid'
+          package-type: 'nuget'
+          min-versions-to-keep: 15
+          delete-only-pre-release-versions: true
+
+      - name: "Clean Old Deveel.Messaging.Connector.Firebase Nuget Packages"
+        uses: actions/delete-package-versions@v4
+        with:
+          package-name: 'Deveel.Messaging.Connector.Firebase'
+          package-type: 'nuget'
+          min-versions-to-keep: 15
+          delete-only-pre-release-versions: true
