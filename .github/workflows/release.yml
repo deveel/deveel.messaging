@@ -122,6 +122,7 @@ jobs:
       final-version: ${{ steps.version-override.outputs.FINAL_VERSION }}
       final-nuget-version: ${{ steps.version-override.outputs.FINAL_NUGET_VERSION }}
       final-assembly-version: ${{ steps.version-override.outputs.FINAL_ASSEMBLY_VERSION }}
+      final-file-version: ${{ steps.version-override.outputs.FINAL_FILE_VERSION }}
       final-informational-version: ${{ steps.version-override.outputs.FINAL_INFORMATIONAL_VERSION }}
       use-tag-version: ${{ steps.version-override.outputs.USE_TAG_VERSION }}
     
@@ -157,8 +158,12 @@ jobs:
           echo "FINAL_VERSION=$VALIDATED_VERSION" >> $GITHUB_OUTPUT
           echo "FINAL_NUGET_VERSION=$VALIDATED_VERSION" >> $GITHUB_OUTPUT
           # For assembly version, remove pre-release and build metadata
-          ASSEMBLY_VERSION="${VALIDATED_VERSION%%[-+]*}"
+          ASSEMBLY_VERSION="${VALIDATED_VERSION%%[-+]*}.0"
+          if [[ ! "$ASSEMBLY_VERSION" =~ \.[0-9]+$ ]]; then
+            ASSEMBLY_VERSION="${ASSEMBLY_VERSION}.0"
+          fi
           echo "FINAL_ASSEMBLY_VERSION=$ASSEMBLY_VERSION" >> $GITHUB_OUTPUT
+          echo "FINAL_FILE_VERSION=$ASSEMBLY_VERSION" >> $GITHUB_OUTPUT
           echo "FINAL_INFORMATIONAL_VERSION=$VALIDATED_VERSION" >> $GITHUB_OUTPUT
           echo "USE_TAG_VERSION=true" >> $GITHUB_OUTPUT
         else
@@ -167,6 +172,7 @@ jobs:
           echo "FINAL_VERSION=${{ steps.gitversion.outputs.SemVer }}" >> $GITHUB_OUTPUT
           echo "FINAL_NUGET_VERSION=${{ steps.gitversion.outputs.NuGetVersion }}" >> $GITHUB_OUTPUT
           echo "FINAL_ASSEMBLY_VERSION=${{ steps.gitversion.outputs.AssemblySemVer }}" >> $GITHUB_OUTPUT
+          echo "FINAL_FILE_VERSION=${{ steps.gitversion.outputs.AssemblySemFileVer }}" >> $GITHUB_OUTPUT
           echo "FINAL_INFORMATIONAL_VERSION=${{ steps.gitversion.outputs.InformationalVersion }}" >> $GITHUB_OUTPUT
           echo "USE_TAG_VERSION=false" >> $GITHUB_OUTPUT
         fi
@@ -184,6 +190,7 @@ jobs:
         echo "  SemVer: ${{ steps.gitversion.outputs.SemVer }}"
         echo "  NuGetVersion: ${{ steps.gitversion.outputs.NuGetVersion }}"
         echo "  AssemblySemVer: ${{ steps.gitversion.outputs.AssemblySemVer }}"
+        echo "  AssemblySemFileVer: ${{ steps.gitversion.outputs.AssemblySemFileVer }}"
         echo "  InformationalVersion: ${{ steps.gitversion.outputs.InformationalVersion }}"
         echo "  PreReleaseTag: ${{ steps.gitversion.outputs.PreReleaseTag }}"
         echo "  PreReleaseNumber: ${{ steps.gitversion.outputs.PreReleaseNumber }}"
@@ -192,6 +199,7 @@ jobs:
         echo "  Version: ${{ steps.version-override.outputs.FINAL_VERSION }}"
         echo "  NuGet Version: ${{ steps.version-override.outputs.FINAL_NUGET_VERSION }}"
         echo "  Assembly Version: ${{ steps.version-override.outputs.FINAL_ASSEMBLY_VERSION }}"
+        echo "  File Version: ${{ steps.version-override.outputs.FINAL_FILE_VERSION }}"
         echo "  Informational Version: ${{ steps.version-override.outputs.FINAL_INFORMATIONAL_VERSION }}"
 
   build:
@@ -227,25 +235,27 @@ jobs:
       with:
         dotnet-version: ${{ matrix.dotnet }}
 
-    - name: Debug Environment Variables
+    - name: Display Build Version Info
       run: |
-        echo "🔍 Build Environment Debug:"
-        echo "GitVersion_SemVer: ${{ needs.calculate-version.outputs.final-version }}"
-        echo "GitVersion_NuGetVersion: ${{ needs.calculate-version.outputs.final-nuget-version }}"
-        echo "GitVersion_AssemblySemVer: ${{ needs.calculate-version.outputs.final-assembly-version }}"
-        echo "GitVersion_InformationalVersion: ${{ needs.calculate-version.outputs.final-informational-version }}"
+        echo "🔍 Release Build Version Information:"
+        echo "SemVer: ${{ needs.calculate-version.outputs.final-version }}"
+        echo "NuGet Version: ${{ needs.calculate-version.outputs.final-nuget-version }}"
+        echo "Assembly Version: ${{ needs.calculate-version.outputs.final-assembly-version }}"
+        echo "File Version: ${{ needs.calculate-version.outputs.final-file-version }}"
+        echo "Informational Version: ${{ needs.calculate-version.outputs.final-informational-version }}"
           
     - name: Restore dependencies
       run: dotnet restore -p:TargetFramework=${{ matrix.dotnet-framework }}
       
     - name: Build
-      run: dotnet build --no-restore -c Release -f ${{ matrix.dotnet-framework }}
-      env:
-        GitVersion_SemVer: ${{ needs.calculate-version.outputs.final-version }}
-        GitVersion_AssemblySemVer: ${{ needs.calculate-version.outputs.final-assembly-version }}
-        GitVersion_AssemblySemFileVer: ${{ needs.calculate-version.outputs.final-assembly-version }}
-        GitVersion_InformationalVersion: ${{ needs.calculate-version.outputs.final-informational-version }}
-        GitVersion_NuGetVersion: ${{ needs.calculate-version.outputs.final-nuget-version }}
+      run: |
+        dotnet build --no-restore -c Release -f ${{ matrix.dotnet-framework }} \
+          -p:Version="${{ needs.calculate-version.outputs.final-nuget-version }}" \
+          -p:PackageVersion="${{ needs.calculate-version.outputs.final-nuget-version }}" \
+          -p:AssemblyVersion="${{ needs.calculate-version.outputs.final-assembly-version }}" \
+          -p:FileVersion="${{ needs.calculate-version.outputs.final-file-version }}" \
+          -p:InformationalVersion="${{ needs.calculate-version.outputs.final-informational-version }}" \
+          -p:UseGitVersion=false
     
     - name: Test
       run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }} --collect:"XPlat Code Coverage" --results-directory ./coverage
@@ -318,6 +328,7 @@ jobs:
         echo "| Version | \`${{ needs.calculate-version.outputs.final-version }}\` |" >> $GITHUB_STEP_SUMMARY
         echo "| NuGet Version | \`${{ needs.calculate-version.outputs.final-nuget-version }}\` |" >> $GITHUB_STEP_SUMMARY
         echo "| Assembly Version | \`${{ needs.calculate-version.outputs.final-assembly-version }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| File Version | \`${{ needs.calculate-version.outputs.final-file-version }}\` |" >> $GITHUB_STEP_SUMMARY
         echo "| Used Tag Version | ${{ needs.calculate-version.outputs.use-tag-version == 'true' && '✅ Yes' || '❌ No (GitVersion)' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Trigger | ${{ needs.validate-release.outputs.is-manual == 'true' && '🖱️ Manual' || '🏷️ Tag Push' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| NuGet.org | ${{ needs.validate-release.outputs.should-publish == 'true' && '✅ Published' || '❌ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
