@@ -18,11 +18,12 @@ jobs:
     name: "Calculate Version"
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.gitversion.outputs.SemVer }}
-      nuget-version: ${{ steps.gitversion.outputs.NuGetVersion }}
+      version: ${{ steps.validate-version.outputs.VERSION }}
+      nuget-version: ${{ steps.validate-version.outputs.NUGET_VERSION }}
       assembly-version: ${{ steps.validate-version.outputs.ASSEMBLY_VERSION }}
       file-version: ${{ steps.validate-version.outputs.FILE_VERSION }}
-      informational-version: ${{ steps.gitversion.outputs.InformationalVersion }}
+      informational-version: ${{ steps.validate-version.outputs.INFORMATIONAL_VERSION }}
+      is-prerelease: ${{ steps.validate-version.outputs.IS_PRERELEASE }}
 
     steps:
     - uses: actions/checkout@v4
@@ -38,7 +39,7 @@ jobs:
       id: gitversion
       uses: gittools/actions/gitversion/execute@v4.0.1
 
-    - name: Validate and Normalize Version Properties
+    - name: Validate and Normalize All Version Properties
       id: validate-version
       run: |
         echo "🔍 Raw GitVersion outputs:"
@@ -47,6 +48,27 @@ jobs:
         echo "AssemblySemVer: '${{ steps.gitversion.outputs.AssemblySemVer }}'"
         echo "AssemblySemFileVer: '${{ steps.gitversion.outputs.AssemblySemFileVer }}'"
         echo "InformationalVersion: '${{ steps.gitversion.outputs.InformationalVersion }}'"
+        echo "PreReleaseTag: '${{ steps.gitversion.outputs.PreReleaseTag }}'"
+        echo "PreReleaseNumber: '${{ steps.gitversion.outputs.PreReleaseNumber }}'"
+        echo "CommitsSinceVersionSource: '${{ steps.gitversion.outputs.CommitsSinceVersionSource }}'"
+        
+        # Validate and set Version (SemVer)
+        VERSION="${{ steps.gitversion.outputs.SemVer }}"
+        if [ -z "$VERSION" ] || [ "$VERSION" = " " ] || [ "$VERSION" = "0.0.0" ]; then
+          echo "⚠️ SemVer is empty or invalid, using fallback"
+          if [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+            VERSION="1.0.0-dev.1"
+          else
+            VERSION="1.0.0-dev"
+          fi
+        fi
+        
+        # Validate and set NuGet Version
+        NUGET_VERSION="${{ steps.gitversion.outputs.NuGetVersion }}"
+        if [ -z "$NUGET_VERSION" ] || [ "$NUGET_VERSION" = " " ] || [ "$NUGET_VERSION" = "0.0.0" ]; then
+          echo "⚠️ NuGetVersion is empty or invalid, using SemVer fallback"
+          NUGET_VERSION="$VERSION"
+        fi
         
         # Validate and set AssemblyVersion
         ASSEMBLY_VERSION="${{ steps.gitversion.outputs.AssemblySemVer }}"
@@ -62,22 +84,45 @@ jobs:
           FILE_VERSION="$ASSEMBLY_VERSION"
         fi
         
+        # Validate and set InformationalVersion
+        INFORMATIONAL_VERSION="${{ steps.gitversion.outputs.InformationalVersion }}"
+        if [ -z "$INFORMATIONAL_VERSION" ] || [ "$INFORMATIONAL_VERSION" = " " ]; then
+          echo "⚠️ InformationalVersion is empty or invalid, using Version fallback"
+          INFORMATIONAL_VERSION="$VERSION"
+        fi
+        
+        # Determine if this is a pre-release
+        IS_PRERELEASE="false"
+        if [[ "$NUGET_VERSION" == *"-"* ]]; then
+          IS_PRERELEASE="true"
+          echo "🎯 Pre-release version detected: $NUGET_VERSION"
+        fi
+        
         echo "✅ Validated versions:"
+        echo "Version: '$VERSION'"
+        echo "NuGetVersion: '$NUGET_VERSION'"
         echo "AssemblyVersion: '$ASSEMBLY_VERSION'"
         echo "FileVersion: '$FILE_VERSION'"
+        echo "InformationalVersion: '$INFORMATIONAL_VERSION'"
+        echo "IsPreRelease: '$IS_PRERELEASE'"
         
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "NUGET_VERSION=$NUGET_VERSION" >> $GITHUB_OUTPUT
         echo "ASSEMBLY_VERSION=$ASSEMBLY_VERSION" >> $GITHUB_OUTPUT
         echo "FILE_VERSION=$FILE_VERSION" >> $GITHUB_OUTPUT
+        echo "INFORMATIONAL_VERSION=$INFORMATIONAL_VERSION" >> $GITHUB_OUTPUT
+        echo "IS_PRERELEASE=$IS_PRERELEASE" >> $GITHUB_OUTPUT
 
-    - name: Display GitVersion outputs
+    - name: Display Final Version Information
       run: |
-        echo "🔍 CD Version Calculation:"
+        echo "🔍 Final CD Version Calculation:"
         echo "Branch: ${{ github.ref }}"
-        echo "Version: ${{ steps.gitversion.outputs.SemVer }}"
-        echo "NuGet Version: ${{ steps.gitversion.outputs.NuGetVersion }}"
+        echo "Version: ${{ steps.validate-version.outputs.VERSION }}"
+        echo "NuGet Version: ${{ steps.validate-version.outputs.NUGET_VERSION }}"
         echo "Assembly Version: ${{ steps.validate-version.outputs.ASSEMBLY_VERSION }}"
         echo "File Version: ${{ steps.validate-version.outputs.FILE_VERSION }}"
-        echo "Informational Version: ${{ steps.gitversion.outputs.InformationalVersion }}"
+        echo "Informational Version: ${{ steps.validate-version.outputs.INFORMATIONAL_VERSION }}"
+        echo "Is Pre-release: ${{ steps.validate-version.outputs.IS_PRERELEASE }}"
 
   build:
     needs: calculate-version
@@ -118,37 +163,7 @@ jobs:
         echo "Assembly Version: ${{ needs.calculate-version.outputs.assembly-version }}"
         echo "File Version: ${{ needs.calculate-version.outputs.file-version }}"
         echo "Informational Version: ${{ needs.calculate-version.outputs.informational-version }}"
-
-    - name: Validate Build Version Properties
-      run: |
-        echo "🔧 Validating version properties before build..."
-        
-        VERSION="${{ needs.calculate-version.outputs.nuget-version }}"
-        ASSEMBLY_VERSION="${{ needs.calculate-version.outputs.assembly-version }}"
-        FILE_VERSION="${{ needs.calculate-version.outputs.file-version }}"
-        INFORMATIONAL_VERSION="${{ needs.calculate-version.outputs.informational-version }}"
-        
-        if [ -z "$VERSION" ] || [ "$VERSION" = " " ]; then
-          echo "❌ VERSION is empty"
-          exit 1
-        fi
-        
-        if [ -z "$ASSEMBLY_VERSION" ] || [ "$ASSEMBLY_VERSION" = " " ]; then
-          echo "❌ ASSEMBLY_VERSION is empty"
-          exit 1
-        fi
-        
-        if [ -z "$FILE_VERSION" ] || [ "$FILE_VERSION" = " " ]; then
-          echo "❌ FILE_VERSION is empty"
-          exit 1
-        fi
-        
-        if [ -z "$INFORMATIONAL_VERSION" ] || [ "$INFORMATIONAL_VERSION" = " " ]; then
-          echo "❌ INFORMATIONAL_VERSION is empty"
-          exit 1
-        fi
-        
-        echo "✅ All version properties are valid"
+        echo "Is Pre-release: ${{ needs.calculate-version.outputs.is-prerelease }}"
           
     - name: Restore dependencies
       run: dotnet restore -p:TargetFramework=${{ matrix.dotnet-framework }}
@@ -175,7 +190,7 @@ jobs:
 
   publish:
     needs: [calculate-version, build]
-    name: "Publish Packages (Development)"
+    name: "Publish Pre-release Packages"
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     uses: ./.github/workflows/publish.yml
     with:
@@ -189,6 +204,34 @@ jobs:
 
   clean:
     needs: publish
-    name: "Clean Old Packages"
+    name: "Clean Old Pre-release Packages"
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     uses: ./.github/workflows/clean-packages.yml
+
+  summary:
+    needs: [calculate-version, build, publish]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+    - name: CD Workflow Summary
+      run: |
+        echo "## 🚀 CD Workflow Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Version | \`${{ needs.calculate-version.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| NuGet Version | \`${{ needs.calculate-version.outputs.nuget-version }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Assembly Version | \`${{ needs.calculate-version.outputs.assembly-version }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Pre-release | ${{ needs.calculate-version.outputs.is-prerelease == 'true' && '✅ Yes' || '❌ No' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Published to GitHub | ${{ needs.publish.result == 'success' && '✅ Yes' || '❌ No' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ needs.calculate-version.outputs.is-prerelease }}" == "true" ]; then
+          echo "🎯 **Pre-release Package**: This version includes commit count and pre-release identifier" >> $GITHUB_STEP_SUMMARY
+          echo "📦 **Usage**: Install with \`--prerelease\` flag: \`dotnet add package PackageName --version ${{ needs.calculate-version.outputs.nuget-version }} --prerelease\`" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "🏷️ **Stable Package**: This is a stable release version" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "📦 **Published Packages**: Check the [GitHub Packages](https://github.com/${{ github.repository }}/pkgs) for the published packages." >> $GITHUB_STEP_SUMMARY
