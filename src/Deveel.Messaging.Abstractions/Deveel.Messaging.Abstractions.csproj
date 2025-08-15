@@ -1,3 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
+  <PropertyGroup>
+    <Title>Deveel Messaging Abstractions</Title>
+    <Description>The set of abstrations and base classes for the messaging domain</Description>
+    <PackageTags>messaging;message;abstractions;endpoint;email;phone;device</PackageTags>
+  </PropertyGroup>
 </Project>

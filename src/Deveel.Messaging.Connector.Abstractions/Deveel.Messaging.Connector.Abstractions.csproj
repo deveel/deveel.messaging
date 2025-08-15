@@ -1,4 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Title>Deveel Messaging Connector Abstractions</Title>
+    <Description>The set of abstractions and base classes to implement the messaging connectors</Description>
+    <PackageTags>messaging;message;connector;connectors;schema;abstractions;validation</PackageTags>
+  </PropertyGroup>
+  
   <ItemGroup>
     <ProjectReference Include="..\Deveel.Messaging.Abstractions\Deveel.Messaging.Abstractions.csproj" />
   </ItemGroup>

@@ -45,7 +45,7 @@ dotnet add package Deveel.Messaging.Connector.Sendgrid
 
 Each connector documentation provides comprehensive coverage:
 
-### ?? **Installation & Setup**
+### ? **Installation & Setup**
 - NuGet package installation instructions
 - Required dependencies and prerequisites  
 - Configuration parameter setup
@@ -220,7 +220,7 @@ public async Task SendMessage_RealProvider_DeliversMessage()
 
 Planning to add a new connector? Each guide follows our standard template:
 
-1. **?? Installation** - Package installation and setup
+1. **? Installation** - Package installation and setup
 2. **?? Configuration** - Schema and parameter setup  
 3. **?? Usage Examples** - Basic to advanced usage patterns
 4. **?? Integration** - Webhooks and bidirectional messaging

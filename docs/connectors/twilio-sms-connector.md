@@ -452,7 +452,7 @@ var message = new MessageBuilder()
 
 // ? Good - Smart encoding for international characters
 var internationalMessage = new MessageBuilder()
-    .WithTextContent("Bonjour! Votre code: 123456 ??")
+    .WithTextContent("Bonjour! Votre code: 123456 !")
     .WithProperty("SmartEncoded", true) // Let Twilio optimize encoding
     .Message;
 ```

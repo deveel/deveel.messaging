@@ -30,11 +30,11 @@ This directory contains comprehensive documentation for the Deveel Messaging Fra
 **?? [Complete Connector Documentation](connectors/README.md)** - Comprehensive installation, configuration, and usage guides for all connectors.
 
 Each connector guide includes:
-- ?? **Installation & Setup** - Package installation and dependencies
+- ? **Installation & Setup** - Package installation and dependencies
 - ?? **Configuration** - Schema specifications and connection parameters
 - ?? **Usage Examples** - Complete code samples for common scenarios
 - ?? **Webhook Integration** - Event handling and bidirectional messaging
-- ? **Error Handling** - Common errors, solutions, and retry strategies
+- ??? **Error Handling** - Common errors, solutions, and retry strategies
 - ?? **Production Patterns** - Performance optimization and security best practices
 
 ### ?? Quick Connector Comparison
@@ -112,14 +112,14 @@ Each connector guide includes:
 ### Channel Schema
 - ?? **Fluent API** - Method chaining for easy configuration
 - ?? **Type Safety** - Strongly-typed endpoint and content type enums
-- ?? **Schema Derivation** - Create specialized schemas from base configurations
+- ? **Schema Derivation** - Create specialized schemas from base configurations
 - ? **Validation** - Built-in validation for parameters and message properties
 - ?? **Capability Management** - Declare and validate connector capabilities
 
 ### Channel Connectors
 - ??? **Base Implementation** - `ChannelConnectorBase` with common functionality
 - ?? **State Management** - Automatic connector state handling
-- ? **Error Handling** - Standardized error reporting with `ConnectorResult<T>`
+- ??? **Error Handling** - Standardized error reporting with `ConnectorResult<T>`
 - ? **Async Support** - Full async/await with cancellation token support
 - ? **Message Validation** - Automatic message validation against schema
 - ?? **Webhook Integration** - Built-in webhook processing for bidirectional communication
@@ -323,7 +323,7 @@ When contributing to the framework:
 5. Maintain backward compatibility where possible
 6. Review the [Contributing Guide](../CONTRIBUTING.md) for detailed guidelines
 
-## ?? Getting Help
+## ? Getting Help
 
 ### Self-Service Resources
 1. **Search Documentation** - Use the table of contents above

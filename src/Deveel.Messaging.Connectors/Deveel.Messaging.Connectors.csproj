@@ -1,5 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
+  <PropertyGroup>
+    <Title>Deveel Messaging Connectors</Title>
+    <Description>Provides the methods to register, retrieve and use messaging connectors in applications.</Description>
+    <PackageTags>messaging;connector;connectors;deveel;registry;schema;resolve</PackageTags>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Deveel.Messaging.Connector.Abstractions\Deveel.Messaging.Connector.Abstractions.csproj" />
   </ItemGroup>
