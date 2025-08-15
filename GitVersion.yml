@@ -1,6 +1,6 @@
-workflow: GitHubFlow/v1
 mode: ContinuousDeployment
-tag-prefix: '[vV]?'
+tag-prefix: ''
+next-version: '0.2.0'
 branches:
   main:
     regex: ^master$|^main$
