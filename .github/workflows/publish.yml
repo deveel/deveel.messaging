@@ -78,41 +78,40 @@ jobs:
     - name: Restore Dependencies
       run: dotnet restore
 
-    - name: Debug GitVersion Environment Variables
+    - name: Debug Version Properties
       run: |
-        echo "🔍 GitVersion Environment Variables:"
-        echo "GitVersion_SemVer: ${{ inputs.version }}"
-        echo "GitVersion_NuGetVersion: ${{ inputs.nuget-version }}"
-        echo "GitVersion_AssemblySemVer: ${{ inputs.assembly-version }}"
-        echo "GitVersion_InformationalVersion: ${{ inputs.informational-version }}"
-        echo ""
-        echo "Environment variables that will be set:"
-        echo "GitVersion_SemVer=${{ inputs.version }}"
-        echo "GitVersion_NuGetVersion=${{ inputs.nuget-version }}"
-        echo "GitVersion_AssemblySemVer=${{ inputs.assembly-version }}"
-        echo "GitVersion_InformationalVersion=${{ inputs.informational-version }}"
+        echo "🔍 Version Properties to be used:"
+        echo "Version: ${{ inputs.version }}"
+        echo "PackageVersion: ${{ inputs.nuget-version }}"
+        echo "AssemblyVersion: ${{ inputs.assembly-version }}"
+        echo "FileVersion: ${{ inputs.assembly-version }}"
+        echo "InformationalVersion: ${{ inputs.informational-version }}"
 
     - name: Pack Packages
       run: |
-        echo "🏗️ Packing packages with explicit version overrides..."
+        echo "🏗️ Packing packages with explicit version properties..."
         dotnet pack --configuration ${{ inputs.build-configuration }} --include-symbols --output ./nuget \
-          -p:Version="${{ inputs.version }}" \
+          --verbosity normal \
+          -p:Version="${{ inputs.nuget-version }}" \
           -p:PackageVersion="${{ inputs.nuget-version }}" \
           -p:AssemblyVersion="${{ inputs.assembly-version }}" \
           -p:FileVersion="${{ inputs.assembly-version }}" \
           -p:InformationalVersion="${{ inputs.informational-version }}" \
           -p:UseGitVersion=false
-      env:
-        GitVersion_SemVer: ${{ inputs.version }}
-        GitVersion_AssemblySemVer: ${{ inputs.assembly-version }}
-        GitVersion_AssemblySemFileVer: ${{ inputs.assembly-version }}
-        GitVersion_InformationalVersion: ${{ inputs.informational-version }}
-        GitVersion_NuGetVersion: ${{ inputs.nuget-version }}
 
     - name: List Generated Packages
       run: |
         echo "📋 Generated packages:"
         ls -la ./nuget/
+        echo ""
+        echo "📋 Package details:"
+        for pkg in ./nuget/*.nupkg; do
+          if [ -f "$pkg" ]; then
+            echo "Package: $(basename "$pkg")"
+            unzip -l "$pkg" | grep -E '\.(nuspec|dll)$' | head -5
+            echo "---"
+          fi
+        done
 
     - name: Publish to GitHub Packages
       run: |
@@ -169,4 +168,4 @@ jobs:
           echo "🎉 Packages have been published to both GitHub Packages and NuGet.org!" >> $GITHUB_STEP_SUMMARY
         else
           echo "📦 Packages have been published to GitHub Packages only." >> $GITHUB_STEP_SUMMARY
-        fi
+        fi        fi

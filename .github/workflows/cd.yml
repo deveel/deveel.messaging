@@ -78,18 +78,28 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ matrix.dotnet }}
+
+    - name: Display Build Version Info
+      run: |
+        echo "🔍 Build Version Information:"
+        echo "SemVer: ${{ needs.calculate-version.outputs.version }}"
+        echo "NuGet Version: ${{ needs.calculate-version.outputs.nuget-version }}"
+        echo "Assembly Version: ${{ needs.calculate-version.outputs.assembly-version }}"
+        echo "File Version: ${{ needs.calculate-version.outputs.file-version }}"
+        echo "Informational Version: ${{ needs.calculate-version.outputs.informational-version }}"
           
     - name: Restore dependencies
       run: dotnet restore -p:TargetFramework=${{ matrix.dotnet-framework }}
       
     - name: Build
-      run: dotnet build --no-restore -c Release -f ${{ matrix.dotnet-framework }}
-      env:
-        GitVersion_SemVer: ${{ needs.calculate-version.outputs.version }}
-        GitVersion_AssemblySemVer: ${{ needs.calculate-version.outputs.assembly-version }}
-        GitVersion_AssemblySemFileVer: ${{ needs.calculate-version.outputs.file-version }}
-        GitVersion_InformationalVersion: ${{ needs.calculate-version.outputs.informational-version }}
-        GitVersion_NuGetVersion: ${{ needs.calculate-version.outputs.nuget-version }}
+      run: |
+        dotnet build --no-restore -c Release -f ${{ matrix.dotnet-framework }} \
+          -p:Version="${{ needs.calculate-version.outputs.nuget-version }}" \
+          -p:PackageVersion="${{ needs.calculate-version.outputs.nuget-version }}" \
+          -p:AssemblyVersion="${{ needs.calculate-version.outputs.assembly-version }}" \
+          -p:FileVersion="${{ needs.calculate-version.outputs.file-version }}" \
+          -p:InformationalVersion="${{ needs.calculate-version.outputs.informational-version }}" \
+          -p:UseGitVersion=false
     
     - name: Test (Ubuntu)
       if: startsWith(matrix.os, 'ubuntu')

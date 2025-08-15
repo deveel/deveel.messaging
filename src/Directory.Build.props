@@ -29,17 +29,28 @@
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
-  <!-- GitVersion Integration -->
-  <ItemGroup>
-    <PackageReference Include="GitVersion.MsBuild" Version="6.0.5" PrivateAssets="All" Condition="'$(UseGitVersion)' != 'false'" />
+  <!-- GitVersion Integration - Only when enabled -->
+  <ItemGroup Condition="'$(UseGitVersion)' != 'false'">
+    <PackageReference Include="GitVersion.MsBuild" Version="6.0.5" PrivateAssets="All" />
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(UseGitVersion)' != 'false'">
+  <!-- GitVersion Properties - Only set when GitVersion is enabled and variables are available -->
+  <PropertyGroup Condition="'$(UseGitVersion)' != 'false' And '$(GitVersion_SemVer)' != ''">
     <Version>$(GitVersion_SemVer)</Version>
     <AssemblyVersion>$(GitVersion_AssemblySemVer)</AssemblyVersion>
     <FileVersion>$(GitVersion_AssemblySemFileVer)</FileVersion>
     <InformationalVersion>$(GitVersion_InformationalVersion)</InformationalVersion>
     <PackageVersion>$(GitVersion_NuGetVersion)</PackageVersion>
+  </PropertyGroup>
+
+  <!-- Fallback Version Properties - Used when GitVersion is disabled or variables are not available -->
+  <PropertyGroup Condition="'$(UseGitVersion)' == 'false' Or '$(GitVersion_SemVer)' == ''">
+    <!-- Version defaults - these will be overridden by explicit MSBuild properties in CI/CD -->
+    <Version Condition="'$(Version)' == ''">1.0.0-dev</Version>
+    <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
+    <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">1.0.0.0</AssemblyVersion>
+    <FileVersion Condition="'$(FileVersion)' == ''">$(AssemblyVersion)</FileVersion>
+    <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(Version)</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
