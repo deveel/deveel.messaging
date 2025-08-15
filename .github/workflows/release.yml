@@ -221,7 +221,8 @@ jobs:
     with:
       publish-to-nuget: ${{ needs.validate-release.outputs.should-publish == 'true' }}
       build-configuration: 'Release'
-      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+    secrets:
+      inherit: true
 
   summary:
     needs: [validate-release, publish, create-tag]

@@ -13,10 +13,6 @@ on:
         required: false
         type: string
         default: 'Release'
-    secrets:
-      NUGET_API_KEY:
-        required: false
-        description: 'API key for NuGet.org to publish packages'
 
 
 permissions:
