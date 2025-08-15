@@ -4,41 +4,23 @@ tag-prefix: '[vV]?'
 branches:
   main:
     regex: ^master$|^main$
-    mode: ContinuousDeployment
-    tag: ''
+    label: ''
     increment: Patch
-    prevent-increment-of-merged-branch-version: true
-    track-merge-target: false
     is-mainline: true
   develop:
     regex: ^dev(elop)?(ment)?$
-    mode: ContinuousDeployment
-    tag: 'dev'
+    label: 'dev'
     increment: Minor
-    prevent-increment-of-merged-branch-version: false
-    track-merge-target: true
     is-mainline: false
   feature:
     regex: ^features?[/-]
-    mode: ContinuousDeployment
-    tag: 'feature'
+    label: 'feature'
     increment: Patch
-    prevent-increment-of-merged-branch-version: false
-    track-merge-target: false
-    is-mainline: false
   pull-request:
     regex: ^(pull|pull\-requests|pr)[/-]
-    mode: ContinuousDeployment
-    tag: 'pr'
+    label: 'pr'
     increment: Patch
-    prevent-increment-of-merged-branch-version: false
-    track-merge-target: false
-    is-mainline: false
   hotfix:
     regex: ^hotfix(es)?[/-]
-    mode: ContinuousDeployment
-    tag: 'hotfix'
+    label: 'hotfix'
     increment: Patch
-    prevent-increment-of-merged-branch-version: false
-    track-merge-target: false
-    is-mainline: false
