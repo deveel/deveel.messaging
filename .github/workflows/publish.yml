@@ -13,7 +13,22 @@ on:
         required: false
         type: string
         default: 'Release'
-
+      version:
+        description: 'Version to use for packages'
+        required: true
+        type: string
+      nuget-version:
+        description: 'NuGet package version'
+        required: true
+        type: string
+      assembly-version:
+        description: 'Assembly version'
+        required: true
+        type: string
+      informational-version:
+        description: 'Informational version'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -30,11 +45,11 @@ jobs:
     runs-on: ubuntu-latest
     
     outputs:
-      version: ${{ steps.gitversion.outputs.SemVer }}
-      nuget-version: ${{ steps.gitversion.outputs.NuGetVersion }}
-      assembly-version: ${{ steps.gitversion.outputs.AssemblySemVer }}
-      file-version: ${{ steps.gitversion.outputs.AssemblySemFileVer }}
-      informational-version: ${{ steps.gitversion.outputs.InformationalVersion }}
+      version: ${{ inputs.version }}
+      nuget-version: ${{ inputs.nuget-version }}
+      assembly-version: ${{ inputs.assembly-version }}
+      file-version: ${{ inputs.assembly-version }}
+      informational-version: ${{ inputs.informational-version }}
       packages-published-to-nuget: ${{ steps.publish-nuget.outputs.published }}
     
     steps:
@@ -43,25 +58,15 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v4.0.1
-      with:
-        versionSpec: '6.x'
-    
-    - name: Determine Version
-      id: gitversion
-      uses: gittools/actions/gitversion/execute@v4.0.1
-      with:
-        useConfigFile: true
-
     - name: Display Version Information
       run: |
-        echo "🏷️ Version: ${{ steps.gitversion.outputs.SemVer }}"
-        echo "📦 NuGet Version: ${{ steps.gitversion.outputs.NuGetVersion }}"
-        echo "🔢 Assembly Version: ${{ steps.gitversion.outputs.AssemblySemVer }}"
-        echo "📄 File Version: ${{ steps.gitversion.outputs.AssemblySemFileVer }}"
-        echo "ℹ️ Informational Version: ${{ steps.gitversion.outputs.InformationalVersion }}"
+        echo "🏷️ Version: ${{ inputs.version }}"
+        echo "📦 NuGet Version: ${{ inputs.nuget-version }}"
+        echo "🔢 Assembly Version: ${{ inputs.assembly-version }}"
+        echo "📄 File Version: ${{ inputs.assembly-version }}"
+        echo "ℹ️ Informational Version: ${{ inputs.informational-version }}"
         echo "🚀 Publish to NuGet: ${{ inputs.publish-to-nuget }}"
+        echo "⚙️ Build Configuration: ${{ inputs.build-configuration }}"
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -76,11 +81,11 @@ jobs:
     - name: Pack Packages
       run: dotnet pack --configuration ${{ inputs.build-configuration }} --include-symbols --output ./nuget
       env:
-        GitVersion_SemVer: ${{ steps.gitversion.outputs.SemVer }}
-        GitVersion_AssemblySemVer: ${{ steps.gitversion.outputs.AssemblySemVer }}
-        GitVersion_AssemblySemFileVer: ${{ steps.gitversion.outputs.AssemblySemFileVer }}
-        GitVersion_InformationalVersion: ${{ steps.gitversion.outputs.InformationalVersion }}
-        GitVersion_NuGetVersion: ${{ steps.gitversion.outputs.NuGetVersion }}
+        GitVersion_SemVer: ${{ inputs.version }}
+        GitVersion_AssemblySemVer: ${{ inputs.assembly-version }}
+        GitVersion_AssemblySemFileVer: ${{ inputs.assembly-version }}
+        GitVersion_InformationalVersion: ${{ inputs.informational-version }}
+        GitVersion_NuGetVersion: ${{ inputs.nuget-version }}
 
     - name: List Generated Packages
       run: |
@@ -118,7 +123,7 @@ jobs:
     - name: Upload Package Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: nuget-packages-${{ steps.gitversion.outputs.NuGetVersion }}
+        name: nuget-packages-${{ inputs.nuget-version }}
         path: ./nuget/*.nupkg
         retention-days: 7
 
@@ -132,8 +137,9 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
         echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
-        echo "| Version | \`${{ needs.publish.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| NuGet Version | \`${{ needs.publish.outputs.nuget-version }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Version | \`${{ inputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| NuGet Version | \`${{ inputs.nuget-version }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Assembly Version | \`${{ inputs.assembly-version }}\` |" >> $GITHUB_STEP_SUMMARY
         echo "| Published to GitHub | ✅ |" >> $GITHUB_STEP_SUMMARY
         echo "| Published to NuGet.org | ${{ inputs.publish-to-nuget == true && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
