@@ -2,25 +2,12 @@ workflow: GitHubFlow/v1
 mode: ContinuousDeployment
 tag-prefix: '[vV]?'
 branches:
-  main:
-    regex: ^master$|^main$
-    label: ''
-    increment: Patch
-    is-mainline: true
   develop:
-    regex: ^dev(elop)?(ment)?$
     label: 'dev'
     increment: Minor
-    is-mainline: false
   feature:
-    regex: ^features?[/-]
     label: 'feature'
-    increment: Patch
   pull-request:
-    regex: ^(pull|pull\-requests|pr)[/-]
     label: 'pr'
-    increment: Patch
   hotfix:
-    regex: ^hotfix(es)?[/-]
     label: 'hotfix'
-    increment: Patch
