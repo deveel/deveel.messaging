@@ -309,7 +309,7 @@ var advancedTemplate = new MessageBuilder()
         {
             order_id = "ORD-12345",
             total = "$99.99",
-            items = new[]
+            items = new[] 
             {
                 new { name = "Product A", quantity = 2, price = "$29.99" },
                 new { name = "Product B", quantity = 1, price = "$39.99" }

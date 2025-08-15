@@ -30,10 +30,10 @@ Modern applications often need to send notifications through multiple channels (
 
 | Connector | Provider | Type | Documentation | Package |
 |-----------|----------|------|---------------|---------|
-| **Twilio SMS** | Twilio | SMS | [📖 Guide](docs/connectors/twilio-sms-connector.md) | `Deveel.Messaging.Connector.Twilio` |
-| **Twilio WhatsApp** | Twilio | WhatsApp | [📖 Guide](docs/connectors/twilio-whatsapp-connector.md) | `Deveel.Messaging.Connector.Twilio` |
-| **Firebase FCM** | Firebase | Push | [📖 Guide](docs/connectors/firebase-push-connector.md) | `Deveel.Messaging.Connector.Firebase` |
-| **SendGrid Email** | SendGrid | Email | [📖 Guide](docs/connectors/sendgrid-email-connector.md) | `Deveel.Messaging.Connector.Sendgrid` |
+| **Twilio SMS** | Twilio | SMS | [📖 Guide](../docs/connectors/twilio-sms-connector.md) | `Deveel.Messaging.Connector.Twilio` |
+| **Twilio WhatsApp** | Twilio | WhatsApp | [📖 Guide](../docs/connectors/twilio-whatsapp-connector.md) | `Deveel.Messaging.Connector.Twilio` |
+| **Firebase FCM** | Firebase | Push | [📖 Guide](../docs/connectors/firebase-push-connector.md) | `Deveel.Messaging.Connector.Firebase` |
+| **SendGrid Email** | SendGrid | Email | [📖 Guide](../docs/connectors/sendgrid-email-connector.md) | `Deveel.Messaging.Connector.Sendgrid` |
 
 > **📋 [Complete Connector Documentation](docs/connectors/README.md)** - Detailed installation, configuration, and usage guides for all connectors.
 

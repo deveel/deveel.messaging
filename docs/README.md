@@ -107,17 +107,17 @@ Each connector guide includes:
 
 **?? [Complete Email Documentation](connectors/sendgrid-email-connector.md)**
 
-## ?? Framework Features
+## ? Framework Features
 
 ### Channel Schema
 - ?? **Fluent API** - Method chaining for easy configuration
-- ? **Type Safety** - Strongly-typed endpoint and content type enums
+- ?? **Type Safety** - Strongly-typed endpoint and content type enums
 - ?? **Schema Derivation** - Create specialized schemas from base configurations
 - ? **Validation** - Built-in validation for parameters and message properties
 - ?? **Capability Management** - Declare and validate connector capabilities
 
 ### Channel Connectors
-- ? **Base Implementation** - `ChannelConnectorBase` with common functionality
+- ??? **Base Implementation** - `ChannelConnectorBase` with common functionality
 - ?? **State Management** - Automatic connector state handling
 - ? **Error Handling** - Standardized error reporting with `ConnectorResult<T>`
 - ? **Async Support** - Full async/await with cancellation token support
@@ -125,7 +125,7 @@ Each connector guide includes:
 - ?? **Webhook Integration** - Built-in webhook processing for bidirectional communication
 
 ### Endpoint Types
-- ? **Strongly Typed** - `EndpointType` enumeration prevents errors
+- ?? **Strongly Typed** - `EndpointType` enumeration prevents errors
 - ?? **Backward Compatible** - Automatic conversion from legacy string types
 - ?? **IntelliSense Support** - Better developer experience with auto-completion
 - ? **Validation** - Compile-time and runtime validation

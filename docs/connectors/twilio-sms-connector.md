@@ -556,4 +556,5 @@ public class SmsService : IDisposable
 
 - [Twilio WhatsApp Connector](twilio-whatsapp-connector.md)
 - [Channel Schema Usage Guide](../ChannelSchema-Usage.md)
-- [Connector Implementation Guide](../ChannelConnector-Usage.md)- [Error Handling Best Practices](../error-handling.md)
+- [Connector Implementation Guide](../ChannelConnector-Usage.md)
+- [Error Handling Best Practices](../error-handling.md)
