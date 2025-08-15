@@ -3,11 +3,18 @@ mode: ContinuousDeployment
 tag-prefix: '[vV]?'
 branches:
   develop:
+    regex: ^dev(elop)?(ment)?$
     label: 'dev'
     increment: Minor
   feature:
+    regex: ^features?[/-]
     label: 'feature'
+    increment: Patch
   pull-request:
+    regex: ^(pull|pull\-requests|pr)[/-]
     label: 'pr'
+    increment: Patch
   hotfix:
+    regex: ^hotfix(es)?[/-]
     label: 'hotfix'
+    increment: Patch
