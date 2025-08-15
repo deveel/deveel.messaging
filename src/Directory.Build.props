@@ -29,59 +29,34 @@
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
-  <!-- GitVersion Integration - Only when explicitly enabled -->
+  <!-- GitVersion Integration -->
   <ItemGroup Condition="'$(UseGitVersion)' == 'true'">
     <PackageReference Include="GitVersion.MsBuild" Version="6.0.5" PrivateAssets="All" />
   </ItemGroup>
 
-  <!-- GitVersion Properties - Only set when GitVersion is explicitly enabled and variables are available -->
-  <PropertyGroup Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_SemVer)' != '' And '$(GitVersion_NuGetVersion)' != ''">
-    <Version>$(GitVersion_SemVer)</Version>
-    <AssemblyVersion>$(GitVersion_AssemblySemVer)</AssemblyVersion>
-    <FileVersion>$(GitVersion_AssemblySemFileVer)</FileVersion>
-    <InformationalVersion>$(GitVersion_InformationalVersion)</InformationalVersion>
-    <PackageVersion>$(GitVersion_NuGetVersion)</PackageVersion>
-  </PropertyGroup>
-
-  <!-- Explicit Version Properties - Used when versions are passed as MSBuild properties (CI/CD scenarios) -->
-  <!-- These properties will override GitVersion properties if both are present -->
-  <PropertyGroup Condition="'$(UseGitVersion)' != 'true'">
-    <!-- Priority 1: Use explicitly provided MSBuild properties -->
-    <Version Condition="'$(Version)' == ''">1.0.0-dev</Version>
-    <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
-    <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">1.0.0.0</AssemblyVersion>
-    <FileVersion Condition="'$(FileVersion)' == ''">1.0.0.0</FileVersion>
-    <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(Version)</InformationalVersion>
-  </PropertyGroup>
-
-  <!-- Fallback Version Properties - Safety net for any scenario where versions are still empty -->
+  <!-- Version Properties -->
   <PropertyGroup>
-    <!-- Ensure we always have valid version properties -->
-    <Version Condition="'$(Version)' == '' Or '$(Version)' == '0.0.0'">1.0.0-dev</Version>
-    <PackageVersion Condition="'$(PackageVersion)' == '' Or '$(PackageVersion)' == '0.0.0'">$(Version)</PackageVersion>
-    <AssemblyVersion Condition="'$(AssemblyVersion)' == '' Or '$(AssemblyVersion)' == '0.0.0.0'">1.0.0.0</AssemblyVersion>
-    <FileVersion Condition="'$(FileVersion)' == '' Or '$(FileVersion)' == '0.0.0.0'">$(AssemblyVersion)</FileVersion>
+    <!-- Use GitVersion if enabled and available, otherwise use explicit properties or fallbacks -->
+    <Version Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_SemVer)' != ''">$(GitVersion_SemVer)</Version>
+    <Version Condition="'$(Version)' == ''">1.0.0-dev</Version>
+    
+    <PackageVersion Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_NuGetVersion)' != ''">$(GitVersion_NuGetVersion)</PackageVersion>
+    <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
+    
+    <AssemblyVersion Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_AssemblySemVer)' != ''">$(GitVersion_AssemblySemVer)</AssemblyVersion>
+    <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">1.0.0.0</AssemblyVersion>
+    
+    <FileVersion Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_AssemblySemFileVer)' != ''">$(GitVersion_AssemblySemFileVer)</FileVersion>
+    <FileVersion Condition="'$(FileVersion)' == ''">$(AssemblyVersion)</FileVersion>
+    
+    <InformationalVersion Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_InformationalVersion)' != ''">$(GitVersion_InformationalVersion)</InformationalVersion>
     <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(Version)</InformationalVersion>
   </PropertyGroup>
 
-  <!-- SourceLink Integration - Support both .NET 8 and .NET 9 -->
+  <!-- SourceLink Integration -->
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
-
-  <!-- Debug Version Properties - Only in Debug builds for troubleshooting -->
-  <Target Name="DebugVersionProperties" BeforeTargets="CoreCompile" Condition="'$(Configuration)' == 'Debug' And '$(DesignTimeBuild)' != 'true'">
-    <Message Text="?? Version Properties Debug:" Importance="high" />
-    <Message Text="  UseGitVersion: $(UseGitVersion)" Importance="high" />
-    <Message Text="  Version: $(Version)" Importance="high" />
-    <Message Text="  PackageVersion: $(PackageVersion)" Importance="high" />
-    <Message Text="  AssemblyVersion: $(AssemblyVersion)" Importance="high" />
-    <Message Text="  FileVersion: $(FileVersion)" Importance="high" />
-    <Message Text="  InformationalVersion: $(InformationalVersion)" Importance="high" />
-    <Message Text="  GitVersion_SemVer: $(GitVersion_SemVer)" Importance="high" />
-    <Message Text="  GitVersion_NuGetVersion: $(GitVersion_NuGetVersion)" Importance="high" />
-    <Message Text="  GitVersion_AssemblySemVer: $(GitVersion_AssemblySemVer)" Importance="high" />
-  </Target>
 
   <ItemGroup>
     <None Include="..\..\deveel-logo.png">
