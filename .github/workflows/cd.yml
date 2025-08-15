@@ -103,20 +103,16 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -p:TargetFramework=${{ matrix.dotnet-framework }}
       
-    - name: Build with GitVersion
+    - name: Build
       run: |
         echo "🏗️ Building with GitVersion integration..."
         dotnet build --no-restore -c Release -f ${{ matrix.dotnet-framework }} \
           -p:UseGitVersion=true \
           --verbosity normal
+      shell: bash
     
-    - name: Test (Ubuntu)
-      if: startsWith(matrix.os, 'ubuntu')
+    - name: Test
       run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }}
-
-    - name: Test (Windows)
-      if: startsWith(matrix.os, 'windows')
-      run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }} --filter "DB!=SQLServer"
 
   publish:
     needs: [calculate-version, build]
