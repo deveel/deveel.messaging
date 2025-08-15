@@ -221,8 +221,7 @@ jobs:
     with:
       publish-to-nuget: ${{ needs.validate-release.outputs.should-publish == 'true' }}
       build-configuration: 'Release'
-    secrets:
-      inherit: true
+    secrets: inherit
 
   summary:
     needs: [validate-release, publish, create-tag]
