@@ -180,13 +180,8 @@ jobs:
           -p:UseGitVersion=false \
           --verbosity normal
     
-    - name: Test (Ubuntu)
-      if: startsWith(matrix.os, 'ubuntu')
+    - name: Test
       run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }}
-
-    - name: Test (Windows)
-      if: startsWith(matrix.os, 'windows')
-      run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }} --filter "DB!=SQLServer"
 
   publish:
     needs: [calculate-version, build]
