@@ -2,6 +2,10 @@ workflow: GitHubFlow/v1
 mode: ContinuousDeployment
 tag-prefix: '[vV]?'
 branches:
+  main:
+    regex: ^master$|^main$
+    label: 'alpha'
+    increment: Patch
   develop:
     regex: ^dev(elop)?(ment)?$
     label: 'dev'

@@ -58,6 +58,8 @@ jobs:
           echo "⚠️ SemVer is empty or invalid, using fallback"
           if [ "${{ github.ref }}" = "refs/heads/develop" ]; then
             VERSION="1.0.0-dev.1"
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            VERSION="1.0.0-main.1"
           else
             VERSION="1.0.0-dev"
           fi
@@ -91,11 +93,14 @@ jobs:
           INFORMATIONAL_VERSION="$VERSION"
         fi
         
-        # Determine if this is a pre-release
+        # Determine if this is a pre-release (should always be true for CD workflow)
         IS_PRERELEASE="false"
         if [[ "$NUGET_VERSION" == *"-"* ]]; then
           IS_PRERELEASE="true"
           echo "🎯 Pre-release version detected: $NUGET_VERSION"
+        else
+          echo "⚠️ Warning: CD workflow should always produce pre-release versions!"
+          echo "⚠️ Current version: $NUGET_VERSION appears to be stable"
         fi
         
         echo "✅ Validated versions:"
@@ -123,6 +128,10 @@ jobs:
         echo "File Version: ${{ steps.validate-version.outputs.FILE_VERSION }}"
         echo "Informational Version: ${{ steps.validate-version.outputs.INFORMATIONAL_VERSION }}"
         echo "Is Pre-release: ${{ steps.validate-version.outputs.IS_PRERELEASE }}"
+        echo ""
+        echo "📋 Expected behavior:"
+        echo "- CD workflow should ALWAYS produce pre-release versions"
+        echo "- Only tagged releases from release workflow should produce stable versions"
 
   build:
     needs: calculate-version
@@ -177,15 +186,17 @@ jobs:
           -p:AssemblyVersion="${{ needs.calculate-version.outputs.assembly-version }}" \
           -p:FileVersion="${{ needs.calculate-version.outputs.file-version }}" \
           -p:InformationalVersion="${{ needs.calculate-version.outputs.informational-version }}" \
-          -p:UseGitVersion=false
+          -p:UseGitVersion=false \
+          --verbosity normal
       shell: bash
     
     - name: Test
       run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }}
 
+
   publish:
     needs: [calculate-version, build]
-    name: "Publish Pre-release Packages"
+    name: "Publish Pre-release Packages (CI/CD)"
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     uses: ./.github/workflows/publish.yml
     with:
@@ -210,7 +221,7 @@ jobs:
     steps:
     - name: CD Workflow Summary
       run: |
-        echo "## 🚀 CD Workflow Summary" >> $GITHUB_STEP_SUMMARY
+        echo "## 🚀 CD Workflow Summary (Pre-release Only)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
         echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
@@ -225,8 +236,15 @@ jobs:
         if [ "${{ needs.calculate-version.outputs.is-prerelease }}" == "true" ]; then
           echo "🎯 **Pre-release Package**: This version includes commit count and pre-release identifier" >> $GITHUB_STEP_SUMMARY
           echo "📦 **Usage**: Install with \`--prerelease\` flag: \`dotnet add package PackageName --version ${{ needs.calculate-version.outputs.nuget-version }} --prerelease\`" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Expected Behavior**: CD workflow correctly produces pre-release versions" >> $GITHUB_STEP_SUMMARY
         else
-          echo "🏷️ **Stable Package**: This is a stable release version" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Warning**: CD workflow should always produce pre-release versions!" >> $GITHUB_STEP_SUMMARY
+          echo "🏷️ **Current**: This appears to be a stable version: \`${{ needs.calculate-version.outputs.nuget-version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "🔧 **Action Required**: Check GitVersion configuration" >> $GITHUB_STEP_SUMMARY
         fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "📋 **Versioning Strategy**:" >> $GITHUB_STEP_SUMMARY
+        echo "- **CI/CD Workflow** (this): Always produces pre-release versions" >> $GITHUB_STEP_SUMMARY
+        echo "- **Release Workflow**: Only produces stable versions from tags" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "📦 **Published Packages**: Check the [GitHub Packages](https://github.com/${{ github.repository }}/pkgs) for the published packages." >> $GITHUB_STEP_SUMMARY

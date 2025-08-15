@@ -168,4 +168,4 @@ jobs:
           echo "🎉 Packages have been published to both GitHub Packages and NuGet.org!" >> $GITHUB_STEP_SUMMARY
         else
           echo "📦 Packages have been published to GitHub Packages only." >> $GITHUB_STEP_SUMMARY
-        fi        fi
+        fi
