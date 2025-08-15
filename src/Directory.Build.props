@@ -29,18 +29,18 @@
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
-  <!-- GitVersion Integration -->
+  <!-- GitVersion 5.x Integration -->
   <ItemGroup Condition="'$(UseGitVersion)' == 'true'">
-    <PackageReference Include="GitVersion.MsBuild" Version="6.0.5" PrivateAssets="All" />
+    <PackageReference Include="GitVersion.MsBuild" Version="5.12.0" PrivateAssets="All" />
   </ItemGroup>
 
-  <!-- Version Properties -->
+  <!-- Version Properties for GitVersion 5.x -->
   <PropertyGroup>
-    <!-- Use GitVersion if enabled and available, otherwise use explicit properties or fallbacks -->
+    <!-- Use GitVersion 5.x variables if enabled and available, otherwise use explicit properties or fallbacks -->
     <Version Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_SemVer)' != ''">$(GitVersion_SemVer)</Version>
     <Version Condition="'$(Version)' == ''">1.0.0-dev</Version>
     
-    <PackageVersion Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_NuGetVersion)' != ''">$(GitVersion_NuGetVersion)</PackageVersion>
+    <PackageVersion Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_NuGetVersionV2)' != ''">$(GitVersion_NuGetVersionV2)</PackageVersion>
     <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
     
     <AssemblyVersion Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_AssemblySemVer)' != ''">$(GitVersion_AssemblySemVer)</AssemblyVersion>
