@@ -24,6 +24,7 @@ This directory contains comprehensive documentation for the Deveel Messaging Fra
 |-----------|----------|------|---------------|
 | **Twilio SMS** | Twilio | SMS | [?? Complete Guide](connectors/twilio-sms-connector.md) |
 | **Twilio WhatsApp** | Twilio | WhatsApp | [?? Complete Guide](connectors/twilio-whatsapp-connector.md) |
+| **Facebook Messenger** | Facebook | Messenger | [?? Complete Guide](connectors/facebook-messenger-connector.md) |
 | **Firebase FCM** | Firebase | Push | [?? Complete Guide](connectors/firebase-push-connector.md) |
 | **SendGrid Email** | SendGrid | Email | [?? Complete Guide](connectors/sendgrid-email-connector.md) |
 
@@ -39,14 +40,14 @@ Each connector guide includes:
 
 ### ?? Quick Connector Comparison
 
-| Feature | SMS | WhatsApp | Push | Email |
-|---------|-----|----------|------|-------|
-| **Send Messages** | ? | ? | ? | ? |
-| **Receive Messages** | ? | ? | ? | ? |
-| **Templates** | ? | ? | ? | ? |
-| **Media Support** | ? | ? | ? | ? |
-| **Batch Operations** | ? | ? | ? | ? |
-| **Interactive Elements** | ? | ? | ? | ? |
+| Feature | SMS | WhatsApp | Facebook Messenger | Push | Email |
+|---------|-----|----------|-------------------|------|-------|
+| **Send Messages** | ? | ? | ? | ? | ? |
+| **Receive Messages** | ? | ? | ? | ? | ? |
+| **Templates** | ? | ? | ? | ? | ? |
+| **Media Support** | ? | ? | ? | ? | ? |
+| **Batch Operations** | ? | ? | ? | ? | ? |
+| **Interactive Elements** | ? | ? | ? | ? | ? |
 
 ## ?? Quick Navigation
 
@@ -67,6 +68,17 @@ Each connector guide includes:
 - Check [Advanced Configuration Guide](advanced-configuration.md) for optimization techniques
 
 ## ?? Latest Framework Features
+
+### ?? Facebook Messenger Platform Integration
+- **Interactive Messaging**: Complete Facebook Messenger connector with quick replies and media support
+- **Bidirectional Communication**: Send and receive messages via Facebook webhooks
+- **Graph API v21.0**: Full compliance with the latest Facebook Graph API version
+- **RestSharp Integration**: Modern HTTP client with proper error handling and validation
+- **Quick Replies**: Interactive quick reply buttons (up to 13 per message)
+- **Media Attachments**: Images, videos, audio, and file sharing
+- **Health Monitoring**: Built-in connection testing and comprehensive health checks
+
+**?? [Complete Facebook Messenger Documentation](connectors/facebook-messenger-connector.md)**
 
 ### ?? Firebase Cloud Messaging (FCM) Support
 - **Push Notifications**: Complete Firebase connector for mobile and web push notifications
@@ -166,6 +178,18 @@ var whatsAppSchema = new ChannelSchema("Twilio", "WhatsApp", "2.1.0")
         ChannelCapability.SendMessages | 
         ChannelCapability.ReceiveMessages |
         ChannelCapability.Templates |
+        ChannelCapability.MediaAttachments);
+```
+
+### Facebook Messenger
+```csharp
+var messengerSchema = new ChannelSchema("Facebook", "Messenger", "1.0.0")
+    .AllowsMessageEndpoint(EndpointType.FacebookUserId)
+    .AddContentType(MessageContentType.PlainText)
+    .AddContentType(MessageContentType.Media)
+    .WithCapabilities(
+        ChannelCapability.SendMessages | 
+        ChannelCapability.ReceiveMessages |
         ChannelCapability.MediaAttachments);
 ```
 
@@ -285,9 +309,10 @@ The framework provides excellent development experience:
 ### Connector Capabilities Matrix
 
 | Connector | Send | Receive | Status | Batch | Templates | Media | Health |
-|-----------|------|---------|--------|-------|-----------|-------|---------|
+|-----------|:----:|:-------:|:------:|:-----:|:---------:|:-----:|:------:|
 | Twilio SMS | ? | ? | ? | ? | ? | ? | ? |
 | Twilio WhatsApp | ? | ? | ? | ? | ? | ? | ? |
+| Facebook Messenger | ? | ? | ? | ? | ? | ? | ? |
 | SendGrid Email | ? | ? | ? | ? | ? | ? | ? |
 | Firebase FCM | ? | ? | ? | ? | ? | ? | ? |
 

@@ -31,6 +31,7 @@ namespace Deveel.Messaging
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(status, nameof(status));
 
 			Status = status;
+			Description = description;
 			Timestamp = timestamp ?? DateTimeOffset.UtcNow;
 		}
 

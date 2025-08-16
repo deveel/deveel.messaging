@@ -8,6 +8,7 @@ This directory contains comprehensive documentation for all available connectors
 |-----------|----------|------|---------------|---------|
 | **Twilio SMS** | Twilio | SMS | [?? Complete Guide](twilio-sms-connector.md) | `Deveel.Messaging.Connector.Twilio` |
 | **Twilio WhatsApp** | Twilio | WhatsApp | [?? Complete Guide](twilio-whatsapp-connector.md) | `Deveel.Messaging.Connector.Twilio` |
+| **Facebook Messenger** | Facebook | Messenger | [?? Complete Guide](facebook-messenger-connector.md) | `Deveel.Messaging.Connector.Facebook` |
 | **Firebase FCM** | Firebase | Push | [?? Complete Guide](firebase-push-connector.md) | `Deveel.Messaging.Connector.Firebase` |
 | **SendGrid Email** | SendGrid | Email | [?? Complete Guide](sendgrid-email-connector.md) | `Deveel.Messaging.Connector.Sendgrid` |
 
@@ -27,6 +28,13 @@ dotnet add package Deveel.Messaging.Connector.Twilio
 ```
 ?? **[Complete WhatsApp Business Setup Guide](twilio-whatsapp-connector.md)**
 
+### Facebook Messenger
+**Install and configure Facebook Messenger Platform:**
+```bash
+dotnet add package Deveel.Messaging.Connector.Facebook
+```
+?? **[Complete Facebook Messenger Setup Guide](facebook-messenger-connector.md)**
+
 ### Push Notifications
 **Install and configure Firebase Cloud Messaging:**
 ```bash
@@ -45,7 +53,7 @@ dotnet add package Deveel.Messaging.Connector.Sendgrid
 
 Each connector documentation provides comprehensive coverage:
 
-### ? **Installation & Setup**
+### ?? **Installation & Setup**
 - NuGet package installation instructions
 - Required dependencies and prerequisites  
 - Configuration parameter setup
@@ -83,16 +91,13 @@ Each connector documentation provides comprehensive coverage:
 
 ## ?? Connector Capabilities Matrix
 
-| Capability | Twilio SMS | Twilio WhatsApp | Firebase FCM | SendGrid Email |
-|------------|------------|------------------|--------------|----------------|
-| **Send Messages** | ? | ? | ? | ? |
-| **Receive Messages** | ? | ? | ? | ? |
-| **Status Tracking** | ? | ? | ? | ? |
-| **Batch Operations** | ? | ? | ? | ? |
-| **Templates** | ? | ? | ? | ? |
-| **Media Attachments** | ? | ? | ? | ? |
-| **Health Monitoring** | ? | ? | ? | ? |
-| **Webhook Support** | ? | ? | ? | ? |
+| Connector | Send Messages | Receive Messages | Status Tracking | Batch Operations | Templates | Media Attachments | Health Monitoring | Webhook Support | Quick Replies | Interactive Elements |
+|-----------|:-------------:|:----------------:|:---------------:|:----------------:|:---------:|:-----------------:|:-----------------:|:---------------:|:-------------:|:--------------------:|
+| **Twilio SMS** | ? | ? | ? | ? | ? | ? | ? | ? | ? | ? |
+| **Twilio WhatsApp** | ? | ? | ? | ? | ? | ? | ? | ? | ? | ? |
+| **Facebook Messenger** | ? | ? | ? | ? | ? | ? | ? | ? | ? | ? |
+| **Firebase FCM** | ? | ? | ? | ? | ? | ? | ? | ? | ? | ? |
+| **SendGrid Email** | ? | ? | ? | ? | ? | ? | ? | ? | ? | ? |
 
 ## ?? Use Case Recommendations
 
@@ -104,6 +109,17 @@ Each connector documentation provides comprehensive coverage:
 | **SMS Verification** | [Twilio SMS](twilio-sms-connector.md) | High delivery rates, global reach |
 | **Push Notifications** | [Firebase FCM](firebase-push-connector.md) | Real-time, cross-platform |
 | **WhatsApp Business** | [Twilio WhatsApp](twilio-whatsapp-connector.md) | High engagement, rich media |
+| **Facebook Messenger** | [Facebook Messenger](facebook-messenger-connector.md) | Interactive, quick replies |
+
+### Customer Support
+
+| Use Case | Recommended Connector | Why |
+|----------|----------------------|-----|
+| **Support Tickets** | [SendGrid Email](sendgrid-email-connector.md) | Threading, attachments |
+| **Live Chat** | [Facebook Messenger](facebook-messenger-connector.md) | Real-time conversation |
+| **Urgent Alerts** | [Twilio SMS](twilio-sms-connector.md) | Immediate delivery |
+| **App Notifications** | [Firebase FCM](firebase-push-connector.md) | In-app alerts |
+| **WhatsApp Support** | [Twilio WhatsApp](twilio-whatsapp-connector.md) | Two-way conversation |
 
 ### Marketing Campaigns
 
@@ -113,15 +129,7 @@ Each connector documentation provides comprehensive coverage:
 | **SMS Campaigns** | [Twilio SMS](twilio-sms-connector.md) | Bulk messaging, opt-out handling |
 | **App Promotions** | [Firebase FCM](firebase-push-connector.md) | Topic messaging, segmentation |
 | **WhatsApp Marketing** | [Twilio WhatsApp](twilio-whatsapp-connector.md) | Interactive elements, templates |
-
-### Customer Support
-
-| Use Case | Recommended Connector | Why |
-|----------|----------------------|-----|
-| **Support Tickets** | [SendGrid Email](sendgrid-email-connector.md) | Threading, attachments |
-| **Urgent Alerts** | [Twilio SMS](twilio-sms-connector.md) | Immediate delivery |
-| **App Notifications** | [Firebase FCM](firebase-push-connector.md) | In-app alerts |
-| **WhatsApp Support** | [Twilio WhatsApp](twilio-whatsapp-connector.md) | Two-way conversation |
+| **Facebook Engagement** | [Facebook Messenger](facebook-messenger-connector.md) | Quick replies, interactive |
 
 ## ?? Multi-Connector Patterns
 
@@ -129,6 +137,7 @@ Each connector documentation provides comprehensive coverage:
 ```bash
 # Install multiple connectors for comprehensive messaging
 dotnet add package Deveel.Messaging.Connector.Twilio      # SMS + WhatsApp
+dotnet add package Deveel.Messaging.Connector.Facebook    # Facebook Messenger
 dotnet add package Deveel.Messaging.Connector.Firebase    # Push notifications  
 dotnet add package Deveel.Messaging.Connector.Sendgrid    # Email delivery
 ```
@@ -138,6 +147,7 @@ dotnet add package Deveel.Messaging.Connector.Sendgrid    # Email delivery
 public class NotificationService
 {
     private readonly TwilioSmsConnector _smsConnector;
+    private readonly FacebookMessengerConnector _facebookConnector;
     private readonly SendGridEmailConnector _emailConnector;
     private readonly FirebasePushConnector _pushConnector;
     
@@ -147,6 +157,9 @@ public class NotificationService
         {
             case NotificationChannel.SMS:
                 await _smsConnector.SendMessageAsync(CreateSmsMessage(user, message));
+                break;
+            case NotificationChannel.FacebookMessenger:
+                await _facebookConnector.SendMessageAsync(CreateFacebookMessage(user, message));
                 break;
             case NotificationChannel.Email:
                 await _emailConnector.SendMessageAsync(CreateEmailMessage(user, message));
@@ -213,6 +226,7 @@ public async Task SendMessage_RealProvider_DeliversMessage()
 | Provider | Documentation | Console | Support |
 |----------|---------------|---------|---------|
 | **Twilio** | [Docs](https://www.twilio.com/docs) | [Console](https://console.twilio.com) | [Support](https://support.twilio.com) |
+| **Facebook** | [Docs](https://developers.facebook.com/docs/messenger-platform) | [Console](https://developers.facebook.com) | [Support](https://developers.facebook.com/support) |
 | **Firebase** | [Docs](https://firebase.google.com/docs) | [Console](https://console.firebase.google.com) | [Support](https://firebase.google.com/support) |
 | **SendGrid** | [Docs](https://docs.sendgrid.com) | [Console](https://app.sendgrid.com) | [Support](https://support.sendgrid.com) |
 
@@ -220,7 +234,7 @@ public async Task SendMessage_RealProvider_DeliversMessage()
 
 Planning to add a new connector? Each guide follows our standard template:
 
-1. **? Installation** - Package installation and setup
+1. **?? Installation** - Package installation and setup
 2. **?? Configuration** - Schema and parameter setup  
 3. **?? Usage Examples** - Basic to advanced usage patterns
 4. **?? Integration** - Webhooks and bidirectional messaging
