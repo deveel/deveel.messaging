@@ -151,7 +151,7 @@ namespace Deveel.Messaging
         private static void ValidateMessageRequest(FacebookMessageRequest request)
         {
             // Facebook Messenger Platform validation requirements
-            if (string.IsNullOrEmpty(request.Message.Text) && request.Message.Attachment == null)
+            if (string.IsNullOrWhiteSpace(request.Message.Text) && request.Message.Attachment == null)
                 throw new ArgumentException("Message must contain either text or attachment");
 
             if (!string.IsNullOrEmpty(request.Message.Text) && request.Message.Text.Length > 2000)
@@ -280,7 +280,10 @@ namespace Deveel.Messaging
             }
             catch
             {
-                return $"HTTP {(int)response.StatusCode} {response.StatusCode}: {response.ErrorMessage}";
+                // When JSON parsing fails, return the raw content if it's not empty
+                return !string.IsNullOrEmpty(response.Content) 
+                    ? response.Content 
+                    : $"HTTP {(int)response.StatusCode} {response.StatusCode}: {response.ErrorMessage}";
             }
         }
 

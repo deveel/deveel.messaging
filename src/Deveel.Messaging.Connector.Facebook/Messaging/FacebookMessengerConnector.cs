@@ -430,8 +430,10 @@ namespace Deveel.Messaging
             if (string.IsNullOrEmpty(senderId) || string.IsNullOrEmpty(recipientId))
                 return null;
 
-            // Extract message ID and timestamp
-            var messageId = messageProperty.GetProperty("mid").GetString() ?? Guid.NewGuid().ToString();
+            // Extract message ID and timestamp - handle missing mid property safely
+            var messageId = messageProperty.TryGetProperty("mid", out var midProperty) 
+                ? midProperty.GetString() ?? Guid.NewGuid().ToString()
+                : Guid.NewGuid().ToString();
             var timestamp = messageProperty.TryGetProperty("timestamp", out var timestampProperty)
                 ? DateTimeOffset.FromUnixTimeMilliseconds(timestampProperty.GetInt64()).DateTime
                 : DateTime.UtcNow;

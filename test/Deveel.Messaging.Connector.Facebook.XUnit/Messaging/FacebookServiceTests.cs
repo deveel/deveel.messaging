@@ -4,6 +4,8 @@
 //
 
 using RestSharp;
+using Moq;
+using System.Text.Json;
 
 namespace Deveel.Messaging;
 
@@ -338,4 +340,383 @@ public class FacebookServiceTests
         Assert.True(content.ContainsKey("attachment"));
         Assert.False(content.ContainsKey("text"));
     }
+
+    // Additional edge case and error handling tests
+
+    #region Error Response Parsing Tests
+
+    [Fact]
+    public void ParseFacebookError_ValidErrorResponse_ReturnsFormattedMessage()
+    {
+        // Use reflection to test the private method
+        var method = typeof(FacebookService).GetMethod("ParseFacebookError", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        
+        var mockResponse = new Mock<RestResponse>();
+        mockResponse.Object.Content = @"{
+            ""error"": {
+                ""message"": ""Invalid OAuth access token."",
+                ""code"": ""190"",
+                ""error_subcode"": ""460""
+            }
+        }";
+        mockResponse.Object.StatusCode = System.Net.HttpStatusCode.BadRequest;
+
+        // Act
+        var result = method!.Invoke(null, new object[] { mockResponse.Object });
+
+        // Assert
+        Assert.NotNull(result);
+        var errorMessage = result as string;
+        Assert.Contains("Code 190", errorMessage!);
+        Assert.Contains("Subcode 460", errorMessage);
+        Assert.Contains("Invalid OAuth access token", errorMessage);
+    }
+
+    [Fact]
+    public void ParseFacebookError_ErrorWithoutSubcode_ReturnsSimpleFormat()
+    {
+        // Use reflection to test the private method
+        var method = typeof(FacebookService).GetMethod("ParseFacebookError", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        
+        var mockResponse = new Mock<RestResponse>();
+        mockResponse.Object.Content = @"{
+            ""error"": {
+                ""message"": ""Rate limit exceeded"",
+                ""code"": ""4""
+            }
+        }";
+        mockResponse.Object.StatusCode = System.Net.HttpStatusCode.TooManyRequests;
+
+        // Act
+        var result = method!.Invoke(null, new object[] { mockResponse.Object });
+
+        // Assert
+        Assert.NotNull(result);
+        var errorMessage = result as string;
+        Assert.Contains("Code 4", errorMessage!);
+        Assert.DoesNotContain("Subcode", errorMessage);
+        Assert.Contains("Rate limit exceeded", errorMessage);
+    }
+
+    [Fact]
+    public void ParseFacebookError_EmptyContent_ReturnsHttpStatus()
+    {
+        // Use reflection to test the private method
+        var method = typeof(FacebookService).GetMethod("ParseFacebookError", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        
+        var mockResponse = new Mock<RestResponse>();
+        mockResponse.Object.Content = "";
+        mockResponse.Object.StatusCode = System.Net.HttpStatusCode.InternalServerError;
+        mockResponse.Object.ErrorMessage = "Network error";
+
+        // Act
+        var result = method!.Invoke(null, new object[] { mockResponse.Object });
+
+        // Assert
+        Assert.NotNull(result);
+        var errorMessage = result as string;
+        Assert.Contains("HTTP 500", errorMessage!);
+        Assert.Contains("Network error", errorMessage);
+    }
+
+    [Fact]
+    public void ParseFacebookError_InvalidJson_ReturnsRawContent()
+    {
+        // Use reflection to test the private method
+        var method = typeof(FacebookService).GetMethod("ParseFacebookError", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        
+        var mockResponse = new Mock<RestResponse>();
+        mockResponse.Object.Content = "Invalid JSON response";
+        mockResponse.Object.StatusCode = System.Net.HttpStatusCode.BadRequest;
+
+        // Act
+        var result = method!.Invoke(null, new object[] { mockResponse.Object });
+
+        // Assert
+        Assert.NotNull(result);
+        var errorMessage = result as string;
+        Assert.Equal("Invalid JSON response", errorMessage);
+    }
+
+    #endregion
+
+    #region JSON Property Extraction Tests
+
+    [Fact]
+    public void GetJsonStringProperty_ExistingProperty_ReturnsValue()
+    {
+        // Use reflection to test the private method
+        var method = typeof(FacebookService).GetMethod("GetJsonStringProperty", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(@"{""name"": ""Test Page"", ""id"": ""123456""}");
+
+        // Act
+        var result = method!.Invoke(null, new object[] { jsonElement, "name" });
+
+        // Assert
+        Assert.Equal("Test Page", result);
+    }
+
+    [Fact]
+    public void GetJsonStringProperty_NonExistingProperty_ReturnsNull()
+    {
+        // Use reflection to test the private method
+        var method = typeof(FacebookService).GetMethod("GetJsonStringProperty", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(@"{""name"": ""Test Page""}");
+
+        // Act
+        var result = method!.Invoke(null, new object[] { jsonElement, "nonexistent" });
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    #endregion
+
+    #region Message Validation Edge Cases
+
+    [Fact]
+    public async Task SendMessageAsync_WithEmptyTextAndNoAttachment_ThrowsArgumentException()
+    {
+        // Arrange
+        var service = new FacebookService();
+        service.Initialize("EAATest123456789|ValidPageAccessToken");
+
+        var request = new FacebookMessageRequest
+        {
+            Recipient = "user-123",
+            Message = new FacebookMessage { Text = "", Attachment = null }
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.SendMessageAsync(request, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_WithNullTextAndNoAttachment_ThrowsArgumentException()
+    {
+        // Arrange
+        var service = new FacebookService();
+        service.Initialize("EAATest123456789|ValidPageAccessToken");
+
+        var request = new FacebookMessageRequest
+        {
+            Recipient = "user-123",
+            Message = new FacebookMessage { Text = null, Attachment = null }
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.SendMessageAsync(request, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_WithWhitespaceOnlyText_ThrowsArgumentException()
+    {
+        // Arrange
+        var service = new FacebookService();
+        service.Initialize("EAATest123456789|ValidPageAccessToken");
+
+        var request = new FacebookMessageRequest
+        {
+            Recipient = "user-123",
+            Message = new FacebookMessage { Text = "   ", Attachment = null }
+        };
+
+        // Act & Assert
+        // The validation method in FacebookService checks for text/attachment content before making API call
+        // So whitespace text with no attachment should throw ArgumentException during validation
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.SendMessageAsync(request, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_WithRequestLevelQuickReplies_ValidatesCount()
+    {
+        // Arrange
+        var service = new FacebookService();
+        service.Initialize("EAATest123456789|ValidPageAccessToken");
+
+        var request = new FacebookMessageRequest
+        {
+            Recipient = "user-123",
+            Message = new FacebookMessage { Text = "Test" },
+            QuickReplies = Enumerable.Range(1, 14).Select(i => new FacebookQuickReply 
+            { 
+                ContentType = "text", 
+                Title = $"Option {i}", 
+                Payload = $"OPTION_{i}" 
+            }).ToList()
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.SendMessageAsync(request, CancellationToken.None));
+    }
+
+    #endregion
+
+    #region Default Values and Edge Cases
+
+    [Fact]
+    public void BuildFacebookMessagePayload_WithDefaultNotificationType_DoesNotIncludeProperty()
+    {
+        // Use reflection to test the private method
+        var method = typeof(FacebookService).GetMethod("BuildFacebookMessagePayload", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        
+        var request = new FacebookMessageRequest
+        {
+            Recipient = "user-123",
+            MessagingType = "RESPONSE",
+            NotificationType = "REGULAR", // Default value
+            Message = new FacebookMessage { Text = "Hello!" }
+        };
+
+        // Act
+        var result = method!.Invoke(null, new object[] { request });
+
+        // Assert
+        var payload = result as Dictionary<string, object>;
+        Assert.NotNull(payload);
+        Assert.False(payload.ContainsKey("notification_type")); // Should not include default value
+    }
+
+    [Fact]
+    public void BuildFacebookMessagePayload_WithNonDefaultNotificationType_IncludesProperty()
+    {
+        // Use reflection to test the private method
+        var method = typeof(FacebookService).GetMethod("BuildFacebookMessagePayload", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        
+        var request = new FacebookMessageRequest
+        {
+            Recipient = "user-123",
+            MessagingType = "RESPONSE",
+            NotificationType = "SILENT_PUSH", // Non-default value
+            Message = new FacebookMessage { Text = "Hello!" }
+        };
+
+        // Act
+        var result = method!.Invoke(null, new object[] { request });
+
+        // Assert
+        var payload = result as Dictionary<string, object>;
+        Assert.NotNull(payload);
+        Assert.True(payload.ContainsKey("notification_type"));
+        Assert.Equal("SILENT_PUSH", payload["notification_type"]);
+    }
+
+    [Fact]
+    public void BuildFacebookMessagePayload_WithTag_IncludesTagProperty()
+    {
+        // Use reflection to test the private method
+        var method = typeof(FacebookService).GetMethod("BuildFacebookMessagePayload", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        
+        var request = new FacebookMessageRequest
+        {
+            Recipient = "user-123",
+            MessagingType = "MESSAGE_TAG",
+            Tag = "CONFIRMED_EVENT_UPDATE",
+            Message = new FacebookMessage { Text = "Your event is confirmed!" }
+        };
+
+        // Act
+        var result = method!.Invoke(null, new object[] { request });
+
+        // Assert
+        var payload = result as Dictionary<string, object>;
+        Assert.NotNull(payload);
+        Assert.True(payload.ContainsKey("tag"));
+        Assert.Equal("CONFIRMED_EVENT_UPDATE", payload["tag"]);
+    }
+
+    [Fact]
+    public void BuildMessageContent_WithQuickReplyWithoutImageUrl_DoesNotIncludeImageUrl()
+    {
+        // Use reflection to test the private method
+        var method = typeof(FacebookService).GetMethod("BuildMessageContent", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        
+        var message = new FacebookMessage
+        {
+            Text = "Choose an option:",
+            QuickReplies = new List<FacebookQuickReply>
+            {
+                new FacebookQuickReply 
+                { 
+                    ContentType = "text", 
+                    Title = "Yes", 
+                    Payload = "YES_PAYLOAD"
+                    // No ImageUrl specified
+                }
+            }
+        };
+
+        // Act
+        var result = method!.Invoke(null, new object[] { message });
+
+        // Assert
+        var content = result as Dictionary<string, object>;
+        Assert.NotNull(content);
+        
+        var quickReplies = content["quick_replies"] as object[];
+        Assert.NotNull(quickReplies);
+        Assert.Single(quickReplies);
+        
+        var quickReply = quickReplies[0] as Dictionary<string, object>;
+        Assert.NotNull(quickReply);
+        Assert.False(quickReply.ContainsKey("image_url"));
+    }
+
+    #endregion
+
+    #region Argument Validation Edge Cases
+
+    [Fact]
+    public async Task FetchPageAsync_WithNullPageId_ThrowsArgumentException()
+    {
+        // Arrange
+        var service = new FacebookService();
+        service.Initialize("EAATest123456789|ValidPageAccessToken");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.FetchPageAsync(null!, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task FetchPageAsync_WithEmptyPageId_ThrowsArgumentException()
+    {
+        // Arrange
+        var service = new FacebookService();
+        service.Initialize("EAATest123456789|ValidPageAccessToken");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.FetchPageAsync("", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task FetchPageAsync_WithWhitespacePageId_ThrowsArgumentException()
+    {
+        // Arrange
+        var service = new FacebookService();
+        service.Initialize("EAATest123456789|ValidPageAccessToken");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => 
+            service.FetchPageAsync("   ", CancellationToken.None));
+    }
+
+    #endregion
 }

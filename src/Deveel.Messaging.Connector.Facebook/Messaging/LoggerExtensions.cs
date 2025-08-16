@@ -10,7 +10,7 @@ namespace Deveel.Messaging
     /// <summary>
     /// Provides high-performance logging extensions for Facebook Messenger Connector operations using source-generated logging methods.
     /// </summary>
-    internal static partial class FacebookMessengerConnectorLoggerExtensions
+    internal static partial class LoggerExtensions
     {
         #region Initialization Logging
 
