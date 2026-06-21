@@ -135,7 +135,7 @@ public class MessagingClientContextEnrichmentTests
     [Fact]
     public async Task Should_AddContextTags_ToSendActivity()
     {
-        var recorded = new ConcurrentBag<Activity>();
+        var recorded = new BlockingCollection<Activity>();
 
         using var listener = new ActivityListener
         {
@@ -165,7 +165,7 @@ public class MessagingClientContextEnrichmentTests
     [Fact]
     public async Task Should_AddContextTags_ToReceiveActivity()
     {
-        var recorded = new ConcurrentBag<Activity>();
+        var recorded = new BlockingCollection<Activity>();
 
         using var listener = new ActivityListener
         {
@@ -192,7 +192,7 @@ public class MessagingClientContextEnrichmentTests
     [Fact]
     public async Task Should_AddContextTags_ToStatusActivity()
     {
-        var recorded = new ConcurrentBag<Activity>();
+        var recorded = new BlockingCollection<Activity>();
 
         using var listener = new ActivityListener
         {
@@ -218,7 +218,7 @@ public class MessagingClientContextEnrichmentTests
     [Fact]
     public async Task Should_AddContextTags_ToReceiveStatusActivity()
     {
-        var recorded = new ConcurrentBag<Activity>();
+        var recorded = new BlockingCollection<Activity>();
 
         using var listener = new ActivityListener
         {
@@ -266,7 +266,7 @@ public class MessagingClientContextEnrichmentTests
     [Fact]
     public async Task SendActivity_ShouldBeChildOfCurrentActivity()
     {
-        var recorded = new ConcurrentBag<Activity>();
+        var recorded = new BlockingCollection<Activity>();
 
         using var clientListener = new ActivityListener
         {
@@ -299,7 +299,7 @@ public class MessagingClientContextEnrichmentTests
     [Fact]
     public async Task SendActivity_ShouldBeRoot_WhenNoCurrentActivity()
     {
-        var recorded = new ConcurrentBag<Activity>();
+        var recorded = new BlockingCollection<Activity>();
 
         using var listener = new ActivityListener
         {
@@ -521,16 +521,14 @@ public class MessagingClientContextEnrichmentTests
         Assert.Equal("v", request.Context!["k"]);
     }
 
-    private static Activity? WaitForActivity(ConcurrentBag<Activity> recorded, string operationName)
+    private static Activity WaitForActivity(BlockingCollection<Activity> recorded, string operationName)
     {
         var deadline = DateTime.UtcNow.AddSeconds(5);
         while (DateTime.UtcNow < deadline)
         {
-            var activity = recorded.FirstOrDefault(a => a.OperationName == operationName);
-            if (activity != null)
+            if (recorded.TryTake(out var activity, 10) && activity.OperationName == operationName)
                 return activity;
-            Thread.SpinWait(10);
         }
-        return recorded.FirstOrDefault(a => a.OperationName == operationName);
+        throw new InvalidOperationException($"Activity '{operationName}' was not recorded within the timeout.");
     }
 }
