@@ -4,20 +4,20 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 namespace Ratatosk
 {
     /// <summary>
-    /// An ASP.NET Core <see cref="IHealthCheck"/> that probes all registered
-    /// Ratatosk connectors and reports their aggregate health status.
+    /// An ASP.NET Core <see cref="IHealthCheck"/> that probes Ratatosk
+    /// connectors and reports their aggregate health status.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// This health check resolves all unnamed connectors via
-    /// <see cref="IEnumerable{IChannelConnector}"/> and all named connectors
+    /// This health check resolves unnamed connectors via
+    /// <see cref="IEnumerable{IChannelConnector}"/> and named connectors
     /// via <see cref="NamedConnectorDescriptor"/> at check time. Each connector
     /// is probed through its <see cref="IChannelConnector.GetHealthAsync"/>
     /// method and the results are aggregated into a single
     /// <see cref="HealthCheckResult"/>.
     /// </para>
     /// <para>
-    /// The overall status is the worst status across all connectors:
+    /// The overall status is the worst status across all probed connectors:
     /// <see cref="HealthStatus.Unhealthy"/> if any connector is unhealthy,
     /// <see cref="HealthStatus.Degraded"/> if any connector has issues,
     /// <see cref="HealthStatus.Healthy"/> if all connectors are healthy.
@@ -28,15 +28,23 @@ namespace Ratatosk
     /// keyed by the connector type name (with the "Connector" suffix removed)
     /// or the named connector's registration name.
     /// </para>
+    /// <para>
+    /// Use the <paramref name="connectorTypes"/> and <paramref name="connectorNames"/>
+    /// parameters to restrict which connectors are probed. When both are <c>null</c>
+    /// or empty, all registered connectors are probed.
+    /// </para>
     /// </remarks>
     public sealed class ConnectorHealthCheck : IHealthCheck
     {
         private readonly IEnumerable<IChannelConnector> _connectors;
         private readonly IEnumerable<NamedConnectorDescriptor> _namedDescriptors;
         private readonly IServiceProvider _serviceProvider;
+        private readonly HashSet<Type>? _connectorTypes;
+        private readonly HashSet<string>? _connectorNames;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConnectorHealthCheck"/> class.
+        /// Initializes a new instance of the <see cref="ConnectorHealthCheck"/> class
+        /// that probes all registered connectors.
         /// </summary>
         /// <param name="connectors">
         /// The collection of unnamed connectors registered in the application.
@@ -52,6 +60,38 @@ namespace Ratatosk
             IEnumerable<IChannelConnector> connectors,
             IEnumerable<NamedConnectorDescriptor> namedDescriptors,
             IServiceProvider? serviceProvider)
+            : this(connectors, namedDescriptors, serviceProvider, null, null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConnectorHealthCheck"/> class
+        /// with optional filters to restrict which connectors are probed.
+        /// </summary>
+        /// <param name="connectors">
+        /// The collection of unnamed connectors registered in the application.
+        /// </param>
+        /// <param name="namedDescriptors">
+        /// The collection of named connector descriptors registered in the application.
+        /// </param>
+        /// <param name="serviceProvider">
+        /// The service provider used to resolve named connector instances.
+        /// Can be <c>null</c> if no named connectors are registered.
+        /// </param>
+        /// <param name="connectorTypes">
+        /// An optional set of connector types to probe. When <c>null</c> or empty,
+        /// all unnamed connectors are probed.
+        /// </param>
+        /// <param name="connectorNames">
+        /// An optional set of named connector names to probe. When <c>null</c> or empty,
+        /// all named connectors are probed.
+        /// </param>
+        public ConnectorHealthCheck(
+            IEnumerable<IChannelConnector> connectors,
+            IEnumerable<NamedConnectorDescriptor> namedDescriptors,
+            IServiceProvider? serviceProvider,
+            HashSet<Type>? connectorTypes,
+            HashSet<string>? connectorNames)
         {
             ArgumentNullException.ThrowIfNull(connectors);
             ArgumentNullException.ThrowIfNull(namedDescriptors);
@@ -59,6 +99,8 @@ namespace Ratatosk
             _connectors = connectors;
             _namedDescriptors = namedDescriptors;
             _serviceProvider = serviceProvider!;
+            _connectorTypes = connectorTypes;
+            _connectorNames = connectorNames;
         }
 
         /// <inheritdoc />
@@ -71,6 +113,9 @@ namespace Ratatosk
 
             foreach (var connector in _connectors)
             {
+                if (_connectorTypes != null && _connectorTypes.Count > 0 && !_connectorTypes.Contains(connector.GetType()))
+                    continue;
+
                 var key = GetConnectorKey(connector);
                 var (status, detail) = await ProbeAsync(connector, cancellationToken);
                 data[key] = detail;
@@ -80,6 +125,9 @@ namespace Ratatosk
 
             foreach (var descriptor in _namedDescriptors)
             {
+                if (_connectorNames != null && _connectorNames.Count > 0 && !_connectorNames.Contains(descriptor.Name))
+                    continue;
+
                 var connector = _serviceProvider.GetKeyedService<IChannelConnector>(descriptor.Name);
                 if (connector == null)
                 {
