@@ -1,9 +1,11 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Ratatosk.Extensions.HealthChecks.XUnit.Unit
 {
     public class ConnectorHealthCheckTests
     {
+        private static readonly IServiceProvider EmptyServiceProvider = new ServiceCollection().BuildServiceProvider();
         [Fact]
         public async Task Should_ReturnHealthy_When_AllConnectorsHealthy()
         {
@@ -17,7 +19,7 @@ namespace Ratatosk.Extensions.HealthChecks.XUnit.Unit
                 })
             };
 
-            var check = new ConnectorHealthCheck(connectors, [], null!);
+            var check = new ConnectorHealthCheck(connectors, [], EmptyServiceProvider);
             var result = await check.CheckHealthAsync(new HealthCheckContext());
 
             Assert.Equal(HealthStatus.Healthy, result.Status);
@@ -38,7 +40,7 @@ namespace Ratatosk.Extensions.HealthChecks.XUnit.Unit
                 })
             };
 
-            var check = new ConnectorHealthCheck(connectors, [], null!);
+            var check = new ConnectorHealthCheck(connectors, [], EmptyServiceProvider);
             var result = await check.CheckHealthAsync(new HealthCheckContext());
 
             Assert.Equal(HealthStatus.Degraded, result.Status);
@@ -58,7 +60,7 @@ namespace Ratatosk.Extensions.HealthChecks.XUnit.Unit
                 })
             };
 
-            var check = new ConnectorHealthCheck(connectors, [], null!);
+            var check = new ConnectorHealthCheck(connectors, [], EmptyServiceProvider);
             var result = await check.CheckHealthAsync(new HealthCheckContext());
 
             Assert.Equal(HealthStatus.Unhealthy, result.Status);
@@ -72,7 +74,7 @@ namespace Ratatosk.Extensions.HealthChecks.XUnit.Unit
                 new Fixtures.FakeConnector(() => throw new InvalidOperationException("Unexpected error"))
             };
 
-            var check = new ConnectorHealthCheck(connectors, [], null!);
+            var check = new ConnectorHealthCheck(connectors, [], EmptyServiceProvider);
             var result = await check.CheckHealthAsync(new HealthCheckContext());
 
             Assert.Equal(HealthStatus.Unhealthy, result.Status);
@@ -86,7 +88,7 @@ namespace Ratatosk.Extensions.HealthChecks.XUnit.Unit
                 new Fixtures.FakeFailingConnector("FailingConnector")
             };
 
-            var check = new ConnectorHealthCheck(connectors, [], null!);
+            var check = new ConnectorHealthCheck(connectors, [], EmptyServiceProvider);
             var result = await check.CheckHealthAsync(new HealthCheckContext());
 
             Assert.Equal(HealthStatus.Unhealthy, result.Status);
@@ -110,7 +112,7 @@ namespace Ratatosk.Extensions.HealthChecks.XUnit.Unit
                 })
             };
 
-            var check = new ConnectorHealthCheck(connectors, [], null!);
+            var check = new ConnectorHealthCheck(connectors, [], EmptyServiceProvider);
             var result = await check.CheckHealthAsync(new HealthCheckContext());
 
             Assert.Equal(HealthStatus.Healthy, result.Status);
@@ -139,7 +141,7 @@ namespace Ratatosk.Extensions.HealthChecks.XUnit.Unit
                 })
             };
 
-            var check = new ConnectorHealthCheck(connectors, [], null!);
+            var check = new ConnectorHealthCheck(connectors, [], EmptyServiceProvider);
             var result = await check.CheckHealthAsync(new HealthCheckContext());
 
             Assert.Equal(HealthStatus.Unhealthy, result.Status);
@@ -165,7 +167,7 @@ namespace Ratatosk.Extensions.HealthChecks.XUnit.Unit
                 })
             };
 
-            var check = new ConnectorHealthCheck(connectors, [], null!);
+            var check = new ConnectorHealthCheck(connectors, [], EmptyServiceProvider);
             var result = await check.CheckHealthAsync(new HealthCheckContext());
 
             Assert.Equal(HealthStatus.Degraded, result.Status);
@@ -174,7 +176,7 @@ namespace Ratatosk.Extensions.HealthChecks.XUnit.Unit
         [Fact]
         public async Task Should_HandleEmptyConnectors()
         {
-            var check = new ConnectorHealthCheck([], [], null!);
+            var check = new ConnectorHealthCheck([], [], EmptyServiceProvider);
             var result = await check.CheckHealthAsync(new HealthCheckContext());
 
             Assert.Equal(HealthStatus.Healthy, result.Status);

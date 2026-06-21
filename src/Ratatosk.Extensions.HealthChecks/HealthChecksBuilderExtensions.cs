@@ -41,8 +41,8 @@ namespace Ratatosk
         {
             ArgumentNullException.ThrowIfNull(builder);
 
-            builder.Services.AddSingleton<ConnectorHealthCheck>();
-            builder.AddCheck<ConnectorHealthCheck>(name, tags: ["messaging"]);
+            builder.Services.AddTransient<ConnectorHealthCheck>();
+            builder.AddCheck<ConnectorHealthCheck>(name, failureStatus: null, tags: ["messaging"]);
 
             return builder;
         }
@@ -99,7 +99,10 @@ namespace Ratatosk
                     filter.IncludeAll ? null : new HashSet<string>(filter.ConnectorNames));
             });
 
-            builder.AddCheck<ConnectorHealthCheck>(name, tags: ["messaging"]);
+            builder.Add(new HealthCheckRegistration(name,
+                sp => sp.GetRequiredService<ConnectorHealthCheck>(),
+                failureStatus: null,
+                tags: ["messaging"]));
 
             return builder;
         }
@@ -150,7 +153,10 @@ namespace Ratatosk
                     null);
             });
 
-            builder.AddCheck<ConnectorHealthCheck>(name, tags: ["messaging"]);
+            builder.Add(new HealthCheckRegistration(name,
+                sp => sp.GetRequiredService<ConnectorHealthCheck>(),
+                failureStatus: null,
+                tags: ["messaging"]));
 
             return builder;
         }
@@ -204,7 +210,10 @@ namespace Ratatosk
                     new HashSet<string> { connectorName });
             });
 
-            builder.AddCheck<ConnectorHealthCheck>(name, tags: ["messaging"]);
+            builder.Add(new HealthCheckRegistration(name,
+                sp => sp.GetRequiredService<ConnectorHealthCheck>(),
+                failureStatus: null,
+                tags: ["messaging"]));
 
             return builder;
         }

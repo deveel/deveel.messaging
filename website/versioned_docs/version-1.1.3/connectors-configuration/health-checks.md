@@ -68,6 +68,28 @@ app.Run();
 
 The health check result includes per-connector detail in the `Data` dictionary, keyed by connector type name (with the `Connector` suffix removed) or the named connector's registration name:
 
+> **Note:** By default, ASP.NET Core's `MapHealthChecks` middleware does not serialize `HealthCheckResult.Data` in the HTTP response. To expose per-connector details over HTTP, provide a custom `ResponseWriter`:
+>
+> ```csharp
+> app.MapHealthChecks("/health/detail", new HealthCheckOptions
+> {
+>     ResponseWriter = async (context, report) =>
+>     {
+>         var json = JsonSerializer.Serialize(new
+>         {
+>             status = report.Status.ToString(),
+>             results = report.Entries.ToDictionary(
+>                 e => e.Key,
+>                 e => e.Value.Data)
+>         });
+>         context.Response.ContentType = "application/json";
+>         await context.Response.WriteAsync(json);
+>     }
+> });
+> ```
+
+The per-connector data has this shape:
+
 ```json
 {
   "status": "Degraded",

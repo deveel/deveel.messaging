@@ -29,7 +29,7 @@ namespace Ratatosk
     /// or the named connector's registration name.
     /// </para>
     /// <para>
-    /// Use the <paramref name="connectorTypes"/> and <paramref name="connectorNames"/>
+    /// Use the <c>connectorTypes</c> and <c>connectorNames</c>
     /// parameters to restrict which connectors are probed. When both are <c>null</c>
     /// or empty, all registered connectors are probed.
     /// </para>

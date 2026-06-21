@@ -335,7 +335,7 @@ services.AddHealthChecks()
     .AddRatatoskHealthChecks();
 ```
 
-The check is exposed through the standard ASP.NET Core health endpoint with no additional configuration.
+The check is exposed through the standard ASP.NET Core health endpoint with no additional configuration. Per-connector detail (state, issues, uptime, metrics) is included in `HealthCheckResult.Data`, but note that the default `MapHealthChecks` response does not serialize `Data` — a custom `ResponseWriter` is required to surface per-connector details over HTTP.
 
 #### Benefits
 
