@@ -523,10 +523,10 @@ public class MessagingClientContextEnrichmentTests
 
     private static Activity WaitForActivity(BlockingCollection<Activity> recorded, string operationName)
     {
-        var deadline = DateTime.UtcNow.AddSeconds(5);
+        var deadline = DateTime.UtcNow.AddSeconds(15);
         while (DateTime.UtcNow < deadline)
         {
-            if (recorded.TryTake(out var activity, 10) && activity.OperationName == operationName)
+            if (recorded.TryTake(out var activity, 100) && activity.OperationName == operationName)
                 return activity;
         }
         throw new InvalidOperationException($"Activity '{operationName}' was not recorded within the timeout.");

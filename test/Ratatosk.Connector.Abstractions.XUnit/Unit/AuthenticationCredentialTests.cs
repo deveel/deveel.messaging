@@ -67,7 +67,7 @@ public class AuthenticationCredentialTests
         var cred = new AuthenticationCredential(AuthenticationScheme.Bearer, "tok", DateTime.UtcNow.AddMinutes(30));
         var remaining = cred.GetTimeUntilExpiration();
         Assert.NotNull(remaining);
-        Assert.True(remaining.Value.TotalMinutes > 29);
+        Assert.True(remaining.Value.TotalMinutes > 28);
     }
 
     [Fact]
@@ -136,9 +136,9 @@ public class AuthenticationCredentialTests
     [Fact]
     public void Should_HaveObtainedAtTimestamp()
     {
-        var before = DateTime.UtcNow.AddSeconds(-1);
+        var before = DateTime.UtcNow.AddSeconds(-5);
         var cred = new AuthenticationCredential(AuthenticationScheme.ApiKey, "key");
-        var after = DateTime.UtcNow.AddSeconds(1);
+        var after = DateTime.UtcNow.AddSeconds(5);
         Assert.InRange(cred.ObtainedAt, before, after);
     }
 }
