@@ -46,22 +46,19 @@ namespace Ratatosk
         /// </param>
         /// <param name="serviceProvider">
         /// The service provider used to resolve named connector instances.
+        /// Can be <c>null</c> if no named connectors are registered.
         /// </param>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown if any parameter is <c>null</c>.
-        /// </exception>
         public ConnectorHealthCheck(
             IEnumerable<IChannelConnector> connectors,
             IEnumerable<NamedConnectorDescriptor> namedDescriptors,
-            IServiceProvider serviceProvider)
+            IServiceProvider? serviceProvider)
         {
             ArgumentNullException.ThrowIfNull(connectors);
             ArgumentNullException.ThrowIfNull(namedDescriptors);
-            ArgumentNullException.ThrowIfNull(serviceProvider);
 
             _connectors = connectors;
             _namedDescriptors = namedDescriptors;
-            _serviceProvider = serviceProvider;
+            _serviceProvider = serviceProvider!;
         }
 
         /// <inheritdoc />
