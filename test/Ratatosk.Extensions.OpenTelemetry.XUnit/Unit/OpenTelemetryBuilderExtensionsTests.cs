@@ -63,7 +63,8 @@ public class OpenTelemetryBuilderExtensionsTests
 
         meterProvider.ForceFlush();
 
-        Assert.Contains(exporter.Exported, m => m.MeterName == "Ratatosk.Client");
+        var exported = exporter.GetExported();
+        Assert.Contains(exported, m => m.MeterName == "Ratatosk.Client");
     }
 
     [Fact]
@@ -82,7 +83,8 @@ public class OpenTelemetryBuilderExtensionsTests
 
         meterProvider.ForceFlush();
 
-        Assert.Contains(exporter.Exported, m => m.MeterName == "Ratatosk.Connector.SendGridEmail");
+        var exported = exporter.GetExported();
+        Assert.Contains(exported, m => m.MeterName == "Ratatosk.Connector.SendGridEmail");
     }
 
     [Fact]
@@ -155,12 +157,22 @@ public class OpenTelemetryBuilderExtensionsTests
 
     private sealed class TestMetricExporter : BaseExporter<Metric>
     {
-        public List<Metric> Exported { get; } = new();
+        private readonly object _lock = new();
+        private readonly List<Metric> _exported = new();
+
+        public List<Metric> GetExported()
+        {
+            lock (_lock)
+                return _exported.ToList();
+        }
 
         public override ExportResult Export(in Batch<Metric> batch)
         {
-            foreach (var metric in batch)
-                Exported.Add(metric);
+            lock (_lock)
+            {
+                foreach (var metric in batch)
+                    _exported.Add(metric);
+            }
             return ExportResult.Success;
         }
     }
