@@ -1,0 +1,64 @@
+{
+  "docs": [
+    "README",
+    "framework-overview",
+    "installation",
+    "quickstart",
+    "messaging-model",
+    "channel-schema",
+    "schema-derivation",
+    "message-validation",
+    "authentication",
+    "connector-implementation",
+    "connectors-implementation/result-types",
+    "connectors-configuration/retry-policies",
+    "telemetry",
+    "connectors-implementation/advanced-topics",
+    {
+      "type": "category",
+      "label": "Senders",
+      "link": {
+        "type": "doc",
+        "id": "senders/README"
+      },
+      "items": [
+        "senders/sender-management",
+        "senders/sender-resolution"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Connectors",
+      "link": {
+        "type": "doc",
+        "id": "connectors/README"
+      },
+      "items": [
+        "connectors/twilio-sms",
+        "connectors/twilio-whatsapp",
+        "connectors/sendgrid-email",
+        "connectors/firebase-push",
+        "connectors/facebook-messenger",
+        "connectors/telegram-bot"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Samples",
+      "link": {
+        "type": "doc",
+        "id": "samples/README"
+      },
+      "items": [
+        "samples/twilio",
+        "samples/multi-connector",
+        "samples/firebase-push",
+        "samples/facebook-messenger",
+        "samples/sendgrid-email",
+        "samples/telegram-bot",
+        "samples/sender-manager"
+      ]
+    },
+    "roadmap"
+  ]
+}
