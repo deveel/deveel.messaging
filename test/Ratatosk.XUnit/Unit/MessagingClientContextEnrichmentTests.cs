@@ -5,8 +5,12 @@ using System.Diagnostics;
 
 namespace Ratatosk.XUnit.Unit;
 
+[CollectionDefinition("ActivityListenerTests", DisableParallelization = true)]
+public class ActivityListenerTestsCollection;
+
 [Trait("Category", "Integration")]
 [Trait("Feature", "MessagingClient")]
+[Collection("ActivityListenerTests")]
 public class MessagingClientContextEnrichmentTests
 {
     private static IServiceProvider CreateClient(Action<MessagingBuilder>? configure = null)
