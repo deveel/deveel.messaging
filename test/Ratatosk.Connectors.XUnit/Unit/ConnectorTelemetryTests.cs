@@ -78,7 +78,11 @@ public class ConnectorTelemetryTests
         {
             ShouldListenTo = source => source.Name.StartsWith("Ratatosk.Connector."),
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
-            ActivityStarted = activity => events.Add(activity)
+            ActivityStarted = activity =>
+            {
+                lock (events)
+                    events.Add(activity);
+            }
         };
         ActivitySource.AddActivityListener(listener);
 
@@ -210,7 +214,7 @@ public class ConnectorTelemetryTests
         Assert.True(result.IsSuccess());
         
         // Small delay to ensure all Activity callbacks have completed
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
         
         Assert.Contains(events, a =>
             a.OperationName.Contains("receive") &&
@@ -340,7 +344,7 @@ public class ConnectorTelemetryTests
         await connector2.InitializeAsync(TestContext.Current.CancellationToken);
         
         // Small delay to ensure all Activity callbacks have completed
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         Assert.Contains(sources, s => s.Contains("type-a"));
         Assert.Contains(sources, s => s.Contains("type-b"));

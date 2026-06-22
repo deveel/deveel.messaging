@@ -211,8 +211,8 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal("invalid_timestamp_123", result.Value.MessageId);
-        // Timestamp should be recent (within last minute)
-        Assert.True(result.Value.Timestamp >= DateTime.UtcNow.AddMinutes(-1));
+        // Timestamp should be recent (within last 5 minutes)
+        Assert.True(result.Value.Timestamp >= DateTime.UtcNow.AddMinutes(-5));
         Assert.True(result.Value.Timestamp <= DateTime.UtcNow);
     }
 

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Title>Ratatosk Health Checks</Title>
+    <Description>ASP.NET Core health check integration for the Ratatosk messaging framework,
+      exposing per-connector health status through the standard health check endpoint.</Description>
+    <PackageTags>ratatosk;messaging;healthchecks;aspnetcore;diagnostics</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ratatosk\Ratatosk.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework) == 'net8.0'">
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework) == 'net9.0'">
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework) == 'net10.0'">
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Ratatosk" />
+    <Using Include="Deveel" />
+  </ItemGroup>
+</Project>

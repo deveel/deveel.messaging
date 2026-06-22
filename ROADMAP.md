@@ -15,7 +15,7 @@ This document describes the planned evolution of the **Ratatosk Framework** — 
 | [Framework Foundations](#v040--framework-foundations) | v0.4.0 | [Test Coverage Target](#test-coverage-target--80) · [CI/CD Pipeline Hardening](#cicd-pipeline-hardening) · [Structured Logging Improvements](#structured-logging-improvements) · [Documentation](#documentation) |
 | [Inbound Messaging](#v050--inbound-messaging) | v0.5.0 | [Twilio Inbound Messages](#twilio-inbound-messages-sms--whatsapp) · [SendGrid Inbound Messages](#sendgrid-inbound-messages-inbound-parse) · [Firebase Inbound Messages](#firebase-inbound-messages-data--notification-messages) |
 | [First Stable Release](#v100--first-stable-release) | v1.0.0 | [API Freeze](#api-freeze) · [NuGet GA Release](#nuget-ga-release) · [Interactive Content](#interactive-content) · [Sender Identity Model](#sender-identity-model) |
-| [Resilience & Observability](#v110--resilience--observability) | v1.1.0 | [Retry Policies](#retry-policies) ✓ · [OpenTelemetry Tracing & Metrics](#opentelemetry-tracing--metrics) ✓ · [Health Checks](#health-checks) · [Connector-Level Timeout Configuration](#connector-level-timeout-configuration) |
+| [Resilience & Observability](#v110--resilience--observability) | v1.1.0 | [Retry Policies](#retry-policies) ✓ · [OpenTelemetry Tracing & Metrics](#opentelemetry-tracing--metrics) ✓ · [Health Checks](#health-checks) ✓ · [Connector-Level Timeout Configuration](#connector-level-timeout-configuration) |
 | [New SaaS Connectors](#v120--new-saas-connectors) | v1.2.0 | [Slack](#slack-connector) · [Microsoft Teams](#microsoft-teams-connector) · [WhatsApp Business API](#whatsapp-business-api-connector-direct-cloud-api) · [Viber Business](#viber-business-connector) · [LINE](#line-connector) |
 | [Protocol Connectors](#v130--protocol-connectors) | v1.3.0 | [Base Classes](#protocol-connector-base-classes) · [SMPP](#smpp-connector) · [SMTP](#smtp-connector) · [RCS](#rcs-connector) · [APNs](#apns-connector-direct) |
 | [Content Adaptation & Transcoding](#v140--content-adaptation--transcoding) | v1.4.0 | [IContentTranscoder Abstraction](#icontenttrancoder-abstraction) · [Built-In Transcoders](#built-in-transcoders) · [Channel-Aware Fallback](#channel-aware-content-fallback) · [SMS Segmentation](#sms-segmentation) · [Character Encoding Detection](#character-encoding-detection) |
@@ -272,7 +272,7 @@ A generic sender identity system that decouples message composition from sender 
 
 A messaging connector that fails silently, cannot be monitored, or brings down dependent services on provider outages is not production-ready. This milestone adds the operational layer that connectors need to be trusted in production: structured retry and circuit-breaker policies, distributed tracing and metrics via OpenTelemetry, health check endpoints, and consistent structured logging across all connectors.
 
-Retry policies and OpenTelemetry tracing & metrics are complete in this release. Health checks and timeout configuration remain in progress.
+Retry policies, OpenTelemetry tracing & metrics, and health checks are complete in this release. Timeout configuration remains in progress.
 
 ---
 
@@ -325,9 +325,17 @@ Activity sources and metric instruments built into the connector base: an `Activ
 
 There is no standard way to check whether a connector is operational. The `HealthCheck` capability flag exists but there is no integration with ASP.NET Core's `IHealthCheck` infrastructure.
 
-#### What We Are Building
+#### What We Built
 
-`IHealthCheck` implementations for each connector, registered automatically via the DI builder. A health check probes the provider's API (using the connector's existing `HealthCheck` capability path) and reports `Healthy`, `Degraded`, or `Unhealthy` with a structured description. The checks are exposed through the standard ASP.NET Core health endpoint.
+A `Ratatosk.Extensions.HealthChecks` package providing a single `ConnectorHealthCheck` that implements ASP.NET Core's `IHealthCheck`. At check time it discovers all registered connectors (both unnamed and named) via DI, probes each through the connector's existing `GetHealthAsync()` method, and reports `Healthy`, `Degraded`, or `Unhealthy` with per-connector structured detail (state, issues, uptime, metrics) in the result data dictionary.
+
+Registration is a one-liner on `IHealthChecksBuilder`:
+```csharp
+services.AddHealthChecks()
+    .AddRatatoskHealthChecks();
+```
+
+The check is exposed through the standard ASP.NET Core health endpoint with no additional configuration. Per-connector detail (state, issues, uptime, metrics) is included in `HealthCheckResult.Data`, but note that the default `MapHealthChecks` response does not serialize `Data` — a custom `ResponseWriter` is required to surface per-connector details over HTTP.
 
 #### Benefits
 

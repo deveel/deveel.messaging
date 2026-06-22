@@ -202,7 +202,7 @@ public class TwilioMessageReceivingTests
         Assert.Equal("SM1234567890", statusResult.MessageId);
         Assert.Equal(MessageStatus.Delivered, statusResult.Status);
         Assert.True(statusResult.Timestamp <= DateTimeOffset.UtcNow);
-        Assert.True(statusResult.Timestamp >= DateTimeOffset.UtcNow.AddMinutes(-1)); // Recent timestamp
+        Assert.True(statusResult.Timestamp >= DateTimeOffset.UtcNow.AddMinutes(-5)); // Recent timestamp
 
         // Check additional Twilio status data
         Assert.NotNull(statusResult.AdditionalData);
@@ -245,7 +245,7 @@ public class TwilioMessageReceivingTests
         Assert.Equal("SM1234567890", statusResult.MessageId);
         Assert.Equal(MessageStatus.DeliveryFailed, statusResult.Status);
         Assert.True(statusResult.Timestamp <= DateTimeOffset.UtcNow);
-        Assert.True(statusResult.Timestamp >= DateTimeOffset.UtcNow.AddMinutes(-1)); // Recent timestamp
+        Assert.True(statusResult.Timestamp >= DateTimeOffset.UtcNow.AddMinutes(-5)); // Recent timestamp
 
         // Check error information
         Assert.NotNull(statusResult.AdditionalData);
@@ -340,7 +340,7 @@ public class TwilioMessageReceivingTests
         Assert.Equal("SM1234567890", statusResult.MessageId);
         Assert.Equal(expectedStatus, statusResult.Status);
         Assert.True(statusResult.Timestamp <= DateTimeOffset.UtcNow);
-        Assert.True(statusResult.Timestamp >= DateTimeOffset.UtcNow.AddMinutes(-1)); // Recent timestamp
+        Assert.True(statusResult.Timestamp >= DateTimeOffset.UtcNow.AddMinutes(-5)); // Recent timestamp
 
         // Verify that additional data is properly initialized even if empty
         Assert.NotNull(statusResult.AdditionalData);

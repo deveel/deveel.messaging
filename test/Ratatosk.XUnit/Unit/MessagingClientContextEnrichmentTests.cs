@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ratatosk.XUnit.Fixtures;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 
 namespace Ratatosk.XUnit.Unit;
@@ -134,7 +135,7 @@ public class MessagingClientContextEnrichmentTests
     [Fact]
     public async Task Should_AddContextTags_ToSendActivity()
     {
-        var recorded = new List<Activity>();
+        var recorded = new BlockingCollection<Activity>();
 
         using var listener = new ActivityListener
         {
@@ -153,7 +154,7 @@ public class MessagingClientContextEnrichmentTests
 
         await client.SendAsync(request);
 
-        var activity = recorded.FirstOrDefault(a => a.OperationName == "mock send");
+        var activity = WaitForActivity(recorded, "mock send");
         Assert.NotNull(activity);
         Assert.Equal("ratatosk", activity.GetTagItem("messaging.system"));
         Assert.Equal("send", activity.GetTagItem("messaging.operation"));
@@ -164,7 +165,7 @@ public class MessagingClientContextEnrichmentTests
     [Fact]
     public async Task Should_AddContextTags_ToReceiveActivity()
     {
-        var recorded = new List<Activity>();
+        var recorded = new BlockingCollection<Activity>();
 
         using var listener = new ActivityListener
         {
@@ -183,7 +184,7 @@ public class MessagingClientContextEnrichmentTests
 
         await client.ReceiveAsync(request);
 
-        var activity = recorded.FirstOrDefault(a => a.OperationName == "mock receive");
+        var activity = WaitForActivity(recorded, "mock receive");
         Assert.NotNull(activity);
         Assert.Equal("t-2", activity.GetTagItem("tenant_id"));
     }
@@ -191,7 +192,7 @@ public class MessagingClientContextEnrichmentTests
     [Fact]
     public async Task Should_AddContextTags_ToStatusActivity()
     {
-        var recorded = new List<Activity>();
+        var recorded = new BlockingCollection<Activity>();
 
         using var listener = new ActivityListener
         {
@@ -209,7 +210,7 @@ public class MessagingClientContextEnrichmentTests
 
         await client.GetStatusAsync(request);
 
-        var activity = recorded.FirstOrDefault(a => a.OperationName == "mock status_query");
+        var activity = WaitForActivity(recorded, "mock status_query");
         Assert.NotNull(activity);
         Assert.Equal("t-3", activity.GetTagItem("tenant_id"));
     }
@@ -217,7 +218,7 @@ public class MessagingClientContextEnrichmentTests
     [Fact]
     public async Task Should_AddContextTags_ToReceiveStatusActivity()
     {
-        var recorded = new List<Activity>();
+        var recorded = new BlockingCollection<Activity>();
 
         using var listener = new ActivityListener
         {
@@ -236,7 +237,7 @@ public class MessagingClientContextEnrichmentTests
 
         await client.ReceiveMessageStatusAsync(request);
 
-        var activity = recorded.FirstOrDefault(a => a.OperationName == "mock receive_status");
+        var activity = WaitForActivity(recorded, "mock receive_status");
         Assert.NotNull(activity);
         Assert.Equal("t-4", activity.GetTagItem("tenant_id"));
     }
@@ -265,7 +266,7 @@ public class MessagingClientContextEnrichmentTests
     [Fact]
     public async Task SendActivity_ShouldBeChildOfCurrentActivity()
     {
-        var recorded = new List<Activity>();
+        var recorded = new BlockingCollection<Activity>();
 
         using var clientListener = new ActivityListener
         {
@@ -287,7 +288,7 @@ public class MessagingClientContextEnrichmentTests
         var request = new SendRequest("mock", message);
         await client.SendAsync(request);
 
-        var childActivity = recorded.FirstOrDefault(a => a.OperationName == "mock send");
+        var childActivity = WaitForActivity(recorded, "mock send");
         Assert.NotNull(childActivity);
 
         // The send span should be a child of the parent activity
@@ -298,7 +299,7 @@ public class MessagingClientContextEnrichmentTests
     [Fact]
     public async Task SendActivity_ShouldBeRoot_WhenNoCurrentActivity()
     {
-        var recorded = new List<Activity>();
+        var recorded = new BlockingCollection<Activity>();
 
         using var listener = new ActivityListener
         {
@@ -318,7 +319,7 @@ public class MessagingClientContextEnrichmentTests
         var request = new SendRequest("mock", message);
         await client.SendAsync(request);
 
-        var activity = recorded.FirstOrDefault(a => a.OperationName == "mock send");
+        var activity = WaitForActivity(recorded, "mock send");
         Assert.NotNull(activity);
         // When there's no parent Activity instance, Parent is null
         Assert.Null(activity.Parent);
@@ -518,5 +519,16 @@ public class MessagingClientContextEnrichmentTests
         Assert.NotNull(request.ConnectionSettings);
         Assert.Equal(typeof(MockConnector), request.ConnectorType);
         Assert.Equal("v", request.Context!["k"]);
+    }
+
+    private static Activity WaitForActivity(BlockingCollection<Activity> recorded, string operationName)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(15);
+        while (DateTime.UtcNow < deadline)
+        {
+            if (recorded.TryTake(out var activity, 100) && activity.OperationName == operationName)
+                return activity;
+        }
+        throw new InvalidOperationException($"Activity '{operationName}' was not recorded within the timeout.");
     }
 }

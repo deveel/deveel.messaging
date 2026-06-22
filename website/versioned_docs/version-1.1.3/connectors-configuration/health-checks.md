@@ -27,66 +27,101 @@ if (health.IsSuccess())
 
 ## ASP.NET Core Health Check Integration
 
-Register connector health checks with ASP.NET Core health monitoring:
+The `Ratatosk.Extensions.HealthChecks` package provides a `ConnectorHealthCheck` that automatically discovers all registered connectors and probes them through the standard ASP.NET Core health check pipeline.
 
-### Basic Registration
+### Installation
 
-```csharp
-builder.Services
-    .AddHealthChecks()
-    .AddCheck<MessagingHealthCheck>("messaging", tags: ["ready"]);
-```
+Add the `Ratatosk.Extensions.HealthChecks` NuGet package to your project.
 
-### Implementation
+### Registration
+
+Register the health check after all connectors have been configured:
 
 ```csharp
-public class MessagingHealthCheck : IHealthCheck
-{
-    private readonly IEnumerable<IChannelConnector> _connectors;
+services.AddMessaging()
+    .AddTwilioSms(...)
+    .AddSendGridEmail(...);
 
-    public MessagingHealthCheck(IEnumerable<IChannelConnector> connectors)
-    {
-        _connectors = connectors;
-    }
-
-    public async Task<HealthCheckResult> CheckHealthAsync(
-        HealthCheckContext context, CancellationToken ct)
-    {
-        var healthy = true;
-        var data = new Dictionary<string, object>();
-
-        foreach (var connector in _connectors)
-        {
-            var health = await connector.GetHealthAsync(ct);
-            var connectorName = $"{connector.Schema.ChannelProvider}/{connector.Schema.ChannelType}";
-            
-            data[$"{connectorName}_healthy"] = health.Value?.IsHealthy;
-            data[$"{connectorName}_state"] = health.Value?.State.ToString();
-            healthy &= health.Value?.IsHealthy ?? false;
-        }
-
-        return healthy
-            ? HealthCheckResult.Healthy(data: data)
-            : HealthCheckResult.Degraded(data: data);
-    }
-}
+services.AddHealthChecks()
+    .AddRatatoskHealthChecks();
 ```
+
+This registers a single health check named `"ratatosk"` with the `"messaging"` tag. At check time it discovers all unnamed and named connectors via DI, probes each through `GetHealthAsync()`, and reports the worst status across all connectors.
 
 ### Health Check Endpoint
 
-Configure health check endpoint in `Program.cs`:
+Configure the health check endpoint in `Program.cs`:
 
 ```csharp
 var app = builder.Build();
 
-app.MapHealthChecks("/health");           // Basic health check
+app.MapHealthChecks("/health");
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
-    Predicate = check => check.Tags.Contains("ready")
+    Predicate = check => check.Tags.Contains("messaging")
 });
 
 app.Run();
 ```
+
+### Per-Connector Detail
+
+The health check result includes per-connector detail in the `Data` dictionary, keyed by connector type name (with the `Connector` suffix removed) or the named connector's registration name:
+
+> **Note:** By default, ASP.NET Core's `MapHealthChecks` middleware does not serialize `HealthCheckResult.Data` in the HTTP response. To expose per-connector details over HTTP, provide a custom `ResponseWriter`:
+>
+> ```csharp
+> app.MapHealthChecks("/health/detail", new HealthCheckOptions
+> {
+>     ResponseWriter = async (context, report) =>
+>     {
+>         var json = JsonSerializer.Serialize(new
+>         {
+>             status = report.Status.ToString(),
+>             results = report.Entries.ToDictionary(
+>                 e => e.Key,
+>                 e => e.Value.Data)
+>         });
+>         context.Response.ContentType = "application/json";
+>         await context.Response.WriteAsync(json);
+>     }
+> });
+> ```
+
+The per-connector data has this shape:
+
+```json
+{
+  "status": "Degraded",
+  "results": {
+    "TwilioSms": {
+      "status": "Healthy",
+      "state": "Ready",
+      "isHealthy": true,
+      "issues": [],
+      "uptime": "01:23:45",
+      "lastHealthCheck": "2026-06-21T10:00:00Z"
+    },
+    "SendGridEmail": {
+      "status": "Degraded",
+      "state": "Ready",
+      "isHealthy": true,
+      "issues": ["High latency detected"],
+      "uptime": "01:23:45",
+      "lastHealthCheck": "2026-06-21T10:00:00Z"
+    }
+  }
+}
+```
+
+### Health Status Mapping
+
+| `ConnectorHealth` | `HealthStatus` | Overall |
+|---|---|---|
+| `IsHealthy == true`, no `Issues` | `Healthy` | Worst across all connectors |
+| `IsHealthy == true`, has `Issues` | `Degraded` | |
+| `IsHealthy == false` | `Unhealthy` | |
+| Exception or failed `OperationResult` | `Unhealthy` | |
 
 ## Manual Health Verification
 
@@ -95,12 +130,10 @@ Test connector connectivity before sending messages:
 ```csharp
 public async Task<bool> VerifyConnectorAsync(IChannelConnector connector)
 {
-    // Test connection to provider
     var testResult = await connector.TestConnectionAsync(CancellationToken.None);
     if (testResult.IsFailure())
         return false;
 
-    // Check health status
     var health = await connector.GetHealthAsync(CancellationToken.None);
     return health.IsSuccess() && health.Value?.IsHealthy == true;
 }
@@ -148,7 +181,6 @@ protected override async Task<ConnectorHealth> GetConnectorHealthAsync(Cancellat
 
     try
     {
-        // Test actual API connectivity
         var response = await _httpClient.GetAsync("/health", ct);
         response.EnsureSuccessStatusCode();
         
@@ -171,45 +203,12 @@ Connector state affects health status:
 
 | State | IsHealthy | Description |
 |-------|-----------|-------------|
-| `Ready` | ✅ Yes | Operational, can send/receive |
-| `Initializing` | ❌ No | Still initializing |
-| `Uninitialized` | ❌ No | Not yet initialized |
-| `Error` | ❌ No | Error state, needs recovery |
-| `ShuttingDown` | ❌ No | Graceful shutdown in progress |
-| `Shutdown` | ❌ No | Connector is shut down |
-
-## Monitoring and Alerting
-
-### Prometheus Metrics
-
-Export health status as metrics:
-
-```csharp
-// In your monitoring service
-var connectors = serviceProvider.GetServices<IChannelConnector>();
-foreach (var connector in connectors)
-{
-    var health = await connector.GetHealthAsync(ct);
-    var isHealthy = health.Value?.IsHealthy == true ? 1 : 0;
-    
-    Metrics.RecordGauge("connector_health", isHealthy, 
-        new("connector", connector.Schema.ChannelType));
-}
-```
-
-### Application Insights
-
-Track health with telemetry:
-
-```csharp
-telemetryClient.GetMetric("Connector Health")
-    .TrackMetric(health.Value?.IsHealthy == true ? 1.0 : 0.0,
-        new Dictionary<string, string>
-        {
-            ["Connector"] = connector.Schema.ChannelType,
-            ["Provider"] = connector.Schema.ChannelProvider
-        });
-```
+| `Ready` | Yes | Operational, can send/receive |
+| `Initializing` | No | Still initializing |
+| `Uninitialized` | No | Not yet initialized |
+| `Error` | No | Error state, needs recovery |
+| `ShuttingDown` | No | Graceful shutdown in progress |
+| `Shutdown` | No | Connector is shut down |
 
 ## Troubleshooting
 
@@ -223,12 +222,9 @@ telemetryClient.GetMetric("Connector Health")
 
 **Recovery:**
 ```csharp
-// Attempt to reinitialize
 if (!health.IsHealthy)
 {
     await connector.InitializeAsync(ct);
-    
-    // Verify recovery
     health = await connector.GetHealthAsync(ct);
 }
 ```
@@ -247,36 +243,36 @@ if (!health.IsHealthy)
 
 ## Best Practices
 
-### ✅ DO: Implement Health Checks
+### DO: Implement Health Checks
 
 Always implement `GetConnectorHealthAsync()` in custom connectors - it's essential for monitoring.
 
-### ✅ DO: Test Provider Connectivity
+### DO: Test Provider Connectivity
 
 Don't just check internal state - verify you can actually reach the provider API.
 
-### ✅ DO: Include Diagnostic Information
+### DO: Include Diagnostic Information
 
 Provide useful diagnostic data in health check results:
 
 ```csharp
-health.AdditionalData["LastSuccessfulSend"] = _lastSuccessfulSend;
-health.AdditionalData["FailedSendCount"] = _failedSendCount;
+health.Metrics["LastSuccessfulSend"] = _lastSuccessfulSend;
+health.Metrics["FailedSendCount"] = _failedSendCount;
 ```
 
-### ❌ DON'T: Perform Expensive Operations
+### DON'T: Perform Expensive Operations
 
 Health checks should be lightweight and fast:
 
 ```csharp
-// ❌ Bad - sends actual message as health check
+// Bad - sends actual message as health check
 await SendMessageAsync(testMessage, ct);
 
-// ✅ Good - lightweight connectivity test
+// Good - lightweight connectivity test
 await _httpClient.GetAsync("/ping", ct);
 ```
 
-### ❌ DON'T: Cache Health Status
+### DON'T: Cache Health Status
 
 Always perform fresh health checks - cached status may be stale.
 

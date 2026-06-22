@@ -17,7 +17,7 @@ Completes the receive-side model for bidirectional messaging.
 ### v1.0.0 — First Stable Release ✓
 Locks the public API and ships stable NuGet packages.
 
-### v1.1.0 — Resilience & Observability
+### v1.1.0 — Resilience & Observability ✓
 Retry/circuit-breaker policies, OpenTelemetry signals, health checks, timeout controls.
 
 ### v1.2.0 — New SaaS Connectors
