@@ -144,4 +144,39 @@ public class ChannelConnectorBaseExtendedTests
         var result2 = await connector.InitializeAsync(CancellationToken.None);
         Assert.False(result2.IsSuccess());
     }
+
+    [Fact]
+    public void Should_ReturnNull_When_GetAuthenticationHeaderWithNoCredential()
+    {
+        var schema = CreateSchema();
+        var connector = new ExposedConnector(schema);
+        Assert.Null(connector.GetAuthenticationHeader());
+    }
+
+    [Fact]
+    public void Should_ReturnNull_When_GetApiKeyWithNoCredential()
+    {
+        var schema = CreateSchema();
+        var connector = new ExposedConnector(schema);
+        Assert.Null(connector.GetApiKey());
+    }
+
+    [Fact]
+    public void Should_ReturnTrue_When_IsAnonymousConnectorWithNoAuthConfigs()
+    {
+        var schema = CreateSchema();
+        var connector = new ExposedConnector(schema);
+        Assert.True(connector.IsAnonymousConnector());
+    }
+
+    [Fact]
+    public void Should_ReturnFalse_When_IsAnonymousConnectorWithAuthConfigs()
+    {
+        var schema = new ChannelSchemaBuilder("TestProvider", "test", "1.0")
+            .WithCapabilities(ChannelCapability.SendMessages)
+            .AddAuthenticationScheme(AuthenticationScheme.Bearer)
+            .Build();
+        var connector = new ExposedConnector(schema);
+        Assert.False(connector.IsAnonymousConnector());
+    }
 }

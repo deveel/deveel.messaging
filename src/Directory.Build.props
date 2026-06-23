@@ -16,7 +16,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://deveel.org</PackageProjectUrl>
     <PackageIcon>ratatosk-logo.png</PackageIcon>
-    <RepositoryUrl>https://github.com/deveel/deveel.messaging</RepositoryUrl>
+    <RepositoryUrl>https://github.com/deveel/ratatosk</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <IncludeSymbols>true</IncludeSymbols>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>

@@ -1,4 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Title>Ratatosk Facebook Messenger Connector</Title>
+    <Description>Facebook Messenger connector implementation for the Ratatosk Framework</Description>
+    <PackageTags>messaging;facebook;messenger;connector;deveel</PackageTags>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Ratatosk\Ratatosk.csproj" />
     <ProjectReference Include="..\Ratatosk.Connectors\Ratatosk.Connectors.csproj" />
@@ -22,23 +28,6 @@
   <ItemGroup>
     <PackageReference Include="Polly.Core" Version="8.6.6" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Using Include="Deveel" />
-  </ItemGroup>
-
-  <ItemGroup Condition="$(TargetFramework) == 'net9.0'">
-    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.16" />
-    <PackageReference Include="Polly.Core" Version="9.0.0" />
-    <PackageReference Include="System.Text.Json" Version="9.0.16" />
-  </ItemGroup>
-
-  <ItemGroup Condition="$(TargetFramework) == 'net10.0'">
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.8" />
-    <PackageReference Include="Polly.Core" Version="10.0.0" />
-    <PackageReference Include="System.Text.Json" Version="10.0.8" />
-  </ItemGroup>
-
 
   <ItemGroup>
     <Using Include="Deveel" />

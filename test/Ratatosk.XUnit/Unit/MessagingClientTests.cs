@@ -307,5 +307,55 @@ namespace Ratatosk.XUnit.Unit
             Assert.True(result.IsSuccess());
             Assert.NotNull(result.Value);
         }
+
+        [Fact]
+        public async Task Should_Throw_When_SendAsyncConnectorThrows()
+        {
+            var provider = CreateClient();
+            var connector = provider.GetRequiredKeyedService<IChannelConnector>("mock") as MockConnector;
+            Assert.NotNull(connector);
+
+            connector.OnSend = msg => throw new InvalidOperationException("Simulated connector failure");
+
+            var client = provider.GetRequiredService<IMessagingClient>();
+            var message = new MessageBuilder().WithId("throw-test").WithText("test").Build();
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                client.SendAsync("mock", message));
+        }
+
+        [Fact]
+        public async Task Should_Throw_When_ReceiveAsyncConnectorThrows()
+        {
+            var provider = CreateClient();
+            var connector = provider.GetRequiredKeyedService<IChannelConnector>("mock") as MockConnector;
+            Assert.NotNull(connector);
+
+            connector.OnReceive = source => throw new InvalidOperationException("Simulated receive failure");
+
+            var client = provider.GetRequiredService<IMessagingClient>();
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                client.ReceiveAsync("mock", MessageSource.Json("{}")));
+        }
+
+        [Fact]
+        public async Task Should_DisposeRuntimeConnectors_When_ClientDisposed()
+        {
+            var services = new ServiceCollection();
+            services.AddMessaging()
+                .AddConnector<MockConnector>("runtime-test", _ => { })
+                .AddClient();
+            var provider = services.BuildServiceProvider();
+            var client = provider.GetRequiredService<IMessagingClient>() as MessagingClient;
+
+            Assert.NotNull(client);
+
+            var message = new MessageBuilder().WithId("dispose-test").WithText("test").Build();
+            var result = await client.SendAsync("runtime-test", message);
+            Assert.True(result.IsSuccess());
+
+            client.Dispose();
+        }
     }
 }

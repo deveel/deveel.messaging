@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <Title>Ratatosk Telegram Bot Connector</Title>
     <Description>Telegram Bot connector implementation for the Ratatosk Framework</Description>
     <PackageTags>messaging;telegram;bot;connector;deveel</PackageTags>
   </PropertyGroup>

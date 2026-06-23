@@ -72,17 +72,13 @@ public class ConnectorTelemetryTests
     [Fact]
     public async Task SendOperation_CreatesActivity()
     {
-        var events = new List<Activity>();
+        var events = new System.Collections.Concurrent.ConcurrentBag<Activity>();
 
         using var listener = new ActivityListener
         {
             ShouldListenTo = source => source.Name.StartsWith("Ratatosk.Connector."),
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
-            ActivityStarted = activity =>
-            {
-                lock (events)
-                    events.Add(activity);
-            }
+            ActivityStarted = activity => events.Add(activity)
         };
         ActivitySource.AddActivityListener(listener);
 

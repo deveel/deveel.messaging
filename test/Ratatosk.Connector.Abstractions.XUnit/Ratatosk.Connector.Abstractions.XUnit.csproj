@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Ratatosk.Connector.Abstractions\Ratatosk.Connector.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Ratatosk.Connectors\Ratatosk.Connectors.csproj" />
   </ItemGroup>
 
   <ItemGroup>

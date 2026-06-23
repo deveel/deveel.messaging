@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Twilio SMS connector implementation for the Ratatosk Framework</Description>
-    <PackageTags>messaging;twilio;sms;connector;deveel</PackageTags>
+    <Title>Ratatosk Twilio Connector</Title>
+    <Description>Twilio SMS and WhatsApp connector implementation for the Ratatosk Framework</Description>
+    <PackageTags>messaging;twilio;sms;whatsapp;connector;deveel</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
