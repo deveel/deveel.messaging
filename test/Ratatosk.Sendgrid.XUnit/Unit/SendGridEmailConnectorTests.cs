@@ -362,6 +362,42 @@ public class SendGridEmailConnectorTests
         Assert.Equal(ConnectorState.Uninitialized, connector.State);
     }
 
+    [Fact]
+    public async Task Should_ReturnFailure_When_SendMessageAsyncReturnsApiError()
+    {
+        var schema = SendGridChannelSchemas.SimpleEmail;
+        var connectionSettings = SendGridMockFactory.CreateValidConnectionSettings();
+        var mockService = SendGridMockFactory.CreateApiErrorMock();
+        var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
+
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
+        var message = CreateTestMessage();
+
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess());
+        Assert.NotNull(result.Error);
+        mockService.Verify(x => x.SendEmailAsync(It.IsAny<SendGrid.Helpers.Mail.SendGridMessage>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Should_ReturnFailure_When_SendMessageAsyncReturnsRateLimit()
+    {
+        var schema = SendGridChannelSchemas.SimpleEmail;
+        var connectionSettings = SendGridMockFactory.CreateValidConnectionSettings();
+        var mockService = SendGridMockFactory.CreateRateLimitMock();
+        var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
+
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
+        var message = CreateTestMessage();
+
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess());
+        Assert.NotNull(result.Error);
+        mockService.Verify(x => x.SendEmailAsync(It.IsAny<SendGrid.Helpers.Mail.SendGridMessage>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     private static Message CreateTestMessage()
     {
         return new Message

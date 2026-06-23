@@ -28,6 +28,14 @@ namespace Ratatosk
                 }
             };
 
+        private static FirebaseMessagingException CreateFirebaseException(MessagingErrorCode code, string message)
+        {
+            return (FirebaseMessagingException)typeof(FirebaseMessagingException)
+                .GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)
+                .First()
+                .Invoke(new object?[] { FirebaseAdmin.ErrorCode.InvalidArgument, message, code, null, null });
+        }
+
         [Fact]
         public async Task Should_SendMessage_When_SendAsyncSucceeds()
         {
@@ -134,6 +142,83 @@ namespace Ratatosk
 
             Assert.True(service.IsInitialized);
             Assert.Null(service.App);
+        }
+
+        [Fact]
+        public async Task Should_ReturnTrue_When_TestConnectionAsyncThrowsInvalidArgument()
+        {
+            var mockClient = new Mock<IFirebaseMessagingClient>();
+            mockClient.Setup(x => x.SendAsync(It.IsAny<FirebaseAdmin.Messaging.Message>(), true, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(CreateFirebaseException(MessagingErrorCode.InvalidArgument, "Invalid token"));
+
+            var service = CreateService(mockClient.Object);
+
+            var result = await service.TestConnectionAsync(TestContext.Current.CancellationToken);
+
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task Should_ReturnFalse_When_TestConnectionAsyncThrowsOtherException()
+        {
+            var mockClient = new Mock<IFirebaseMessagingClient>();
+            mockClient.Setup(x => x.SendAsync(It.IsAny<FirebaseAdmin.Messaging.Message>(), true, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(CreateFirebaseException(MessagingErrorCode.Unavailable, "Service unavailable"));
+
+            var service = CreateService(mockClient.Object);
+
+            var result = await service.TestConnectionAsync(TestContext.Current.CancellationToken);
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task Should_ThrowConnectorException_When_SendAsyncThrowsFirebaseMessagingException()
+        {
+            var mockClient = new Mock<IFirebaseMessagingClient>();
+            var message = CreateMessage();
+            mockClient.Setup(x => x.SendAsync(message, false, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(CreateFirebaseException(MessagingErrorCode.QuotaExceeded, "Quota exceeded"));
+
+            var service = CreateService(mockClient.Object);
+
+            var ex = await Assert.ThrowsAsync<ConnectorException>(() =>
+                service.SendAsync(message, false, TestContext.Current.CancellationToken));
+
+            Assert.Equal(MessagingErrorCodes.RateLimitExceeded, ex.ErrorCode);
+            Assert.Equal(FirebaseErrorCodes.ErrorDomain, ex.ErrorDomain);
+        }
+
+        [Fact]
+        public async Task Should_ThrowConnectorException_When_SendEachAsyncThrowsFirebaseMessagingException()
+        {
+            var mockClient = new Mock<IFirebaseMessagingClient>();
+            var messages = new[] { CreateMessage() };
+            mockClient.Setup(x => x.SendEachAsync(messages, false, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(CreateFirebaseException(MessagingErrorCode.Unregistered, "Unregistered token"));
+
+            var service = CreateService(mockClient.Object);
+
+            var ex = await Assert.ThrowsAsync<ConnectorException>(() =>
+                service.SendEachAsync(messages, false, TestContext.Current.CancellationToken));
+
+            Assert.Equal(FirebaseErrorCodes.UnregisteredToken, ex.ErrorCode);
+        }
+
+        [Fact]
+        public async Task Should_ThrowConnectorException_When_SendMulticastAsyncThrowsFirebaseMessagingException()
+        {
+            var mockClient = new Mock<IFirebaseMessagingClient>();
+            var multicastMessage = new MulticastMessage { Tokens = new[] { "token1" } };
+            mockClient.Setup(x => x.SendMulticastAsync(multicastMessage, false, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(CreateFirebaseException(MessagingErrorCode.Internal, "Internal error"));
+
+            var service = CreateService(mockClient.Object);
+
+            var ex = await Assert.ThrowsAsync<ConnectorException>(() =>
+                service.SendMulticastAsync(multicastMessage, false, TestContext.Current.CancellationToken));
+
+            Assert.Equal(FirebaseErrorCodes.InternalError, ex.ErrorCode);
         }
 
         [Fact]

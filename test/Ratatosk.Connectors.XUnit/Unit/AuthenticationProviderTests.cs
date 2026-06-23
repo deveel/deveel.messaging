@@ -292,18 +292,189 @@ namespace Ratatosk
             Assert.NotNull(result.Credential?.ExpiresAt);
         }
 
-        [Fact]
-        public async Task Should_FailBearerToken_When_NoTokenFound()
+    [Fact]
+    public async Task Should_FailBearerToken_When_NoTokenFound()
+    {
+        var provider = new BearerTokenAuthenticationProvider();
+        var settings = new ConnectionSettings();
+        var config = new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Bearer")
+            .WithField("Token", DataType.String, f => f.AuthenticationRole = "principal");
+
+        var result = await provider.ObtainCredentialAsync(settings, config);
+
+        Assert.False(result.IsSuccessful);
+        Assert.Contains("Token", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Should_FailClientCredentials_When_MissingClientId()
+    {
+        var provider = new ClientCredentialsAuthenticationProvider();
+        var settings = new ConnectionSettings();
+        settings.SetParameter("ClientSecret", "secret");
+        settings.SetParameter("TokenEndpoint", "https://example.com/token");
+        var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "OAuth")
+            .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+            .WithField("ClientSecret", DataType.String, f => f.AuthenticationRole = "credential");
+
+        var result = await provider.ObtainCredentialAsync(settings, config);
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal("MISSING_PARAMETERS", result.ErrorCode);
+    }
+
+    [Fact]
+    public async Task Should_FailClientCredentials_When_MissingTokenEndpoint()
+    {
+        var provider = new ClientCredentialsAuthenticationProvider();
+        var settings = new ConnectionSettings();
+        settings.SetParameter("ClientId", "client-id");
+        settings.SetParameter("ClientSecret", "secret");
+        var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "OAuth")
+            .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+            .WithField("ClientSecret", DataType.String, f => f.AuthenticationRole = "credential");
+
+        var result = await provider.ObtainCredentialAsync(settings, config);
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal("MISSING_TOKEN_ENDPOINT", result.ErrorCode);
+    }
+
+    [Fact]
+    public async Task Should_FailClientCredentials_When_NonSuccessResponse()
+    {
+        var httpHandler = new MockHttpMessageHandler(req =>
+            new HttpResponseMessage(System.Net.HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent("{\"error\":\"invalid_client\"}")
+            });
+        var httpClient = new HttpClient(httpHandler);
+        var provider = new ClientCredentialsAuthenticationProvider(httpClient);
+        var settings = new ConnectionSettings();
+        settings.SetParameter("ClientId", "client-id");
+        settings.SetParameter("ClientSecret", "secret");
+        settings.SetParameter("TokenEndpoint", "https://example.com/token");
+        var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "OAuth")
+            .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+            .WithField("ClientSecret", DataType.String, f => f.AuthenticationRole = "credential");
+
+        var result = await provider.ObtainCredentialAsync(settings, config);
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal("TOKEN_REQUEST_FAILED", result.ErrorCode);
+    }
+
+    [Fact]
+    public async Task Should_FailClientCredentials_When_MissingAccessToken()
+    {
+        var httpHandler = new MockHttpMessageHandler(req =>
+            new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"token_type\":\"Bearer\"}")
+            });
+        var httpClient = new HttpClient(httpHandler);
+        var provider = new ClientCredentialsAuthenticationProvider(httpClient);
+        var settings = new ConnectionSettings();
+        settings.SetParameter("ClientId", "client-id");
+        settings.SetParameter("ClientSecret", "secret");
+        settings.SetParameter("TokenEndpoint", "https://example.com/token");
+        var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "OAuth")
+            .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+            .WithField("ClientSecret", DataType.String, f => f.AuthenticationRole = "credential");
+
+        var result = await provider.ObtainCredentialAsync(settings, config);
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal("INVALID_TOKEN_RESPONSE", result.ErrorCode);
+    }
+
+    [Fact]
+    public async Task Should_FailClientCredentials_When_HttpRequestException()
+    {
+        var httpHandler = new MockHttpMessageHandler(req =>
+            throw new HttpRequestException("Network error"));
+        var httpClient = new HttpClient(httpHandler);
+        var provider = new ClientCredentialsAuthenticationProvider(httpClient);
+        var settings = new ConnectionSettings();
+        settings.SetParameter("ClientId", "client-id");
+        settings.SetParameter("ClientSecret", "secret");
+        settings.SetParameter("TokenEndpoint", "https://example.com/token");
+        var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "OAuth")
+            .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+            .WithField("ClientSecret", DataType.String, f => f.AuthenticationRole = "credential");
+
+        var result = await provider.ObtainCredentialAsync(settings, config);
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal("NETWORK_ERROR", result.ErrorCode);
+    }
+
+    [Fact]
+    public async Task Should_RefreshClientCredentials_When_RefreshTokenAvailable()
+    {
+        var httpHandler = new MockHttpMessageHandler(req =>
+            new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"access_token\":\"new-token\",\"expires_in\":3600}")
+            });
+        var httpClient = new HttpClient(httpHandler);
+        var provider = new ClientCredentialsAuthenticationProvider(httpClient);
+        var settings = new ConnectionSettings();
+        settings.SetParameter("ClientId", "client-id");
+        settings.SetParameter("ClientSecret", "secret");
+        settings.SetParameter("TokenEndpoint", "https://example.com/token");
+        var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "OAuth")
+            .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+            .WithField("ClientSecret", DataType.String, f => f.AuthenticationRole = "credential");
+
+        var credential = AuthenticationCredential.ForClientCredentials("old-token", null, "Bearer");
+        credential.Properties["RefreshToken"] = "refresh-token";
+
+        var result = await provider.RefreshCredentialAsync(credential, settings, config);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal("new-token", result.Credential?.Value);
+    }
+
+    [Fact]
+    public async Task Should_FallbackToObtain_When_RefreshClientCredentialsWithoutRefreshToken()
+    {
+        var httpHandler = new MockHttpMessageHandler(req =>
+            new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"access_token\":\"new-token\",\"expires_in\":3600}")
+            });
+        var httpClient = new HttpClient(httpHandler);
+        var provider = new ClientCredentialsAuthenticationProvider(httpClient);
+        var settings = new ConnectionSettings();
+        settings.SetParameter("ClientId", "client-id");
+        settings.SetParameter("ClientSecret", "secret");
+        settings.SetParameter("TokenEndpoint", "https://example.com/token");
+        var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "OAuth")
+            .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+            .WithField("ClientSecret", DataType.String, f => f.AuthenticationRole = "credential");
+
+        var credential = AuthenticationCredential.ForClientCredentials("old-token", null, "Bearer");
+
+        var result = await provider.RefreshCredentialAsync(credential, settings, config);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal("new-token", result.Credential?.Value);
+    }
+
+    private class MockHttpMessageHandler : HttpMessageHandler
+    {
+        private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
+
+        public MockHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> handler)
         {
-            var provider = new BearerTokenAuthenticationProvider();
-            var settings = new ConnectionSettings();
-            var config = new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Bearer")
-                .WithField("Token", DataType.String, f => f.AuthenticationRole = "principal");
+            _handler = handler;
+        }
 
-            var result = await provider.ObtainCredentialAsync(settings, config);
-
-            Assert.False(result.IsSuccessful);
-            Assert.Contains("Token", result.ErrorMessage);
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(_handler(request));
         }
     }
+}
 }
