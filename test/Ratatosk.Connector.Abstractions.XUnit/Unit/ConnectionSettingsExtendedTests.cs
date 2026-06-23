@@ -189,7 +189,7 @@ public class ConnectionSettingsExtendedTests
     [Fact]
     public void Should_Throw_When_ParseNullConnectionString()
     {
-        Assert.Throws<ArgumentException>(() => ConnectionSettings.Parse(null!));
+        Assert.Throws<ArgumentNullException>(() => ConnectionSettings.Parse(null!));
     }
 
     [Fact]
